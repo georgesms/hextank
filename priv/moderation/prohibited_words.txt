@@ -1,0 +1,11 @@
+# Prohibited words (see README, "Moderation").
+#
+# One word per line, English and Portuguese, focused on HATE SPEECH (slurs), not
+# general swearing. Lines starting with "#" and empty lines are ignored.
+#
+# Write words plainly: matching already ignores case and accents, undoes common
+# letter swaps (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a, $ -> s) and shortens repeated
+# letters, so there's no need to list variants. Only whole words match.
+#
+# Changes need the human's approval, and take effect after a deploy (the list is
+# compiled into Hextank.Moderation).
