@@ -4,9 +4,17 @@ defmodule HextankWeb.TableLive do
   log. It watches the table (see `Hextank.Tables.watch/1`), so every change made by
   anyone arrives as `{:game_updated, game}`.
 
-  Acting works in two steps: pick an action (move, shoot, give AP), then click a
-  highlighted cell. Clicking your own tank is a shortcut for "move". Escape cancels.
-  No rule is checked here: `Hextank.Game` decides, we only show its answer.
+  Playing happens on the board:
+
+    * click a cell: shows the shortest path there and its cost; click it again (or
+      double-click) to drive there, 1 AP per cell;
+    * click a tank: shows whether it's within your range; double-click to shoot it;
+    * click your own tank: shows your range; double-click to add 1 to it;
+    * hover a tank: its stats (HP, AP, range).
+
+  The bar under the board explains the current selection and has buttons for the
+  same actions (handy on touch screens). Escape cancels. No rule is checked here:
+  `Hextank.Game` decides, we only show its answer.
 
   The chat panel shows the table chat and your private messages (see
   `Hextank.Chat`). Messages are a LiveView stream: once sent to the browser, the
@@ -19,9 +27,6 @@ defmodule HextankWeb.TableLive do
   alias HextankWeb.Messages
 
   import HextankWeb.GameComponents
-
-  # Action modes chosen with a button. A map, so user input never becomes an atom.
-  @modes %{"move" => :move, "shoot" => :shoot, "give_ap" => :give_ap}
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -40,7 +45,7 @@ defmodule HextankWeb.TableLive do
 
         socket =
           socket
-          |> assign(mode: nil, board_layout: nil, now: DateTime.utc_now())
+          |> assign(selection: nil, board_layout: nil, now: DateTime.utc_now())
           |> assign(chat_form: chat_form(), sent_at: [], sent_count: 0)
           |> assign_game(game)
           # Newest first: the chat box shows them bottom-up (flex-col-reverse), so it
@@ -62,7 +67,7 @@ defmodule HextankWeb.TableLive do
     |> assign(:me, Game.tank(game, socket.assigns.current_player.id))
     |> assign(:page_title, game.name)
     |> assign_layout(game)
-    |> assign_highlights()
+    |> assign_selection_details()
   end
 
   # The board never changes once the game has started, so its layout is computed
@@ -73,31 +78,84 @@ defmodule HextankWeb.TableLive do
 
   defp assign_layout(socket, _game), do: socket
 
-  # Which cells light up for the current mode.
-  defp assign_highlights(socket) do
-    %{game: game, me: me, mode: mode, current_player: player} = socket.assigns
+  ## Selection: what the player clicked on the board
 
-    targets =
-      case mode do
-        :move ->
-          Game.move_targets(game, player.id)
-
-        mode when mode in [:shoot, :give_ap] ->
-          Enum.map(Game.tanks_in_range(game, player.id), & &1.position)
-
-        nil ->
-          []
-      end
-
-    range_hexes =
-      if (mode in [:shoot, :give_ap] and me) && me.position do
-        me.position |> Hex.range(me.range) |> Enum.filter(&Board.on_board?(game.board, &1))
-      else
-        []
-      end
-
-    assign(socket, targets: targets, range_hexes: range_hexes)
+  # The selection is nil, {:cell, hex} (planning a move) or {:tank, player_id}.
+  # From it come the details shown under the board and the highlighted cells. They
+  # are worked out again after every game update, so they never go stale.
+  defp assign_selection(socket, selection) do
+    socket |> assign(:selection, selection) |> assign_selection_details()
   end
+
+  defp assign_selection_details(socket) do
+    %{game: game, me: me, selection: selection} = socket.assigns
+    details = selection_details(game, me, selection)
+    assign(socket, details: details, highlights: highlights(game, me, details))
+  end
+
+  defp selection_details(game, %Tank{position: %Hex{}} = me, {:cell, hex}) do
+    case Game.path(game, me.player_id, hex) do
+      {:ok, path} ->
+        %{
+          kind: :path,
+          target: hex,
+          path: path,
+          cost: length(path),
+          affordable?: length(path) <= me.ap
+        }
+
+      {:error, reason} ->
+        %{kind: :no_path, reason: reason}
+    end
+  end
+
+  defp selection_details(_game, %Tank{player_id: id, position: %Hex{}}, {:tank, id}) do
+    %{kind: :self}
+  end
+
+  defp selection_details(game, %Tank{position: %Hex{}} = me, {:tank, target_id}) do
+    case Game.tank(game, target_id) do
+      %Tank{position: %Hex{} = position} = target ->
+        %{
+          kind: :enemy,
+          target: target,
+          distance: Hex.distance(me.position, position),
+          in_range?: Game.check_target(game, me.player_id, target_id) == :ok
+        }
+
+      # Destroyed in the meantime, or not a real player.
+      _ ->
+        nil
+    end
+  end
+
+  defp selection_details(_game, _me, _selection), do: nil
+
+  # A list of {kind, hexes}, drawn by GameComponents.highlights/1.
+  defp highlights(_game, _me, nil), do: []
+  defp highlights(_game, _me, %{kind: :no_path}), do: []
+
+  defp highlights(_game, _me, %{kind: :path} = details) do
+    [{if(details.affordable?, do: :path, else: :path_too_far), details.path}]
+  end
+
+  defp highlights(game, me, %{kind: :self}), do: [{:range, range_cells(game, me)}]
+
+  defp highlights(game, me, %{kind: :enemy} = details) do
+    target_kind = if details.in_range?, do: :target_in_range, else: :target_out_of_range
+    [{:range, range_cells(game, me)}, {target_kind, [details.target.position]}]
+  end
+
+  defp range_cells(game, me) do
+    me.position |> Hex.range(me.range) |> Enum.filter(&Board.on_board?(game.board, &1))
+  end
+
+  # Only a living tank that isn't frozen, in a running game, can select and act.
+  defp can_select?(%{game: %Game{status: :running}, me: me}) do
+    match?(%Tank{position: %Hex{}, frozen: false}, me)
+  end
+
+  defp can_select?(_assigns), do: false
 
   ## Events from the page
 
@@ -119,15 +177,52 @@ defmodule HextankWeb.TableLive do
 
   def handle_event("vote", %{"target" => target_id}, socket), do: act(socket, {:vote, target_id})
 
-  def handle_event("mode", %{"mode" => mode}, socket) do
-    mode = Map.get(@modes, mode)
-    # Clicking the active mode again turns it off.
-    mode = if mode == socket.assigns.mode, do: nil, else: mode
-    {:noreply, socket |> assign(:mode, mode) |> assign_highlights()}
+  def handle_event("cancel", _params, socket), do: {:noreply, assign_selection(socket, nil)}
+
+  # A click on a cell plans a move there; a second click on the same cell drives.
+  def handle_event("cell", params, socket) do
+    with true <- can_select?(socket.assigns),
+         {:ok, hex} <- parse_hex(params) do
+      case socket.assigns.selection do
+        {:cell, ^hex} -> act(socket, {:move, hex})
+        _ -> {:noreply, assign_selection(socket, {:cell, hex})}
+      end
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
-  def handle_event("cancel", _params, socket) do
-    {:noreply, socket |> assign(:mode, nil) |> assign_highlights()}
+  # A click on a tank selects it (your own: shows your range).
+  def handle_event("tank", %{"player" => player_id}, socket) do
+    if can_select?(socket.assigns),
+      do: {:noreply, assign_selection(socket, {:tank, player_id})},
+      else: {:noreply, socket}
+  end
+
+  # Sent by the .Board hook, since LiveView has no double-click binding of its own.
+  # It only comes for the tank that was under the pointer when the double-click
+  # started, so double-clicking a cell never also upgrades the tank that drives there.
+  def handle_event("tank_double", %{"player" => player_id}, socket) do
+    cond do
+      not can_select?(socket.assigns) -> {:noreply, socket}
+      player_id == socket.assigns.current_player.id -> act(socket, :upgrade_range)
+      true -> act(socket, {:shoot, player_id})
+    end
+  end
+
+  # The buttons under the board do the same for the current selection.
+  def handle_event("move_here", _params, socket) do
+    case socket.assigns.selection do
+      {:cell, hex} -> act(socket, {:move, hex})
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event(action, _params, socket) when action in ["shoot", "give_ap"] do
+    case socket.assigns.selection do
+      {:tank, target_id} -> act(socket, {String.to_existing_atom(action), target_id})
+      _ -> {:noreply, socket}
+    end
   end
 
   def handle_event("send_message", %{"chat" => %{"text" => text} = params}, socket) do
@@ -158,30 +253,6 @@ defmodule HextankWeb.TableLive do
     end
   end
 
-  def handle_event("cell", params, socket) do
-    case parse_hex(params) do
-      {:ok, hex} -> cell_clicked(socket, socket.assigns.mode, hex)
-      :error -> {:noreply, socket}
-    end
-  end
-
-  defp cell_clicked(socket, :move, hex), do: act(socket, {:move, hex})
-
-  defp cell_clicked(socket, mode, hex) when mode in [:shoot, :give_ap] do
-    case Game.tank_at(socket.assigns.game, hex) do
-      %Tank{player_id: target_id} -> act(socket, {mode, target_id})
-      nil -> {:noreply, socket}
-    end
-  end
-
-  # No mode yet: clicking your own tank starts moving it.
-  defp cell_clicked(socket, nil, hex) do
-    case socket.assigns.me do
-      %Tank{position: ^hex} -> {:noreply, socket |> assign(:mode, :move) |> assign_highlights()}
-      _ -> {:noreply, socket}
-    end
-  end
-
   # Cell coordinates come from the browser: parse them, never trust them.
   defp parse_hex(params) do
     with {q, ""} <- Integer.parse(params["q"] || ""),
@@ -201,7 +272,7 @@ defmodule HextankWeb.TableLive do
   defp run(socket, fun) do
     case fun.(socket.assigns.game.id) do
       {:ok, game} ->
-        {:noreply, socket |> clear_flash() |> assign(:mode, nil) |> assign_game(game)}
+        {:noreply, socket |> clear_flash() |> assign(:selection, nil) |> assign_game(game)}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, Messages.error(reason))}
@@ -265,22 +336,53 @@ defmodule HextankWeb.TableLive do
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <section>
             <%= if @board_layout do %>
-              <div class="rounded-3xl border border-base-300 bg-base-200/40 p-2 sm:p-4">
+              <div
+                id="board-area"
+                phx-hook=".Board"
+                class="rounded-3xl border border-base-300 bg-base-200/40 p-2 sm:p-4"
+              >
+                <.selection_bar details={@details} me={@me} can_select={can_select?(assigns)} />
                 <svg
                   id="board"
                   viewBox={@board_layout.view_box}
-                  class="mx-auto max-h-[75vh] w-full select-none"
+                  class="mx-auto max-h-[75vh] w-full touch-manipulation select-none"
                 >
                   <.board_cells cells={@board_layout.cells} />
-                  <.highlights :if={@range_hexes != []} kind={:range} hexes={@range_hexes} />
-                  <.highlights :if={@mode} kind={@mode} hexes={@targets} />
+                  <.highlights :for={{kind, hexes} <- @highlights} kind={kind} hexes={hexes} />
                   <.tanks tanks={Game.living_tanks(@game)} me={@current_player.id} />
                 </svg>
+                <div
+                  id="tank-tooltip"
+                  phx-update="ignore"
+                  hidden
+                  class="pointer-events-none fixed z-50 whitespace-pre-line rounded-lg bg-base-content px-2.5 py-1.5 text-xs font-medium leading-snug text-base-100 shadow-lg"
+                />
               </div>
-              <p :if={@mode} id="mode-hint" class="mt-3 text-center text-sm text-base-content/70">
-                {mode_hint(@mode)}
-                <button phx-click="cancel" class="link ml-1">{gettext("Cancel")}</button>
-              </p>
+              <script :type={Phoenix.LiveView.ColocatedHook} name=".Board">
+                // Two things the server can't see: double-clicks and hovering.
+                export default {
+                  mounted() {
+                    const tooltip = this.el.querySelector("#tank-tooltip")
+
+                    // Only a double-click that started on a tank counts.
+                    this.el.addEventListener("dblclick", (event) => {
+                      const tank = event.target.closest("[data-player]")
+                      if (tank) this.pushEvent("tank_double", {player: tank.dataset.player})
+                    })
+
+                    // Hovering a tank shows its stats next to the pointer.
+                    this.el.addEventListener("mousemove", (event) => {
+                      const tank = event.target.closest("[data-tip]")
+                      tooltip.hidden = !tank
+                      if (!tank) return
+                      tooltip.textContent = tank.dataset.tip
+                      tooltip.style.left = `${event.clientX + 14}px`
+                      tooltip.style.top = `${event.clientY + 14}px`
+                    })
+                    this.el.addEventListener("mouseleave", () => (tooltip.hidden = true))
+                  },
+                }
+              </script>
             <% else %>
               <.waiting_room game={@game} me={@me} current_player={@current_player} />
             <% end %>
@@ -292,7 +394,6 @@ defmodule HextankWeb.TableLive do
               :if={@game.status == :running}
               game={@game}
               me={@me}
-              mode={@mode}
               next_ap_in={next_ap_in(@game, @now)}
             />
             <.player_list game={@game} current_player={@current_player} />
@@ -312,9 +413,94 @@ defmodule HextankWeb.TableLive do
     """
   end
 
-  defp mode_hint(:move), do: gettext("Click a green cell to move there.")
-  defp mode_hint(:shoot), do: gettext("Click a red tank to shoot it.")
-  defp mode_hint(:give_ap), do: gettext("Click a blue tank to give it 1 AP.")
+  # Under the board: what the selection means, and buttons to act on it.
+  attr :details, :map, default: nil
+  attr :me, :any, required: true
+  attr :can_select, :boolean, required: true
+
+  defp selection_bar(assigns) do
+    ~H"""
+    <div
+      id="selection-info"
+      class="mb-2 flex min-h-10 flex-wrap items-center justify-center gap-x-3 gap-y-2 px-2 text-center text-sm"
+    >
+      <%= case @details do %>
+        <% nil -> %>
+          <span :if={@can_select} class="text-base-content/60">
+            {gettext(
+              "Click a cell to plan a move, or a tank to check your range. Double-click to act. Hover a tank for its stats."
+            )}
+          </span>
+        <% %{kind: :path, affordable?: true} = details -> %>
+          <span>
+            {ngettext(
+              "1 cell away, 1 AP. Click it again to drive there.",
+              "%{count} cells along the path, %{count} AP. Click again to drive there.",
+              details.cost
+            )}
+          </span>
+          <button id="move-here" phx-click="move_here" class="btn btn-success btn-sm">
+            {gettext("Move here")}
+          </button>
+        <% %{kind: :path} = details -> %>
+          <span class="text-warning">
+            {ngettext(
+              "1 cell away: you need 1 AP and have %{ap}.",
+              "%{count} cells along the path: you need %{count} AP and have %{ap}.",
+              details.cost,
+              ap: @me.ap
+            )}
+          </span>
+        <% %{kind: :no_path, reason: reason} -> %>
+          <span class="text-base-content/70">{Messages.error(reason)}</span>
+        <% %{kind: :self} -> %>
+          <span>
+            {gettext(
+              "Your range is %{range} (highlighted). Double-click your tank to add 1 for 1 AP.",
+              range: @me.range
+            )}
+          </span>
+          <button id="selection-upgrade" phx-click="upgrade" disabled={@me.ap < 1} class="btn btn-sm">
+            {gettext("Range +1")}
+          </button>
+        <% %{kind: :enemy, in_range?: true} = details -> %>
+          <span>
+            {ngettext(
+              "%{name} is 1 cell away, within your range of %{range}. Double-click to shoot for 1 AP.",
+              "%{name} is %{count} cells away, within your range of %{range}. Double-click to shoot for 1 AP.",
+              details.distance,
+              name: details.target.name,
+              range: @me.range
+            )}
+          </span>
+          <button
+            id="selection-shoot"
+            phx-click="shoot"
+            disabled={@me.ap < 1}
+            class="btn btn-error btn-sm"
+          >
+            {gettext("Shoot")}
+          </button>
+          <button id="selection-give" phx-click="give_ap" disabled={@me.ap < 1} class="btn btn-sm">
+            {gettext("Give 1 AP")}
+          </button>
+        <% %{kind: :enemy} = details -> %>
+          <span class="text-base-content/70">
+            {ngettext(
+              "%{name} is 1 cell away, out of your range of %{range}.",
+              "%{name} is %{count} cells away, out of your range of %{range}.",
+              details.distance,
+              name: details.target.name,
+              range: @me.range
+            )}
+          </span>
+      <% end %>
+      <button :if={@details} id="selection-cancel" phx-click="cancel" class="btn btn-ghost btn-sm">
+        {gettext("Cancel")}
+      </button>
+    </div>
+    """
+  end
 
   # Before the start: who's in, the link to share, join / leave / start.
   attr :game, Game, required: true
@@ -390,7 +576,6 @@ defmodule HextankWeb.TableLive do
   # Your tank and what you can do with it, or your vote as a ghost.
   attr :game, Game, required: true
   attr :me, :any, required: true
-  attr :mode, :atom, required: true
   attr :next_ap_in, :string, required: true
 
   defp my_panel(%{me: nil} = assigns) do
@@ -455,61 +640,18 @@ defmodule HextankWeb.TableLive do
         </div>
       </dl>
 
-      <div class="mt-4 grid grid-cols-2 gap-2">
-        <.action_button
-          id="action-move"
-          mode="move"
-          active={@mode == :move}
-          disabled={@me.ap < 1}
-          icon="hero-arrows-pointing-out"
-        >
-          {gettext("Move")}
-        </.action_button>
-        <.action_button
-          id="action-shoot"
-          mode="shoot"
-          active={@mode == :shoot}
-          disabled={@me.ap < 1}
-          icon="hero-fire"
-        >
-          {gettext("Shoot")}
-        </.action_button>
-        <.action_button
-          id="action-give"
-          mode="give_ap"
-          active={@mode == :give_ap}
-          disabled={@me.ap < 1}
-          icon="hero-gift"
-        >
-          {gettext("Give AP")}
-        </.action_button>
-        <button id="action-upgrade" phx-click="upgrade" disabled={@me.ap < 1} class="btn gap-1.5">
-          <.icon name="hero-arrow-trending-up" class="size-4" /> {gettext("Range +1")}
-        </button>
-      </div>
-      <p class="mt-3 text-xs text-base-content/60">{gettext("Every action costs 1 AP.")}</p>
+      <button
+        id="action-upgrade"
+        phx-click="upgrade"
+        disabled={@me.ap < 1}
+        class="btn mt-4 w-full gap-1.5"
+      >
+        <.icon name="hero-arrow-trending-up" class="size-4" /> {gettext("Range +1")}
+      </button>
+      <p class="mt-3 text-xs text-base-content/60">
+        {gettext("Every action costs 1 AP; driving costs 1 AP per cell.")}
+      </p>
     </div>
-    """
-  end
-
-  attr :id, :string, required: true
-  attr :mode, :string, required: true
-  attr :active, :boolean, required: true
-  attr :disabled, :boolean, required: true
-  attr :icon, :string, required: true
-  slot :inner_block, required: true
-
-  defp action_button(assigns) do
-    ~H"""
-    <button
-      id={@id}
-      phx-click="mode"
-      phx-value-mode={@mode}
-      disabled={@disabled}
-      class={["btn gap-1.5", @active && "btn-primary"]}
-    >
-      <.icon name={@icon} class="size-4" /> {render_slot(@inner_block)}
-    </button>
     """
   end
 

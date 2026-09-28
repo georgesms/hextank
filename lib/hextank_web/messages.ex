@@ -48,6 +48,7 @@ defmodule HextankWeb.Messages do
   def error(:message_too_long), do: gettext("A message has at most 500 characters.")
   def error(:invalid_recipient), do: gettext("Pick another player of this table.")
   def error(:too_fast), do: gettext("Slow down: at most 5 messages in 10 seconds.")
+  def error(:unreachable), do: gettext("There's no way to drive there.")
   def error(:invalid_settings), do: gettext("Those table settings aren't allowed.")
   def error(:board_too_small), do: gettext("The board is too small for this many players.")
   def error(:invalid_name), do: gettext("A table name has 3 to 40 characters.")
@@ -61,18 +62,41 @@ defmodule HextankWeb.Messages do
     target = name(game, event[:target])
 
     case type do
-      :joined -> gettext("%{name} joined the table", name: actor)
-      :left -> gettext("A player left the table")
-      :started -> gettext("The game started!")
-      :moved -> gettext("%{name} moved", name: actor)
-      :shot -> gettext("%{name} shot %{target}", name: actor, target: target)
-      :destroyed -> gettext("%{name} destroyed %{target}", name: actor, target: target)
-      :upgraded -> gettext("%{name} upgraded their range", name: actor)
-      :gave_ap -> gettext("%{name} gave 1 AP to %{target}", name: actor, target: target)
+      :joined ->
+        gettext("%{name} joined the table", name: actor)
+
+      :left ->
+        gettext("A player left the table")
+
+      :started ->
+        gettext("The game started!")
+
+      :moved ->
+        ngettext("%{name} moved 1 cell", "%{name} moved %{count} cells", event[:steps] || 1,
+          name: actor
+        )
+
+      :shot ->
+        gettext("%{name} shot %{target}", name: actor, target: target)
+
+      :destroyed ->
+        gettext("%{name} destroyed %{target}", name: actor, target: target)
+
+      :upgraded ->
+        gettext("%{name} upgraded their range", name: actor)
+
+      :gave_ap ->
+        gettext("%{name} gave 1 AP to %{target}", name: actor, target: target)
+
       # Ghost votes are anonymous: that's part of the politics.
-      :voted -> gettext("A ghost gave 1 AP to %{target}", target: target)
-      :won -> gettext("%{name} won the game!", name: actor)
-      _other -> gettext("Something happened")
+      :voted ->
+        gettext("A ghost gave 1 AP to %{target}", target: target)
+
+      :won ->
+        gettext("%{name} won the game!", name: actor)
+
+      _other ->
+        gettext("Something happened")
     end
   end
 
@@ -83,6 +107,19 @@ defmodule HextankWeb.Messages do
       nil -> gettext("someone")
       tank -> tank.name
     end
+  end
+
+  @doc """
+  A tank's stats on two lines, for the hover tooltip: "Ana" then
+  "3 HP · 2 AP · range 2".
+  """
+  @spec tank_stats(Hextank.Tank.t()) :: String.t()
+  def tank_stats(tank) do
+    stats =
+      gettext("%{hp} HP · %{ap} AP · range %{range}", hp: tank.hp, ap: tank.ap, range: tank.range)
+
+    frozen = if tank.frozen, do: " · " <> gettext("frozen"), else: ""
+    tank.name <> "\n" <> stats <> frozen
   end
 
   @doc "How often AP arrives, e.g. \"1 AP per day\"."

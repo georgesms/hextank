@@ -10,8 +10,10 @@ defmodule HextankWeb.GameComponents do
     3. tanks: one `<g>` per tank, keyed by player, so an action only sends the tanks
        that changed. Moves slide thanks to a CSS transition.
 
-  Every cell (and highlight) sends `phx-click="cell"` with its `q`, `r` and `s`.
-  Tanks let clicks through to the cell beneath them.
+  Every cell (and highlight) sends `phx-click="cell"` with its `q`, `r` and `s`;
+  every tank sends `phx-click="tank"` with its player id. Tanks also carry
+  `data-player` (for double-clicks) and `data-tip` (their stats, shown on hover),
+  both read by the table page's `.Board` hook.
   """
 
   use HextankWeb, :html
@@ -87,9 +89,12 @@ defmodule HextankWeb.GameComponents do
     """
   end
 
-  @doc "Cells highlighted for the current action: where you can move or shoot."
+  @doc "Cells highlighted for the current selection: a path, your range, a target."
   attr :hexes, :list, required: true
-  attr :kind, :atom, required: true, doc: ":move, :shoot, :give_ap or :range"
+
+  attr :kind, :atom,
+    required: true,
+    doc: ":range, :path (affordable), :path_too_far, :target_in_range or :target_out_of_range"
 
   def highlights(assigns) do
     ~H"""
@@ -103,10 +108,11 @@ defmodule HextankWeb.GameComponents do
         phx-value-r={hex.r}
         phx-value-s={hex.s}
         class={[
-          @kind == :range && "pointer-events-none fill-primary/10",
-          @kind == :move && "cursor-pointer fill-success/40 hover:fill-success/70",
-          @kind == :shoot && "cursor-pointer fill-error/40 hover:fill-error/70",
-          @kind == :give_ap && "cursor-pointer fill-info/40 hover:fill-info/70"
+          @kind == :range && "pointer-events-none fill-primary/15",
+          @kind == :path && "cursor-pointer fill-success/45 hover:fill-success/70",
+          @kind == :path_too_far && "cursor-pointer fill-warning/40",
+          @kind == :target_in_range && "pointer-events-none fill-error/50",
+          @kind == :target_out_of_range && "pointer-events-none fill-base-content/25"
         ]}
       />
     </g>
@@ -119,13 +125,17 @@ defmodule HextankWeb.GameComponents do
 
   def tanks(assigns) do
     ~H"""
-    <g id="tanks" class="pointer-events-none">
+    <g id="tanks">
       <g
         :for={tank <- @tanks}
         :key={tank.player_id}
         id={"tank-#{tank.player_id}"}
         style={tank_position(tank)}
-        class="transition-transform duration-500 ease-out"
+        phx-click="tank"
+        phx-value-player={tank.player_id}
+        data-player={tank.player_id}
+        data-tip={Messages.tank_stats(tank)}
+        class="cursor-pointer transition-transform duration-500 ease-out"
       >
         <circle
           :if={tank.player_id == @me}

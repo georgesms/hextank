@@ -424,18 +424,6 @@ defmodule Hextank.Game do
   @spec tank_at(t(), Hex.t()) :: Tank.t() | nil
   def tank_at(game, hex), do: Enum.find(Map.values(game.tanks), &(&1.position == hex))
 
-  @doc "Where the player's tank could move right now (ignoring AP)."
-  @spec move_targets(t(), player_id()) :: [Hex.t()]
-  def move_targets(game, player_id) do
-    case tank(game, player_id) do
-      %Tank{position: %Hex{} = position} ->
-        position |> Hex.neighbors() |> Enum.filter(&(check_open(game, &1) == :ok))
-
-      _ ->
-        []
-    end
-  end
-
   @doc """
   The shortest path the player's tank would drive to reach `target`, around rocks
   and other tanks: the cells to cross, `target` included. Its length is the AP cost.

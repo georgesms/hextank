@@ -27,6 +27,35 @@ defmodule HextankWeb.TableLiveTest do
     game
   end
 
+  defp cell_id(hex), do: "cell_#{hex.q}_#{hex.r}_#{hex.s}"
+
+  # An open cell whose shortest path from the player's tank is `length` cells long.
+  defp cell_at_path_length(game, player_id, length) do
+    game.board
+    |> Hextank.Board.open_cells()
+    |> Enum.find(fn hex ->
+      match?({:ok, path} when length(path) == length, Game.path(game, player_id, hex))
+    end)
+  end
+
+  # Puts the two tanks on neighbouring open cells.
+  defp side_by_side(game, first_id, second_id) do
+    open = Hextank.Board.open_cells(game.board)
+
+    {a, b} =
+      Enum.find_value(open, fn hex ->
+        neighbor = Enum.find(Hextank.Hex.neighbors(hex), &(&1 in open))
+        neighbor && {hex, neighbor}
+      end)
+
+    tanks =
+      game.tanks
+      |> Map.update!(first_id, &%{&1 | position: a})
+      |> Map.update!(second_id, &%{&1 | position: b})
+
+    %{game | tanks: tanks}
+  end
+
   defp wait_until_asleep(id) do
     case Registry.lookup(Hextank.Tables.Registry, id) do
       [{pid, _}] ->
@@ -74,28 +103,87 @@ defmodule HextankWeb.TableLiveTest do
       assert view |> element("#my-range") |> render() =~ "3"
     end
 
-    test "moving: pick the action, then a highlighted cell", ctx do
+    test "a click shows the path and its cost, a second click drives there", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 3)
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      target = cell_at_path_length(game, ctx.ana.id, 2)
+
+      view |> element("##{cell_id(target)}") |> render_click()
+      assert has_element?(view, "#selection-info", "2 cells")
+      assert has_element?(view, "#highlight-path-#{cell_id(target)}")
+
+      view |> element("##{cell_id(target)}") |> render_click()
+
+      {:ok, game} = Tables.get(game.id)
+      assert %{position: ^target, ap: 1} = Game.tank(game, ctx.ana.id)
+      refute has_element?(view, "#highlights-path")
+    end
+
+    test "a path longer than your AP is shown but not driven", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1)
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      target = cell_at_path_length(game, ctx.ana.id, 2)
+
+      view |> element("##{cell_id(target)}") |> render_click()
+      assert has_element?(view, "#selection-info", "you need 2 AP and have 1")
+      assert has_element?(view, "#highlights-path_too_far")
+
+      view |> element("##{cell_id(target)}") |> render_click()
+      assert has_element?(view, "#flash-error")
+      {:ok, game} = Tables.get(game.id)
+      refute Game.tank(game, ctx.ana.id).position == target
+    end
+
+    test "a click on an enemy says it's out of range", ctx do
+      # Tanks start at least 3 cells apart, and the range is 2.
       game = running_game(ctx.ana, ctx.bruno, 1)
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
 
-      view |> element("#action-move") |> render_click()
-      [target | _] = Game.move_targets(game, ctx.ana.id)
+      view |> element("#tank-#{ctx.bruno.id}") |> render_click()
 
-      view
-      |> element("#highlight-move-cell_#{target.q}_#{target.r}_#{target.s}")
-      |> render_click()
-
-      {:ok, game} = Tables.get(game.id)
-      assert Game.tank(game, ctx.ana.id).position == target
-      refute has_element?(view, "#mode-hint")
+      assert has_element?(view, "#selection-info", "out of your range")
+      assert has_element?(view, "#highlights-target_out_of_range")
+      refute has_element?(view, "#selection-shoot")
     end
 
-    test "without AP, the actions are disabled", ctx do
+    test "an enemy within range: a click says so, a double-click shoots", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      view |> element("#tank-#{ctx.bruno.id}") |> render_click()
+      assert has_element?(view, "#selection-info", "within your range")
+
+      render_hook(view, "tank_double", %{"player" => ctx.bruno.id})
+
+      {:ok, game} = Tables.get(game.id)
+      assert Game.tank(game, ctx.bruno.id).hp == 2
+    end
+
+    test "your own tank: a click shows your range, a double-click adds 1", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1)
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      view |> element("#tank-#{ctx.ana.id}") |> render_click()
+      assert has_element?(view, "#highlights-range")
+
+      render_hook(view, "tank_double", %{"player" => ctx.ana.id})
+      assert view |> element("#my-range") |> render() =~ "3"
+    end
+
+    test "every tank carries its stats for the hover tooltip", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 2)
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      assert view |> element("#tank-#{ctx.bruno.id}") |> render() =~ "3 HP · 2 AP · range 2"
+    end
+
+    test "without AP, acting fails with a message", ctx do
       game = running_game(ctx.ana, ctx.bruno, 0)
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
 
       assert has_element?(view, "#action-upgrade[disabled]")
-      assert has_element?(view, "#action-move[disabled]")
+      render_hook(view, "tank_double", %{"player" => ctx.ana.id})
+      assert has_element?(view, "#flash-error")
     end
 
     test "other players see changes as they happen", ctx do
