@@ -5,8 +5,11 @@ defmodule Hextank.Storage do
 
   Data lives under the `:data_dir` config:
 
-      tables/<id>/game.bin    the %Game{}, rewritten after every change
-      players/<id>.bin        a %Player{}
+      tables/<id>/game.bin                the %Game{}, rewritten after every change
+      tables/<id>/chat.jsonl              chat messages, one JSON object per line,
+                                          only ever appended to
+      tables/<id>/reads/<player_id>.bin   when the player last read the chat
+      players/<id>.bin                    a %Player{}
 
   Terms are saved with `:erlang.term_to_binary/1`, wrapped as `{version, term}` so a
   future change to the shape of `%Game{}` can still read old files (see CLAUDE.md,
@@ -65,6 +68,44 @@ defmodule Hextank.Storage do
     :ok
   end
 
+  ## Chat
+
+  @doc """
+  Adds one chat message (a map that JSON can encode) at the end of the table's chat
+  file. Appending is safe with several writers: each message is one small write.
+  """
+  @spec append_chat(String.t(), map()) :: :ok
+  def append_chat(table_id, message) do
+    path = table_file(table_id, "chat.jsonl")
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, JSON.encode!(message) <> "\n", [:append])
+  end
+
+  @doc "The last `limit` chat messages of a table, oldest first, as JSON maps."
+  @spec read_chat(String.t(), pos_integer()) :: [map()]
+  def read_chat(table_id, limit) do
+    path = table_file(table_id, "chat.jsonl")
+
+    if File.exists?(path) do
+      path |> File.stream!() |> Enum.take(-limit) |> Enum.map(&JSON.decode!/1)
+    else
+      []
+    end
+  end
+
+  @doc "Remembers when a player last read a table's chat."
+  @spec save_last_read(String.t(), String.t(), DateTime.t()) :: :ok
+  def save_last_read(table_id, player_id, at), do: write_term(reads_file(table_id, player_id), at)
+
+  @doc "When a player last read a table's chat, or `nil`."
+  @spec load_last_read(String.t(), String.t()) :: DateTime.t() | nil
+  def load_last_read(table_id, player_id) do
+    case read_term(reads_file(table_id, player_id)) do
+      {:ok, at} -> at
+      {:error, :not_found} -> nil
+    end
+  end
+
   ## Players
 
   @doc "Saves a player, replacing the previous save."
@@ -103,6 +144,11 @@ defmodule Hextank.Storage do
   end
 
   defp table_file(id, name), do: Path.join(table_dir(id), name)
+
+  defp reads_file(table_id, player_id) do
+    if not valid_id?(player_id), do: raise(ArgumentError, "invalid id: #{inspect(player_id)}")
+    Path.join([table_dir(table_id), "reads", player_id <> ".bin"])
+  end
 
   defp player_file(id) do
     if not valid_id?(id), do: raise(ArgumentError, "invalid id: #{inspect(id)}")
