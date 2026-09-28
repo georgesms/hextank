@@ -11,7 +11,7 @@ msgstr ""
 "Language: pt_BR\n"
 "Plural-Forms: nplurals=2; plural=(n>1);\n"
 
-#: lib/hextank_web/live/table_live.ex:533
+#: lib/hextank_web/live/table_live.ex:538
 #, elixir-autogen, elixir-format
 msgid "%{count} of 20 players. The game needs at least 2."
 msgstr "%{count} de 20 jogadores. O jogo precisa de pelo menos 2."
@@ -21,82 +21,82 @@ msgstr "%{count} de 20 jogadores. O jogo precisa de pelo menos 2."
 msgid "%{hp} HP"
 msgstr "%{hp} HP"
 
-#: lib/hextank_web/messages.ex:142
+#: lib/hextank_web/messages.ex:143
 #, elixir-autogen, elixir-format
 msgid "%{h} h %{m} min"
 msgstr "%{h} h %{m} min"
 
-#: lib/hextank_web/messages.ex:139
+#: lib/hextank_web/messages.ex:140
 #, elixir-autogen, elixir-format
 msgid "%{m} min"
 msgstr "%{m} min"
 
-#: lib/hextank_web/messages.ex:83
+#: lib/hextank_web/messages.ex:84
 #, elixir-autogen, elixir-format
 msgid "%{name} destroyed %{target}"
 msgstr "%{name} destruiu %{target}"
 
-#: lib/hextank_web/messages.ex:89
+#: lib/hextank_web/messages.ex:90
 #, elixir-autogen, elixir-format
 msgid "%{name} gave 1 AP to %{target}"
 msgstr "%{name} deu 1 PA para %{target}"
 
-#: lib/hextank_web/messages.ex:66
+#: lib/hextank_web/messages.ex:67
 #, elixir-autogen, elixir-format
 msgid "%{name} joined the table"
 msgstr "%{name} entrou na mesa"
 
-#: lib/hextank_web/messages.ex:80
+#: lib/hextank_web/messages.ex:81
 #, elixir-autogen, elixir-format
 msgid "%{name} shot %{target}"
 msgstr "%{name} atirou em %{target}"
 
-#: lib/hextank_web/messages.ex:86
+#: lib/hextank_web/messages.ex:87
 #, elixir-autogen, elixir-format
 msgid "%{name} upgraded their range"
 msgstr "%{name} aumentou o alcance"
 
-#: lib/hextank_web/messages.ex:96
+#: lib/hextank_web/messages.ex:97
 #, elixir-autogen, elixir-format
 msgid "%{name} won the game!"
 msgstr "%{name} venceu o jogo!"
 
-#: lib/hextank_web/live/table_live.ex:730
+#: lib/hextank_web/live/table_live.ex:735
 #, elixir-autogen, elixir-format
 msgid "%{name} won!"
 msgstr "%{name} venceu!"
 
-#: lib/hextank_web/messages.ex:138
+#: lib/hextank_web/messages.ex:139
 #, elixir-autogen, elixir-format
 msgid "%{s} s"
 msgstr "%{s} s"
 
-#: lib/hextank_web/messages.ex:148
+#: lib/hextank_web/messages.ex:149
 #, elixir-autogen, elixir-format
 msgid "%{time} ago"
 msgstr "há %{time}"
 
-#: lib/hextank_web/live/table_live.ex:752
+#: lib/hextank_web/live/table_live.ex:757
 #, elixir-autogen, elixir-format
 msgid "(you)"
 msgstr "(você)"
 
-#: lib/hextank_web/messages.ex:132
+#: lib/hextank_web/messages.ex:133
 #, elixir-autogen, elixir-format
 msgid "1 AP every %{time}"
 msgstr "1 PA a cada %{time}"
 
-#: lib/hextank_web/messages.ex:131
+#: lib/hextank_web/messages.ex:132
 #, elixir-autogen, elixir-format
 msgid "1 AP per day"
 msgstr "1 PA por dia"
 
-#: lib/hextank_web/messages.ex:130
+#: lib/hextank_web/messages.ex:131
 #, elixir-autogen, elixir-format
 msgid "1 AP per hour"
 msgstr "1 PA por hora"
 
-#: lib/hextank_web/messages.ex:129
+#: lib/hextank_web/messages.ex:130
 #, elixir-autogen, elixir-format
 msgid "1 AP per minute"
 msgstr "1 PA por minuto"
@@ -111,22 +111,22 @@ msgstr "2 a 20 letras, dígitos, espaços"
 msgid "A game needs at least 2 players."
 msgstr "Um jogo precisa de pelo menos 2 jogadores."
 
-#: lib/hextank_web/messages.ex:93
+#: lib/hextank_web/messages.ex:94
 #, elixir-autogen, elixir-format
 msgid "A ghost gave 1 AP to %{target}"
 msgstr "Um fantasma deu 1 PA para %{target}"
 
-#: lib/hextank_web/messages.ex:55
+#: lib/hextank_web/messages.ex:56
 #, elixir-autogen, elixir-format
 msgid "A nickname has 2 to 20 letters, digits or spaces."
 msgstr "Um apelido tem de 2 a 20 letras, dígitos ou espaços."
 
-#: lib/hextank_web/messages.ex:69
+#: lib/hextank_web/messages.ex:70
 #, elixir-autogen, elixir-format
 msgid "A player left the table"
 msgstr "Um jogador saiu da mesa"
 
-#: lib/hextank_web/messages.ex:54
+#: lib/hextank_web/messages.ex:55
 #, elixir-autogen, elixir-format
 msgid "A table name has 3 to 40 characters."
 msgstr "O nome da mesa tem de 3 a 40 caracteres."
@@ -137,12 +137,14 @@ msgstr "O nome da mesa tem de 3 a 40 caracteres."
 msgid "Account"
 msgstr "Conta"
 
-#: lib/hextank_web/live/table_live.ex:650
+#: lib/hextank_web/live/table_live.ex:655
 #, elixir-autogen, elixir-format
 msgid "Action points"
 msgstr "Pontos de ação"
 
 #: lib/hextank_web/components/core_components.ex:375
+#: lib/hextank_web/live/admin_live.ex:118
+#: lib/hextank_web/live/admin_live.ex:205
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Ações"
@@ -152,8 +154,8 @@ msgstr "Ações"
 msgid "Anyone (listed in the lobby)"
 msgstr "Qualquer pessoa (aparece no saguão)"
 
-#: lib/hextank_web/components/layouts.ex:121
-#: lib/hextank_web/components/layouts.ex:136
+#: lib/hextank_web/components/layouts.ex:129
+#: lib/hextank_web/components/layouts.ex:144
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Tentando reconectar"
@@ -163,7 +165,7 @@ msgstr "Tentando reconectar"
 msgid "Bookmark this link or keep it somewhere safe: it logs you back in as yourself on any device. It works like a password, so don't share it."
 msgstr "Salve este link nos favoritos ou guarde-o em lugar seguro: ele faz você entrar de novo como você mesmo em qualquer aparelho. Funciona como uma senha, então não o compartilhe."
 
-#: lib/hextank_web/live/table_live.ex:517
+#: lib/hextank_web/live/table_live.ex:522
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr "Cancelar"
@@ -173,7 +175,7 @@ msgstr "Cancelar"
 msgid "Create table"
 msgstr "Criar mesa"
 
-#: lib/hextank_web/messages.ex:183
+#: lib/hextank_web/messages.ex:184
 #, elixir-autogen, elixir-format
 msgid "Finished"
 msgstr "Terminado"
@@ -193,22 +195,22 @@ msgstr "Velocidade do jogo"
 msgid "Get my rejoin link"
 msgstr "Pegar meu link de volta"
 
-#: lib/hextank_web/live/table_live.ex:617
+#: lib/hextank_web/live/table_live.ex:622
 #, elixir-autogen, elixir-format
 msgid "Give 1 AP to a living tank. Nobody will know it was you."
 msgstr "Dê 1 PA para um tanque vivo. Ninguém vai saber que foi você."
 
-#: lib/hextank_web/live/table_live.ex:549
+#: lib/hextank_web/live/table_live.ex:554
 #, elixir-autogen, elixir-format
 msgid "Invite friends with this link"
 msgstr "Convide amigos com este link"
 
-#: lib/hextank_web/live/table_live.ex:569
+#: lib/hextank_web/live/table_live.ex:574
 #, elixir-autogen, elixir-format
 msgid "Join this table"
 msgstr "Entrar nesta mesa"
 
-#: lib/hextank_web/live/table_live.ex:581
+#: lib/hextank_web/live/table_live.ex:586
 #, elixir-autogen, elixir-format
 msgid "Leave"
 msgstr "Sair"
@@ -219,11 +221,12 @@ msgid "Let's play"
 msgstr "Vamos jogar"
 
 #: lib/hextank_web/live/lobby_live.ex:22
-#: lib/hextank_web/live/table_live.ex:349
+#: lib/hextank_web/live/table_live.ex:354
 #, elixir-autogen, elixir-format
 msgid "Lobby"
 msgstr "Saguão"
 
+#: lib/hextank_web/live/admin_live.ex:202
 #: lib/hextank_web/live/lobby_live.ex:126
 #, elixir-autogen, elixir-format
 msgid "Name"
@@ -239,7 +242,7 @@ msgstr "Novo link criado. O antigo não funciona mais."
 msgid "New table"
 msgstr "Nova mesa"
 
-#: lib/hextank_web/live/table_live.ex:658
+#: lib/hextank_web/live/table_live.ex:663
 #, elixir-autogen, elixir-format
 msgid "Next AP"
 msgstr "Próximo PA"
@@ -294,7 +297,9 @@ msgstr "Escolha um apelido"
 msgid "Pick a tank that's still on the board."
 msgstr "Escolha um tanque que ainda esteja no tabuleiro."
 
-#: lib/hextank_web/live/table_live.ex:742
+#: lib/hextank_web/live/admin_live.ex:111
+#: lib/hextank_web/live/admin_live.ex:204
+#: lib/hextank_web/live/table_live.ex:747
 #, elixir-autogen, elixir-format
 msgid "Players"
 msgstr "Jogadores"
@@ -304,22 +309,23 @@ msgstr "Jogadores"
 msgid "Playing on another device?"
 msgstr "Jogando em outro aparelho?"
 
+#: lib/hextank_web/live/admin_live.ex:227
 #: lib/hextank_web/live/lobby_live.ex:237
 #, elixir-autogen, elixir-format
 msgid "Private"
 msgstr "Privada"
 
-#: lib/hextank_web/live/table_live.ex:654
+#: lib/hextank_web/live/table_live.ex:659
 #, elixir-autogen, elixir-format
 msgid "Range"
 msgstr "Alcance"
 
-#: lib/hextank_web/live/table_live.ex:694
+#: lib/hextank_web/live/table_live.ex:699
 #, elixir-autogen, elixir-format
 msgid "Range +1"
 msgstr "Alcance +1"
 
-#: lib/hextank_web/messages.ex:182
+#: lib/hextank_web/messages.ex:183
 #, elixir-autogen, elixir-format
 msgid "Running"
 msgstr "Em andamento"
@@ -329,7 +335,7 @@ msgstr "Em andamento"
 msgid "Save"
 msgstr "Salvar"
 
-#: lib/hextank_web/live/table_live.ex:678
+#: lib/hextank_web/live/table_live.ex:683
 #, elixir-autogen, elixir-format
 msgid "Shoot"
 msgstr "Atirar"
@@ -339,22 +345,22 @@ msgstr "Atirar"
 msgid "Someone else has my link: make a new one"
 msgstr "Alguém tem meu link: criar um novo"
 
-#: lib/hextank_web/messages.ex:99
+#: lib/hextank_web/messages.ex:100
 #, elixir-autogen, elixir-format
 msgid "Something happened"
 msgstr "Algo aconteceu"
 
-#: lib/hextank_web/components/layouts.ex:128
+#: lib/hextank_web/components/layouts.ex:136
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "Algo deu errado!"
 
-#: lib/hextank_web/messages.ex:56
+#: lib/hextank_web/messages.ex:57
 #, elixir-autogen, elixir-format
 msgid "Something went wrong."
 msgstr "Algo deu errado."
 
-#: lib/hextank_web/live/table_live.ex:578
+#: lib/hextank_web/live/table_live.ex:583
 #, elixir-autogen, elixir-format
 msgid "Start the game"
 msgstr "Começar o jogo"
@@ -394,7 +400,7 @@ msgstr "O jogo já começou."
 msgid "The game isn't running."
 msgstr "O jogo não está em andamento."
 
-#: lib/hextank_web/messages.ex:72
+#: lib/hextank_web/messages.ex:73
 #, elixir-autogen, elixir-format
 msgid "The game started!"
 msgstr "O jogo começou!"
@@ -424,13 +430,13 @@ msgstr "Esta mesa não existe."
 msgid "This table is full."
 msgstr "Esta mesa está cheia."
 
-#: lib/hextank_web/live/table_live.ex:531
-#: lib/hextank_web/messages.ex:181
+#: lib/hextank_web/live/table_live.ex:536
+#: lib/hextank_web/messages.ex:182
 #, elixir-autogen, elixir-format
 msgid "Waiting for players"
 msgstr "Esperando jogadores"
 
-#: lib/hextank_web/components/layouts.ex:113
+#: lib/hextank_web/components/layouts.ex:121
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr "Não encontramos a internet"
@@ -450,7 +456,7 @@ msgstr "Boas-vindas ao HexTank"
 msgid "Welcome, %{name}!"
 msgstr "Boas-vindas, %{name}!"
 
-#: lib/hextank_web/live/table_live.ex:871
+#: lib/hextank_web/live/table_live.ex:876
 #, elixir-autogen, elixir-format
 msgid "What happened"
 msgstr "O que aconteceu"
@@ -475,7 +481,7 @@ msgstr "Você não pode mirar em si mesmo."
 msgid "You need 1 action point for that."
 msgstr "Você precisa de 1 ponto de ação para isso."
 
-#: lib/hextank_web/live/table_live.ex:613
+#: lib/hextank_web/live/table_live.ex:618
 #, elixir-autogen, elixir-format
 msgid "You're a ghost"
 msgstr "Você é um fantasma"
@@ -485,7 +491,7 @@ msgstr "Você é um fantasma"
 msgid "You're already at this table."
 msgstr "Você já está nesta mesa."
 
-#: lib/hextank_web/live/table_live.ex:588
+#: lib/hextank_web/live/table_live.ex:593
 #, elixir-autogen, elixir-format
 msgid "You're in! The table's creator will start the game."
 msgstr "Você está dentro! Quem criou a mesa vai começar o jogo."
@@ -500,7 +506,7 @@ msgstr "Você ainda não está em nenhuma mesa. Entre numa abaixo ou crie a sua.
 msgid "You're not playing at this table."
 msgstr "Você não está jogando nesta mesa."
 
-#: lib/hextank_web/live/table_live.ex:604
+#: lib/hextank_web/live/table_live.ex:609
 #, elixir-autogen, elixir-format
 msgid "You're watching this game."
 msgstr "Você está assistindo a este jogo."
@@ -515,7 +521,7 @@ msgstr "Você já votou nesta rodada."
 msgid "Your account page has a personal link that logs you back in anywhere."
 msgstr "Sua página de conta tem um link pessoal que te faz entrar de novo em qualquer lugar."
 
-#: lib/hextank_web/live/table_live.ex:632
+#: lib/hextank_web/live/table_live.ex:637
 #, elixir-autogen, elixir-format
 msgid "Your next vote arrives in %{time}."
 msgstr "Seu próximo voto chega em %{time}."
@@ -530,7 +536,7 @@ msgstr "Seu link de volta"
 msgid "Your tables"
 msgstr "Suas mesas"
 
-#: lib/hextank_web/live/table_live.ex:644
+#: lib/hextank_web/live/table_live.ex:649
 #, elixir-autogen, elixir-format
 msgid "Your tank"
 msgstr "Seu tanque"
@@ -550,18 +556,18 @@ msgstr "Seu tanque foi destruído."
 msgid "close"
 msgstr "fechar"
 
-#: lib/hextank_web/live/table_live.ex:757
+#: lib/hextank_web/live/table_live.ex:762
 #, elixir-autogen, elixir-format
 msgid "ghost"
 msgstr "fantasma"
 
-#: lib/hextank_web/messages.ex:147
+#: lib/hextank_web/messages.ex:148
 #, elixir-autogen, elixir-format
 msgid "just now"
 msgstr "agora mesmo"
 
-#: lib/hextank_web/live/table_live.ex:860
-#: lib/hextank_web/messages.ex:107
+#: lib/hextank_web/live/table_live.ex:865
+#: lib/hextank_web/messages.ex:108
 #, elixir-autogen, elixir-format
 msgid "someone"
 msgstr "alguém"
@@ -578,38 +584,40 @@ msgid_plural "%{count} new messages"
 msgstr[0] "1 mensagem nova"
 msgstr[1] "%{count} mensagens novas"
 
-#: lib/hextank_web/messages.ex:48
+#: lib/hextank_web/messages.ex:49
 #, elixir-autogen, elixir-format
 msgid "A message has at most 500 characters."
 msgstr "Uma mensagem tem no máximo 500 caracteres."
 
-#: lib/hextank_web/messages.ex:152
+#: lib/hextank_web/messages.ex:153
 #, elixir-autogen, elixir-format
 msgid "Automatic (grows with players)"
 msgstr "Automático (cresce com os jogadores)"
 
 #: lib/hextank_web/live/lobby_live.ex:155
-#: lib/hextank_web/messages.ex:172
+#: lib/hextank_web/messages.ex:173
 #, elixir-autogen, elixir-format
 msgid "Board size"
 msgstr "Tamanho do tabuleiro"
 
-#: lib/hextank_web/live/table_live.ex:781
+#: lib/hextank_web/live/admin_live.ex:126
+#: lib/hextank_web/live/admin_live.ex:206
+#: lib/hextank_web/live/table_live.ex:786
 #, elixir-autogen, elixir-format
 msgid "Chat"
 msgstr "Conversa"
 
-#: lib/hextank_web/live/table_live.ex:807
+#: lib/hextank_web/live/table_live.ex:812
 #, elixir-autogen, elixir-format
 msgid "Everyone at the table"
 msgstr "Todos na mesa"
 
-#: lib/hextank_web/messages.ex:164
+#: lib/hextank_web/messages.ex:165
 #, elixir-autogen, elixir-format
 msgid "Few (5%)"
 msgstr "Poucas (5%)"
 
-#: lib/hextank_web/messages.ex:166
+#: lib/hextank_web/messages.ex:167
 #, elixir-autogen, elixir-format
 msgid "Many (%{percent}%)"
 msgstr "Muitas (%{percent}%)"
@@ -619,90 +627,90 @@ msgstr "Muitas (%{percent}%)"
 msgid "More settings"
 msgstr "Mais opções"
 
-#: lib/hextank_web/live/table_live.ex:788
+#: lib/hextank_web/live/table_live.ex:793
 #, elixir-autogen, elixir-format
 msgid "No messages yet. Diplomacy starts here."
 msgstr "Nenhuma mensagem ainda. A diplomacia começa aqui."
 
-#: lib/hextank_web/messages.ex:163
+#: lib/hextank_web/messages.ex:164
 #, elixir-autogen, elixir-format
 msgid "None"
 msgstr "Nenhuma"
 
-#: lib/hextank_web/messages.ex:165
+#: lib/hextank_web/messages.ex:166
 #, elixir-autogen, elixir-format
 msgid "Normal (10%)"
 msgstr "Normal (10%)"
 
-#: lib/hextank_web/messages.ex:49
+#: lib/hextank_web/messages.ex:50
 #, elixir-autogen, elixir-format
 msgid "Pick another player of this table."
 msgstr "Escolha outro jogador desta mesa."
 
-#: lib/hextank_web/messages.ex:46
+#: lib/hextank_web/messages.ex:47
 #, elixir-autogen, elixir-format
 msgid "Please pick different words."
 msgstr "Escolha outras palavras, por favor."
 
-#: lib/hextank_web/live/table_live.ex:814
+#: lib/hextank_web/live/table_live.ex:819
 #, elixir-autogen, elixir-format
 msgid "Privately to %{name}"
 msgstr "Em particular para %{name}"
 
-#: lib/hextank_web/messages.ex:155
+#: lib/hextank_web/messages.ex:156
 #, elixir-autogen, elixir-format
 msgid "Radius %{radius} (%{cells} cells)"
 msgstr "Raio %{radius} (%{cells} casas)"
 
 #: lib/hextank_web/live/lobby_live.ex:163
-#: lib/hextank_web/messages.ex:173
+#: lib/hextank_web/messages.ex:174
 #, elixir-autogen, elixir-format
 msgid "Rocks"
 msgstr "Pedras"
 
-#: lib/hextank_web/messages.ex:50
+#: lib/hextank_web/messages.ex:51
 #, elixir-autogen, elixir-format
 msgid "Slow down: at most 5 messages in 10 seconds."
 msgstr "Mais devagar: no máximo 5 mensagens em 10 segundos."
 
 #: lib/hextank_web/live/lobby_live.ex:172
-#: lib/hextank_web/messages.ex:174
+#: lib/hextank_web/messages.ex:175
 #, elixir-autogen, elixir-format
 msgid "Starting HP"
 msgstr "HP inicial"
 
 #: lib/hextank_web/live/lobby_live.ex:178
-#: lib/hextank_web/messages.ex:175
+#: lib/hextank_web/messages.ex:176
 #, elixir-autogen, elixir-format
 msgid "Starting range"
 msgstr "Alcance inicial"
 
-#: lib/hextank_web/messages.ex:40
+#: lib/hextank_web/messages.ex:41
 #, elixir-autogen, elixir-format
 msgid "That text has a prohibited word, so it wasn't sent. Final warning: next time you'll be banned."
 msgstr "Esse texto tem uma palavra proibida e não foi enviado. Último aviso: na próxima vez sua conta será banida."
 
-#: lib/hextank_web/messages.ex:36
+#: lib/hextank_web/messages.ex:37
 #, elixir-autogen, elixir-format
 msgid "That text has a prohibited word, so it wasn't sent. Warning 1 of 2."
 msgstr "Esse texto tem uma palavra proibida e não foi enviado. Aviso 1 de 2."
 
-#: lib/hextank_web/messages.ex:53
+#: lib/hextank_web/messages.ex:54
 #, elixir-autogen, elixir-format
 msgid "The board is too small for this many players."
 msgstr "O tabuleiro é pequeno demais para tantos jogadores."
 
-#: lib/hextank_web/messages.ex:52
+#: lib/hextank_web/messages.ex:53
 #, elixir-autogen, elixir-format
 msgid "Those table settings aren't allowed."
 msgstr "Essas opções de mesa não são permitidas."
 
-#: lib/hextank_web/live/table_live.ex:825
+#: lib/hextank_web/live/table_live.ex:830
 #, elixir-autogen, elixir-format
 msgid "Write a message"
 msgstr "Escreva uma mensagem"
 
-#: lib/hextank_web/messages.ex:47
+#: lib/hextank_web/messages.ex:48
 #, elixir-autogen, elixir-format
 msgid "Write something first."
 msgstr "Escreva algo primeiro."
@@ -717,117 +725,117 @@ msgstr "Você escreveu palavras proibidas três vezes. Seus tanques estão conge
 msgid "You've been banned"
 msgstr "Sua conta foi banida"
 
-#: lib/hextank_web/messages.ex:44
+#: lib/hextank_web/messages.ex:45
 #, elixir-autogen, elixir-format
 msgid "You've been banned for hate speech."
 msgstr "Sua conta foi banida por discurso de ódio."
 
-#: lib/hextank_web/messages.ex:45
+#: lib/hextank_web/messages.ex:46
 #, elixir-autogen, elixir-format
 msgid "You've been banned."
 msgstr "Sua conta foi banida."
 
-#: lib/hextank_web/live/table_live.ex:850
+#: lib/hextank_web/live/table_live.ex:855
 #, elixir-autogen, elixir-format
 msgid "privately"
 msgstr "em particular"
 
-#: lib/hextank_web/live/table_live.ex:848
+#: lib/hextank_web/live/table_live.ex:853
 #, elixir-autogen, elixir-format
 msgid "to %{name}"
 msgstr "para %{name}"
 
-#: lib/hextank_web/live/table_live.ex:507
+#: lib/hextank_web/live/table_live.ex:512
 #, elixir-autogen, elixir-format
 msgid "%{name} is 1 cell away, out of your range of %{range}."
 msgid_plural "%{name} is %{count} cells away, out of your range of %{range}."
 msgstr[0] "%{name} está a 1 casa, fora do seu alcance de %{range}."
 msgstr[1] "%{name} está a %{count} casas, fora do seu alcance de %{range}."
 
-#: lib/hextank_web/messages.ex:75
+#: lib/hextank_web/messages.ex:76
 #, elixir-autogen, elixir-format
 msgid "%{name} moved 1 cell"
 msgid_plural "%{name} moved %{count} cells"
 msgstr[0] "%{name} andou 1 casa"
 msgstr[1] "%{name} andou %{count} casas"
 
-#: lib/hextank_web/live/table_live.ex:466
+#: lib/hextank_web/live/table_live.ex:471
 #, elixir-autogen, elixir-format
 msgid "1 cell away, 1 AP. Click it again to drive there."
 msgid_plural "%{count} cells along the path, %{count} AP. Click again to drive there."
 msgstr[0] "A 1 casa, 1 PA. Clique de novo para ir até lá."
 msgstr[1] "%{count} casas pelo caminho, %{count} PA. Clique de novo para ir até lá."
 
-#: lib/hextank_web/live/table_live.ex:474
+#: lib/hextank_web/live/table_live.ex:479
 #, elixir-autogen, elixir-format
 msgid "1 cell away: you need 1 AP and have %{ap}."
 msgid_plural "%{count} cells along the path: you need %{count} AP and have %{ap}."
 msgstr[0] "A 1 casa: você precisa de 1 PA e tem %{ap}."
 msgstr[1] "%{count} casas pelo caminho: você precisa de %{count} PA e tem %{ap}."
 
-#: lib/hextank_web/live/table_live.ex:460
+#: lib/hextank_web/live/table_live.ex:465
 #, elixir-autogen, elixir-format
 msgid "Click a cell to plan a move, or a tank to check your range. Double-click to act. Hover a tank for its stats."
 msgstr "Clique numa casa para planejar um movimento, ou num tanque para ver seu alcance. Clique duas vezes para agir. Passe o mouse sobre um tanque para ver seus dados."
 
-#: lib/hextank_web/live/table_live.ex:686
+#: lib/hextank_web/live/table_live.ex:691
 #, elixir-autogen, elixir-format
 msgid "Give 1 AP"
 msgstr "Dar 1 PA"
 
-#: lib/hextank_web/live/table_live.ex:670
+#: lib/hextank_web/live/table_live.ex:675
 #, elixir-autogen, elixir-format
 msgid "Move here"
 msgstr "Mover para cá"
 
-#: lib/hextank_web/messages.ex:51
+#: lib/hextank_web/messages.ex:52
 #, elixir-autogen, elixir-format
 msgid "There's no way to drive there."
 msgstr "Não há caminho até lá."
 
-#: lib/hextank_web/live/table_live.ex:485
+#: lib/hextank_web/live/table_live.ex:490
 #, elixir-autogen, elixir-format
 msgid "Your range is %{range} (highlighted). Double-click your tank to add 1 for 1 AP."
 msgstr "Seu alcance é %{range} (destacado). Clique duas vezes no seu tanque para aumentá-lo em 1, por 1 PA."
 
-#: lib/hextank_web/messages.ex:123
+#: lib/hextank_web/messages.ex:124
 #, elixir-autogen, elixir-format
 msgid "frozen"
 msgstr "congelado"
 
-#: lib/hextank_web/live/table_live.ex:492
+#: lib/hextank_web/live/table_live.ex:497
 #, elixir-autogen, elixir-format
 msgid "%{name} is 1 cell away, within your range of %{range}."
 msgid_plural "%{name} is %{count} cells away, within your range of %{range}."
 msgstr[0] "%{name} está a 1 casa, dentro do seu alcance de %{range}."
 msgstr[1] "%{name} está a %{count} casas, dentro do seu alcance de %{range}."
 
-#: lib/hextank_web/live/table_live.ex:699
+#: lib/hextank_web/live/table_live.ex:704
 #, elixir-autogen, elixir-format
 msgid "A double-click on another tank:"
 msgstr "Clique duplo em outro tanque:"
 
-#: lib/hextank_web/live/table_live.ex:502
+#: lib/hextank_web/live/table_live.ex:507
 #, elixir-autogen, elixir-format
 msgid "Double-click to give 1 AP."
 msgstr "Clique duas vezes para dar 1 PA."
 
-#: lib/hextank_web/live/table_live.ex:500
+#: lib/hextank_web/live/table_live.ex:505
 #, elixir-autogen, elixir-format
 msgid "Double-click to shoot for 1 AP."
 msgstr "Clique duas vezes para atirar por 1 PA."
 
-#: lib/hextank_web/live/table_live.ex:703
+#: lib/hextank_web/live/table_live.ex:708
 #, elixir-autogen, elixir-format
 msgid "Gives it 1 AP"
 msgstr "Dá 1 PA a ele"
 
-#: lib/hextank_web/live/table_live.ex:715
+#: lib/hextank_web/live/table_live.ex:720
 #, elixir-autogen, elixir-format
 msgid "Pick a cell or a tank on the board first. Every action costs 1 AP; driving costs 1 AP per cell."
 msgstr "Escolha antes uma casa ou um tanque no tabuleiro. Cada ação custa 1 PA; dirigir custa 1 PA por casa."
 
-#: lib/hextank_web/live/table_live.ex:703
+#: lib/hextank_web/live/table_live.ex:708
 #, elixir-autogen, elixir-format
 msgid "Shoots it"
 msgstr "Atira nele"
@@ -836,3 +844,185 @@ msgstr "Atira nele"
 #, elixir-autogen, elixir-format
 msgid "range %{range}"
 msgstr "alcance %{range}"
+
+#: lib/hextank_web/live/admin_live.ex:112
+#, elixir-autogen, elixir-format
+msgid "%{count} at a table"
+msgstr "%{count} em alguma mesa"
+
+#: lib/hextank_web/live/admin_live.ex:113
+#, elixir-autogen, elixir-format
+msgid "%{count} banned"
+msgstr "%{count} contas banidas"
+
+#: lib/hextank_web/live/admin_live.ex:102
+#, elixir-autogen, elixir-format
+msgid "%{count} finished"
+msgstr "%{count} terminadas"
+
+#: lib/hextank_web/live/admin_live.ex:101
+#, elixir-autogen, elixir-format
+msgid "%{count} running"
+msgstr "%{count} em andamento"
+
+#: lib/hextank_web/live/admin_live.ex:100
+#, elixir-autogen, elixir-format
+msgid "%{count} waiting"
+msgstr "%{count} aguardando"
+
+#: lib/hextank_web/live/admin_live.ex:146
+#, elixir-autogen, elixir-format
+msgid "%{day} today · %{week} this week · %{month} in 30 days"
+msgstr "%{day} hoje · %{week} nesta semana · %{month} em 30 dias"
+
+#: lib/hextank_web/live/admin_live.ex:104
+#, elixir-autogen, elixir-format
+msgid "%{public} public, %{private} private"
+msgstr "%{public} públicas, %{private} privadas"
+
+#: lib/hextank_web/live/admin_live.ex:138
+#, elixir-autogen, elixir-format
+msgid "%{size} of memory"
+msgstr "%{size} de memória"
+
+#: lib/hextank_web/live/admin_live.ex:136
+#, elixir-autogen, elixir-format
+msgid "1 table awake"
+msgid_plural "%{count} tables awake"
+msgstr[0] "1 mesa acordada"
+msgstr[1] "%{count} mesas acordadas"
+
+#: lib/hextank_web/live/admin_live.ex:128
+#, elixir-autogen, elixir-format
+msgid "1 table with messages"
+msgid_plural "%{count} tables with messages"
+msgstr[0] "1 mesa com mensagens"
+msgstr[1] "%{count} mesas com mensagens"
+
+#: lib/hextank_web/live/admin_live.ex:293
+#, elixir-autogen, elixir-format
+msgid "AP given"
+msgstr "PA doados"
+
+#: lib/hextank_web/components/layouts.ex:42
+#: lib/hextank_web/live/admin_live.ex:23
+#: lib/hextank_web/live/admin_live.ex:92
+#, elixir-autogen, elixir-format
+msgid "Admin"
+msgstr "Admin"
+
+#: lib/hextank_web/live/admin_live.ex:301
+#, elixir-autogen, elixir-format
+msgid "All"
+msgstr "Todas"
+
+#: lib/hextank_web/live/admin_live.ex:158
+#, elixir-autogen, elixir-format
+msgid "All tables"
+msgstr "Todas as mesas"
+
+#: lib/hextank_web/live/admin_live.ex:207
+#, elixir-autogen, elixir-format
+msgid "Created"
+msgstr "Criada"
+
+#: lib/hextank_web/live/admin_live.ex:189
+#, elixir-autogen, elixir-format
+msgid "Delete 1 table"
+msgid_plural "Delete %{count} tables"
+msgstr[0] "Excluir 1 mesa"
+msgstr[1] "Excluir %{count} mesas"
+
+#: lib/hextank_web/live/admin_live.ex:181
+#, elixir-autogen, elixir-format
+msgid "Delete 1 table for good? Its game and chat are gone for everyone."
+msgid_plural "Delete %{count} tables for good? Their games and chats are gone for everyone."
+msgstr[0] "Excluir 1 mesa de vez? O jogo e o chat somem para todo mundo."
+msgstr[1] "Excluir %{count} mesas de vez? Os jogos e os chats somem para todo mundo."
+
+#: lib/hextank_web/live/admin_live.ex:79
+#, elixir-autogen, elixir-format
+msgid "Deleted 1 table."
+msgid_plural "Deleted %{count} tables."
+msgstr[0] "1 mesa excluída."
+msgstr[1] "%{count} mesas excluídas."
+
+#: lib/hextank_web/live/admin_live.ex:295
+#, elixir-autogen, elixir-format
+msgid "Ghost votes"
+msgstr "Votos de fantasmas"
+
+#: lib/hextank_web/live/admin_live.ex:291
+#, elixir-autogen, elixir-format
+msgid "Moves"
+msgstr "Movimentos"
+
+#: lib/hextank_web/live/admin_live.ex:144
+#, elixir-autogen, elixir-format
+msgid "New tables per day"
+msgstr "Mesas novas por dia"
+
+#: lib/hextank_web/live/admin_live.ex:194
+#, elixir-autogen, elixir-format
+msgid "No tables here."
+msgstr "Nenhuma mesa aqui."
+
+#: lib/hextank_web/live/admin_live.ex:294
+#, elixir-autogen, elixir-format
+msgid "Range upgrades"
+msgstr "Aumentos de alcance"
+
+#: lib/hextank_web/live/admin_live.ex:94
+#, elixir-autogen, elixir-format
+msgid "Refresh"
+msgstr "Atualizar"
+
+#: lib/hextank_web/live/admin_live.ex:218
+#, elixir-autogen, elixir-format
+msgid "Select %{name}"
+msgstr "Selecionar %{name}"
+
+#: lib/hextank_web/live/admin_live.ex:171
+#, elixir-autogen, elixir-format
+msgid "Select all"
+msgstr "Selecionar todas"
+
+#: lib/hextank_web/live/admin_live.ex:174
+#, elixir-autogen, elixir-format
+msgid "Select none"
+msgstr "Limpar seleção"
+
+#: lib/hextank_web/live/admin_live.ex:134
+#, elixir-autogen, elixir-format
+msgid "Server"
+msgstr "Servidor"
+
+#: lib/hextank_web/live/admin_live.ex:292
+#, elixir-autogen, elixir-format
+msgid "Shots"
+msgstr "Tiros"
+
+#: lib/hextank_web/live/admin_live.ex:203
+#, elixir-autogen, elixir-format
+msgid "Status"
+msgstr "Situação"
+
+#: lib/hextank_web/live/admin_live.ex:99
+#, elixir-autogen, elixir-format
+msgid "Tables"
+msgstr "Mesas"
+
+#: lib/hextank_web/live/admin_hook.ex:21
+#, elixir-autogen, elixir-format
+msgid "That page is for admins only."
+msgstr "Essa página é só para admins."
+
+#: lib/hextank_web/messages.ex:34
+#, elixir-autogen, elixir-format
+msgid "This table was deleted."
+msgstr "Esta mesa foi excluída."
+
+#: lib/hextank_web/live/account_live.ex:103
+#, elixir-autogen, elixir-format
+msgid "Your player id: %{id}. It isn't secret; the site's admins use it."
+msgstr "Seu id de jogador: %{id}. Não é segredo; os admins do site usam."
