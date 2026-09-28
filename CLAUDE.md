@@ -85,17 +85,20 @@ lib/hextank/hex.ex            cube coordinate math (pure)
 lib/hextank/board.ex          radius and obstacles (pure)
 lib/hextank/tank.ex           tank struct (pure)
 lib/hextank/game.ex           game state and rules (pure)
+lib/hextank/settings.ex       table settings: defaults, allowed values (pure)
+lib/hextank/random.ex         seeded shuffle (pure)
 lib/hextank/player.ex         player struct and strike rules (pure)
 lib/hextank/moderation.ex     prohibited-word check (pure)
+lib/hextank/moderation/text.ex   normalizing text before matching (pure)
 lib/hextank/storage.ex        all file reads and writes
 lib/hextank/chat.ex           append, read and broadcast chat messages
-lib/hextank/players.ex        load/save players, Google lookup, rejoin links
-lib/hextank/players/bans.ex   Agent with banned player ids and Google accounts
+lib/hextank/players.ex        create/load players, screen texts, ban and unban
+lib/hextank/players/bans.ex   Agent with banned player ids
 lib/hextank/tables.ex         public API used by the web layer
 lib/hextank/tables/table.ex   GenServer, one per active table
 lib/hextank/tables/lobby.ex   GenServer with a summary of every table, cleanup
 lib/hextank_web/live/         LiveViews (lobby, table, account)
-lib/hextank_web/controllers/  dormant pages, rejoin links, Google login
+lib/hextank_web/controllers/  welcome, rejoin links, banned page (later: dormant, Google)
 priv/moderation/prohibited_words.txt   the word list (approved by the human)
 priv/gettext/pt_BR/           Portuguese translations
 rel/vm.args.eex               BEAM flags for one shared vCPU
@@ -106,7 +109,8 @@ Runtime data lives under the `:data_dir` config (`priv/data` in dev, a tmp dir i
 test, the Fly volume in prod). Never commit it.
 
 ```
-data/tables/<id>/{game.bin, chat.jsonl, reads.bin}
+data/tables/<id>/{game.bin, chat.jsonl}
+data/tables/<id>/reads/<player_id>.bin   when the player last read the chat
 data/players/<player_id>.bin
 data/google/<sub>             contains the linked player_id
 ```
@@ -142,14 +146,15 @@ data/google/<sub>             contains the linked player_id
 - Google login: generate and check `state`; check `aud` (our client id) and `iss`
   (Google); request only the `openid` scope; store only `sub`. Tests use `Req.Test`
   stubs, never the real Google.
-- **Every text a player writes goes through `Moderation.check/2` before it is saved or
-  broadcast:** chat, private messages, nicknames, table names. Add the check to any
-  new text input.
+- **Every text a player writes goes through `Hextank.Players.screen/3` before it is
+  saved or broadcast** (new players' nicknames: `Moderation.check/2`, no strike): chat,
+  private messages, nicknames, table names. Add the check to any new text input.
 - Checking bans reads the `Bans` Agent, never the disk. A ban broadcasts on
   `"player:<id>"`, and every LiveView of that player handles it by leaving.
 - **Never write real slurs in code, tests or replies.** Tests pass their own harmless
-  list to `Moderation.check/2` (e.g. `["badword"]`). `prohibited_words.txt`
-  changes only with the human's approval.
+  list to `Moderation.check/2`, or rely on `"badword"`, added in `config/test.exs` via
+  `:extra_prohibited_words`. `prohibited_words.txt` changes only with the human's
+  approval.
 - Unbanning or clearing strikes happens only when the human asks.
 
 ## Translations

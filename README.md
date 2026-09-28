@@ -181,13 +181,18 @@ files on disk instead of a database:
 ### Players and moderation (`lib/hextank/players/`, `lib/hextank/moderation.ex`)
 
 - **`Hextank.Player`** (pure) – `%Player{id, nickname, token_version, google_sub,
-  strikes, banned_at}` and the strike rules (`add_strike/2`).
-- **`Hextank.Players`** – load and save players (`data/players/<id>.bin`), look one up
-  by Google account (`data/google/<sub>`), build and check rejoin links.
-- **`Hextank.Players.Bans`** – an `Agent` with the set of banned player ids and Google
-  accounts, loaded at boot, so checking a ban never touches the disk.
+  strikes, banned_at}` and the strike rules (`add_strike/3`).
+- **`Hextank.Players`** – create, load and rename players (`data/players/<id>.bin`),
+  `screen/3` (moderation with strikes, used for every text a player writes), `ban/1`
+  and `unban/1`. Later: look one up by Google account (`data/google/<sub>`).
+- **`Hextank.Players.Bans`** – an `Agent` with the set of banned player ids, loaded at
+  boot, so checking a ban never touches the disk.
 - **`Hextank.Moderation`** (pure) – `check(text, words)` returns `:ok` or
-  `{:error, :prohibited}`. The production word list is compiled into the module.
+  `{:error, {:prohibited, word}}`. The production word list is compiled into the
+  module; `Hextank.Moderation.Text` does the normalizing.
+- **`Hextank.Settings`** (pure) – table settings: defaults, allowed values, validation.
+- **`Hextank.Chat`** – table chat and private messages, unread counts, the rate limit
+  (see *Chat*).
 
 ### Web (`lib/hextank_web/`)
 
@@ -230,8 +235,10 @@ files on disk instead of a database:
 ### Moderation: prohibited words, two warnings, then a ban
 
 - **The list:** `priv/moderation/prohibited_words.txt`, one word per line, English and
-  Portuguese, focused on **hate speech** (slurs, not general swearing). Seeded from a
-  public list and approved by the human. It's compiled into `Hextank.Moderation`
+  Portuguese, focused on **hate speech** (slurs, not general swearing). Written or
+  seeded by the human, who approves every change. **It ships empty**: the public list
+  we planned to seed from is gone, and the remaining one is general swearing, which
+  this game doesn't block. It's compiled into `Hextank.Moderation`
   (`@external_resource`), so checking costs no disk reads. Changing the list needs a
   deploy.
 - **Normalizing before matching** (the same steps on the text and on the list):
@@ -335,8 +342,11 @@ generated `telemetry.ex`, production log level `:warning`, a little swap
 - **History** is the last ~100 lines of `chat.jsonl`. Private messages are in the same
   file with a `to` field and the server filters them, so a player never receives
   someone else's messages.
-- **Unread counts**: a "last read at" per player, kept in a small
-  `data/tables/<id>/reads.bin` so chat state stays out of `%Game{}`.
+- **Unread counts**: a "last read at" per player, one small file per player
+  (`data/tables/<id>/reads/<player_id>.bin`), so two players marking as read at the
+  same time never overwrite each other, and chat state stays out of `%Game{}`.
+- **Who can write**: the players of the table (ghosts too). Anyone watching reads the
+  table chat.
 - **Limits of the file approach:** no search, no direct messages outside tables, no
   global chat. If we ever want those, move to SQLite (still in the same machine). Only
   `Storage` and `Chat` change; the core stays the same.
@@ -578,15 +588,15 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] English and pt-BR texts, language from the browser, switch in the header
 
 ### Phase 5 – Chat and moderation (diplomacy is half the game)
-- [ ] Table chat: append to `chat.jsonl`, broadcast on PubSub, `stream/3` in the page
-- [ ] Private messages between players at the same table
-- [ ] History: the last ~100 messages on open
-- [ ] Unread counts with `reads.bin`
-- [ ] Length limits and chat rate limit
-- [ ] `Moderation.check/2` with normalization
-- [ ] `prohibited_words.txt` seeded from a public list; human approves it
-- [ ] Moderation on chat, private messages, nicknames and table names
-- [ ] Strikes (warning, final warning, ban), `Bans` Agent, banned players' pages closed
+- [x] Table chat: append to `chat.jsonl`, broadcast on PubSub, `stream/3` in the page
+- [x] Private messages between players at the same table
+- [x] History: the last ~100 messages on open
+- [x] Unread counts, one last-read file per player
+- [x] Length limits and chat rate limit
+- [x] `Moderation.check/2` with normalization
+- [ ] Human: fill in and approve `prohibited_words.txt` (ships empty)
+- [x] Moderation on chat, private messages, nicknames and table names
+- [x] Strikes (warning, final warning, ban), `Bans` Agent, banned players' pages closed
       at once, frozen tanks
 
 ### Phase 6 – Google login (optional for players)
@@ -613,7 +623,7 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [ ] Later: GitHub Actions deploy on push to `main`
 
 ### Phase 8 – Nice to have
-- [ ] Table settings: board radius, tick interval, obstacle density, start HP/range
+- [x] Table settings: board radius, tick interval, obstacle density, start HP/range
 - [ ] Table option "Google login required" (makes bans stick)
 - [ ] Spectator mode
 - [ ] Notifications (email or web push) – needs a mailer or a service worker
