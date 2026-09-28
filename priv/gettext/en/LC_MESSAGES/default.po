@@ -11,7 +11,7 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/hextank_web/live/table_live.ex:515
+#: lib/hextank_web/live/table_live.ex:533
 #, elixir-autogen, elixir-format
 msgid "%{count} of 20 players. The game needs at least 2."
 msgstr ""
@@ -61,7 +61,7 @@ msgstr ""
 msgid "%{name} won the game!"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:665
+#: lib/hextank_web/live/table_live.ex:730
 #, elixir-autogen, elixir-format
 msgid "%{name} won!"
 msgstr ""
@@ -76,7 +76,7 @@ msgstr ""
 msgid "%{time} ago"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:687
+#: lib/hextank_web/live/table_live.ex:752
 #, elixir-autogen, elixir-format
 msgid "(you)"
 msgstr ""
@@ -137,8 +137,8 @@ msgstr ""
 msgid "Account"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:630
-#: lib/hextank_web/live/table_live.ex:695
+#: lib/hextank_web/live/table_live.ex:650
+#: lib/hextank_web/live/table_live.ex:760
 #, elixir-autogen, elixir-format
 msgid "Action points"
 msgstr ""
@@ -164,7 +164,7 @@ msgstr ""
 msgid "Bookmark this link or keep it somewhere safe: it logs you back in as yourself on any device. It works like a password, so don't share it."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:499
+#: lib/hextank_web/live/table_live.ex:517
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
@@ -194,22 +194,22 @@ msgstr ""
 msgid "Get my rejoin link"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:597
+#: lib/hextank_web/live/table_live.ex:617
 #, elixir-autogen, elixir-format
 msgid "Give 1 AP to a living tank. Nobody will know it was you."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:531
+#: lib/hextank_web/live/table_live.ex:549
 #, elixir-autogen, elixir-format
 msgid "Invite friends with this link"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:551
+#: lib/hextank_web/live/table_live.ex:569
 #, elixir-autogen, elixir-format
 msgid "Join this table"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:563
+#: lib/hextank_web/live/table_live.ex:581
 #, elixir-autogen, elixir-format
 msgid "Leave"
 msgstr ""
@@ -220,7 +220,7 @@ msgid "Let's play"
 msgstr ""
 
 #: lib/hextank_web/live/lobby_live.ex:22
-#: lib/hextank_web/live/table_live.ex:327
+#: lib/hextank_web/live/table_live.ex:349
 #, elixir-autogen, elixir-format
 msgid "Lobby"
 msgstr ""
@@ -240,7 +240,7 @@ msgstr ""
 msgid "New table"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:638
+#: lib/hextank_web/live/table_live.ex:658
 #, elixir-autogen, elixir-format
 msgid "Next AP"
 msgstr ""
@@ -295,7 +295,7 @@ msgstr ""
 msgid "Pick a tank that's still on the board."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:677
+#: lib/hextank_web/live/table_live.ex:742
 #, elixir-autogen, elixir-format
 msgid "Players"
 msgstr ""
@@ -310,14 +310,13 @@ msgstr ""
 msgid "Private"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:634
-#: lib/hextank_web/live/table_live.ex:696
+#: lib/hextank_web/live/table_live.ex:654
+#: lib/hextank_web/live/table_live.ex:761
 #, elixir-autogen, elixir-format
 msgid "Range"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:464
-#: lib/hextank_web/live/table_live.ex:649
+#: lib/hextank_web/live/table_live.ex:694
 #, elixir-autogen, elixir-format
 msgid "Range +1"
 msgstr ""
@@ -332,7 +331,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:482
+#: lib/hextank_web/live/table_live.ex:678
 #, elixir-autogen, elixir-format
 msgid "Shoot"
 msgstr ""
@@ -357,7 +356,7 @@ msgstr ""
 msgid "Something went wrong."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:560
+#: lib/hextank_web/live/table_live.ex:578
 #, elixir-autogen, elixir-format
 msgid "Start the game"
 msgstr ""
@@ -427,7 +426,7 @@ msgstr ""
 msgid "This table is full."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:513
+#: lib/hextank_web/live/table_live.ex:531
 #: lib/hextank_web/messages.ex:179
 #, elixir-autogen, elixir-format
 msgid "Waiting for players"
@@ -453,7 +452,7 @@ msgstr ""
 msgid "Welcome, %{name}!"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:808
+#: lib/hextank_web/live/table_live.ex:873
 #, elixir-autogen, elixir-format
 msgid "What happened"
 msgstr ""
@@ -478,7 +477,7 @@ msgstr ""
 msgid "You need 1 action point for that."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:593
+#: lib/hextank_web/live/table_live.ex:613
 #, elixir-autogen, elixir-format
 msgid "You're a ghost"
 msgstr ""
@@ -488,7 +487,7 @@ msgstr ""
 msgid "You're already at this table."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:570
+#: lib/hextank_web/live/table_live.ex:588
 #, elixir-autogen, elixir-format
 msgid "You're in! The table's creator will start the game."
 msgstr ""
@@ -503,7 +502,7 @@ msgstr ""
 msgid "You're not playing at this table."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:584
+#: lib/hextank_web/live/table_live.ex:604
 #, elixir-autogen, elixir-format
 msgid "You're watching this game."
 msgstr ""
@@ -518,7 +517,7 @@ msgstr ""
 msgid "Your account page has a personal link that logs you back in anywhere."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:612
+#: lib/hextank_web/live/table_live.ex:632
 #, elixir-autogen, elixir-format
 msgid "Your next vote arrives in %{time}."
 msgstr ""
@@ -533,7 +532,7 @@ msgstr ""
 msgid "Your tables"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:624
+#: lib/hextank_web/live/table_live.ex:644
 #, elixir-autogen, elixir-format
 msgid "Your tank"
 msgstr ""
@@ -553,7 +552,7 @@ msgstr ""
 msgid "close"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:692
+#: lib/hextank_web/live/table_live.ex:757
 #, elixir-autogen, elixir-format
 msgid "ghost"
 msgstr ""
@@ -563,13 +562,13 @@ msgstr ""
 msgid "just now"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:797
+#: lib/hextank_web/live/table_live.ex:862
 #: lib/hextank_web/messages.ex:107
 #, elixir-autogen, elixir-format
 msgid "someone"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:695
+#: lib/hextank_web/live/table_live.ex:760
 #, elixir-autogen, elixir-format
 msgid "%{ap} AP"
 msgstr ""
@@ -597,12 +596,12 @@ msgstr ""
 msgid "Board size"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:718
+#: lib/hextank_web/live/table_live.ex:783
 #, elixir-autogen, elixir-format
 msgid "Chat"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:744
+#: lib/hextank_web/live/table_live.ex:809
 #, elixir-autogen, elixir-format
 msgid "Everyone at the table"
 msgstr ""
@@ -622,7 +621,7 @@ msgstr ""
 msgid "More settings"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:725
+#: lib/hextank_web/live/table_live.ex:790
 #, elixir-autogen, elixir-format
 msgid "No messages yet. Diplomacy starts here."
 msgstr ""
@@ -647,7 +646,7 @@ msgstr ""
 msgid "Please pick different words."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:751
+#: lib/hextank_web/live/table_live.ex:816
 #, elixir-autogen, elixir-format
 msgid "Privately to %{name}"
 msgstr ""
@@ -700,7 +699,7 @@ msgstr ""
 msgid "Those table settings aren't allowed."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:762
+#: lib/hextank_web/live/table_live.ex:827
 #, elixir-autogen, elixir-format
 msgid "Write a message"
 msgstr ""
@@ -730,12 +729,12 @@ msgstr ""
 msgid "You've been banned."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:787
+#: lib/hextank_web/live/table_live.ex:852
 #, elixir-autogen, elixir-format
 msgid "privately"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:785
+#: lib/hextank_web/live/table_live.ex:850
 #, elixir-autogen, elixir-format
 msgid "to %{name}"
 msgstr ""
@@ -745,17 +744,10 @@ msgstr ""
 msgid "%{hp} HP · %{ap} AP · range %{range}"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:489
+#: lib/hextank_web/live/table_live.ex:507
 #, elixir-autogen, elixir-format
 msgid "%{name} is 1 cell away, out of your range of %{range}."
 msgid_plural "%{name} is %{count} cells away, out of your range of %{range}."
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/hextank_web/live/table_live.ex:468
-#, elixir-autogen, elixir-format
-msgid "%{name} is 1 cell away, within your range of %{range}. Double-click to shoot for 1 AP."
-msgid_plural "%{name} is %{count} cells away, within your range of %{range}. Double-click to shoot for 1 AP."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -766,36 +758,31 @@ msgid_plural "%{name} moved %{count} cells"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/hextank_web/live/table_live.ex:436
+#: lib/hextank_web/live/table_live.ex:466
 #, elixir-autogen, elixir-format
 msgid "1 cell away, 1 AP. Click it again to drive there."
 msgid_plural "%{count} cells along the path, %{count} AP. Click again to drive there."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/hextank_web/live/table_live.ex:447
+#: lib/hextank_web/live/table_live.ex:474
 #, elixir-autogen, elixir-format
 msgid "1 cell away: you need 1 AP and have %{ap}."
 msgid_plural "%{count} cells along the path: you need %{count} AP and have %{ap}."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/hextank_web/live/table_live.ex:430
+#: lib/hextank_web/live/table_live.ex:460
 #, elixir-autogen, elixir-format
 msgid "Click a cell to plan a move, or a tank to check your range. Double-click to act. Hover a tank for its stats."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:652
-#, elixir-autogen, elixir-format
-msgid "Every action costs 1 AP; driving costs 1 AP per cell."
-msgstr ""
-
-#: lib/hextank_web/live/table_live.ex:485
+#: lib/hextank_web/live/table_live.ex:686
 #, elixir-autogen, elixir-format
 msgid "Give 1 AP"
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:443
+#: lib/hextank_web/live/table_live.ex:670
 #, elixir-autogen, elixir-format
 msgid "Move here"
 msgstr ""
@@ -805,7 +792,7 @@ msgstr ""
 msgid "There's no way to drive there."
 msgstr ""
 
-#: lib/hextank_web/live/table_live.ex:458
+#: lib/hextank_web/live/table_live.ex:485
 #, elixir-autogen, elixir-format
 msgid "Your range is %{range} (highlighted). Double-click your tank to add 1 for 1 AP."
 msgstr ""
@@ -813,4 +800,41 @@ msgstr ""
 #: lib/hextank_web/messages.ex:121
 #, elixir-autogen, elixir-format
 msgid "frozen"
+msgstr ""
+
+#: lib/hextank_web/live/table_live.ex:492
+#, elixir-autogen, elixir-format, fuzzy
+msgid "%{name} is 1 cell away, within your range of %{range}."
+msgid_plural "%{name} is %{count} cells away, within your range of %{range}."
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/hextank_web/live/table_live.ex:699
+#, elixir-autogen, elixir-format
+msgid "A double-click on another tank:"
+msgstr ""
+
+#: lib/hextank_web/live/table_live.ex:502
+#, elixir-autogen, elixir-format
+msgid "Double-click to give 1 AP."
+msgstr ""
+
+#: lib/hextank_web/live/table_live.ex:500
+#, elixir-autogen, elixir-format
+msgid "Double-click to shoot for 1 AP."
+msgstr ""
+
+#: lib/hextank_web/live/table_live.ex:703
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Gives it 1 AP"
+msgstr ""
+
+#: lib/hextank_web/live/table_live.ex:715
+#, elixir-autogen, elixir-format
+msgid "Pick a cell or a tank on the board first. Every action costs 1 AP; driving costs 1 AP per cell."
+msgstr ""
+
+#: lib/hextank_web/live/table_live.ex:703
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Shoots it"
 msgstr ""
