@@ -1,0 +1,404 @@
+defmodule Hextank.GameTest do
+  use ExUnit.Case, async: true
+
+  alias Hextank.{Board, Game, Hex, Tank}
+
+  @now ~U[2026-01-01 12:00:00Z]
+  @day 86_400
+
+  # A game in the lobby, created by "ana".
+  defp lobby_game(player_ids \\ ["ana"]) do
+    game =
+      Game.new(
+        id: "table01",
+        name: "Test table",
+        visibility: :public,
+        creator_id: "ana",
+        tick_interval: @day,
+        created_at: @now
+      )
+
+    Enum.reduce(player_ids, game, fn player_id, game ->
+      {:ok, game} = Game.add_player(game, player_id, String.capitalize(player_id), @now)
+      game
+    end)
+  end
+
+  # A running game on a radius-3 board with an obstacle at (0, -1, 1), and tanks at
+  # known positions. Each tank is {player_id, hex, fields to override}.
+  defp running_game(tanks) do
+    tanks =
+      tanks
+      |> Enum.with_index(1)
+      |> Map.new(fn {{player_id, position, fields}, seat} ->
+        tank = %Tank{player_id: player_id, name: player_id, seat: seat, position: position}
+        {player_id, struct!(tank, fields)}
+      end)
+
+    %{
+      lobby_game()
+      | status: :running,
+        board: Board.new(3, [Hex.new(0, -1, 1)]),
+        tanks: tanks,
+        started_at: @now
+    }
+  end
+
+  # Ana at the centre with 3 AP, Bruno two steps away, Carla far away.
+  defp standard_game do
+    running_game([
+      {"ana", Hex.new(0, 0, 0), ap: 3},
+      {"bruno", Hex.new(2, -1, -1), []},
+      {"carla", Hex.new(-3, 3, 0), []}
+    ])
+  end
+
+  # Ana and Bruno alive, plus a ghost.
+  defp game_with_ghost(ghost_fields) do
+    running_game([
+      {"ana", Hex.new(0, 0, 0), []},
+      {"bruno", Hex.new(3, -3, 0), []},
+      {"ghost", nil, [hp: 0] ++ ghost_fields}
+    ])
+  end
+
+  defp later(seconds), do: DateTime.add(@now, seconds, :second)
+
+  describe "add_player/4" do
+    test "gives each player the next seat" do
+      game = lobby_game(["ana", "bruno"])
+
+      assert Game.tank(game, "ana").seat == 1
+      assert Game.tank(game, "bruno").seat == 2
+    end
+
+    test "rejects a player who already joined" do
+      assert Game.add_player(lobby_game(), "ana", "Ana", @now) == {:error, :already_joined}
+    end
+
+    test "rejects a 21st player" do
+      game = lobby_game(for n <- 1..20, do: "player#{n}")
+      assert Game.add_player(game, "late", "Late", @now) == {:error, :table_full}
+    end
+
+    test "rejects players once the game started" do
+      assert Game.add_player(standard_game(), "dora", "Dora", @now) ==
+               {:error, :game_already_started}
+    end
+  end
+
+  describe "remove_player/3" do
+    test "removes the player" do
+      {:ok, game} = Game.remove_player(lobby_game(["ana", "bruno"]), "bruno", @now)
+      assert Game.tank(game, "bruno") == nil
+    end
+
+    test "passes the creator role to the player who joined first" do
+      {:ok, game} = Game.remove_player(lobby_game(["ana", "bruno", "carla"]), "ana", @now)
+      assert game.creator_id == "bruno"
+    end
+
+    test "rejects a player who isn't in the game" do
+      assert Game.remove_player(lobby_game(), "zeca", @now) == {:error, :not_in_game}
+    end
+
+    test "rejects leaving once the game started" do
+      assert Game.remove_player(standard_game(), "bruno", @now) ==
+               {:error, :game_already_started}
+    end
+  end
+
+  describe "start/4" do
+    test "places every tank on its own open cell, spread apart" do
+      {:ok, game} = Game.start(lobby_game(["ana", "bruno", "carla"]), "ana", @now, 42)
+
+      positions = Enum.map(Map.values(game.tanks), & &1.position)
+
+      assert game.status == :running
+      assert length(Enum.uniq(positions)) == 3
+      assert Enum.all?(positions, &(&1 in Board.open_cells(game.board)))
+
+      for a <- positions, b <- positions, a != b do
+        assert Hex.distance(a, b) >= 3
+      end
+    end
+
+    test "is the same for the same seed" do
+      game = lobby_game(["ana", "bruno"])
+      assert Game.start(game, "ana", @now, 7) == Game.start(game, "ana", @now, 7)
+    end
+
+    test "counts ticks from the start, to the second" do
+      {:ok, game} =
+        Game.start(lobby_game(["ana", "bruno"]), "ana", ~U[2026-01-01 12:00:00.123456Z], 1)
+
+      assert game.started_at == ~U[2026-01-01 12:00:00Z]
+      assert Game.next_tick_at(game) == ~U[2026-01-02 12:00:00Z]
+    end
+
+    test "only the creator can start" do
+      assert Game.start(lobby_game(["ana", "bruno"]), "bruno", @now, 1) == {:error, :not_creator}
+    end
+
+    test "needs at least two players" do
+      assert Game.start(lobby_game(), "ana", @now, 1) == {:error, :not_enough_players}
+    end
+
+    test "can't start twice" do
+      assert Game.start(standard_game(), "ana", @now, 1) == {:error, :game_already_started}
+    end
+  end
+
+  describe "catch_up/2" do
+    test "does nothing before the first tick is due" do
+      game = standard_game()
+      assert Game.catch_up(game, later(@day - 1)) == game
+    end
+
+    test "gives 1 AP to every living tank when one tick is due" do
+      game = Game.catch_up(standard_game(), later(@day))
+
+      assert game.ticks == 1
+      assert Game.tank(game, "ana").ap == 4
+      assert Game.tank(game, "bruno").ap == 1
+    end
+
+    test "applies every missed tick at once" do
+      game = Game.catch_up(standard_game(), later(5 * @day + 10))
+
+      assert game.ticks == 5
+      assert Game.tank(game, "bruno").ap == 5
+    end
+
+    test "never applies the same tick twice" do
+      game = standard_game() |> Game.catch_up(later(@day)) |> Game.catch_up(later(@day + 60))
+      assert game.ticks == 1
+    end
+
+    test "gives ghosts one vote, however many ticks were missed" do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), []},
+          {"bruno", Hex.new(1, 0, -1), []},
+          {"ghost", nil, hp: 0}
+        ])
+        |> Game.catch_up(later(3 * @day))
+
+      ghost = Game.tank(game, "ghost")
+      assert ghost.has_vote
+      assert ghost.ap == 0
+    end
+
+    test "does nothing when the game isn't running" do
+      game = lobby_game()
+      assert Game.catch_up(game, later(10 * @day)) == game
+    end
+  end
+
+  describe "act/4 with {:move, hex}" do
+    test "moves to a neighbouring cell for 1 AP" do
+      {:ok, game} = Game.act(standard_game(), "ana", {:move, Hex.new(1, 0, -1)}, @now)
+
+      tank = Game.tank(game, "ana")
+      assert tank.position == Hex.new(1, 0, -1)
+      assert tank.ap == 2
+      assert [%{type: :moved, actor: "ana"} | _] = game.events
+    end
+
+    test "rejects a cell that isn't next to the tank" do
+      assert Game.act(standard_game(), "ana", {:move, Hex.new(2, 0, -2)}, @now) ==
+               {:error, :not_adjacent}
+    end
+
+    test "rejects an obstacle" do
+      assert Game.act(standard_game(), "ana", {:move, Hex.new(0, -1, 1)}, @now) ==
+               {:error, :obstacle}
+    end
+
+    test "rejects a cell off the board" do
+      game = running_game([{"ana", Hex.new(3, 0, -3), ap: 1}, {"bruno", Hex.new(0, 0, 0), []}])
+
+      assert Game.act(game, "ana", {:move, Hex.new(4, 0, -4)}, @now) == {:error, :off_board}
+    end
+
+    test "rejects a cell with a tank on it" do
+      game = running_game([{"ana", Hex.new(0, 0, 0), ap: 1}, {"bruno", Hex.new(1, 0, -1), []}])
+
+      assert Game.act(game, "ana", {:move, Hex.new(1, 0, -1)}, @now) == {:error, :cell_occupied}
+    end
+
+    test "needs 1 AP" do
+      assert Game.act(standard_game(), "bruno", {:move, Hex.new(2, 0, -2)}, @now) ==
+               {:error, :not_enough_ap}
+    end
+  end
+
+  describe "act/4 with {:shoot, target_id}" do
+    test "deals 1 damage to a tank within range for 1 AP" do
+      {:ok, game} = Game.act(standard_game(), "ana", {:shoot, "bruno"}, @now)
+
+      assert Game.tank(game, "bruno").hp == 2
+      assert Game.tank(game, "ana").ap == 2
+      assert [%{type: :shot, actor: "ana", target: "bruno"} | _] = game.events
+    end
+
+    test "destroys a tank with 1 HP: it becomes a ghost and leaves the board" do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 1},
+          {"bruno", Hex.new(1, 0, -1), hp: 1},
+          {"carla", Hex.new(-3, 3, 0), []}
+        ])
+
+      {:ok, game} = Game.act(game, "ana", {:shoot, "bruno"}, @now)
+
+      bruno = Game.tank(game, "bruno")
+      assert Tank.ghost?(bruno)
+      assert bruno.position == nil
+      assert game.status == :running
+      assert [%{type: :destroyed, target: "bruno"} | _] = game.events
+    end
+
+    test "destroying the second-to-last tank wins the game" do
+      game = running_game([{"ana", Hex.new(0, 0, 0), ap: 1}, {"bruno", Hex.new(1, 0, -1), hp: 1}])
+
+      {:ok, game} = Game.act(game, "ana", {:shoot, "bruno"}, later(60))
+
+      assert game.status == :finished
+      assert game.winner_id == "ana"
+      assert game.finished_at == later(60)
+      assert [%{type: :won, actor: "ana"} | _] = game.events
+    end
+
+    test "rejects a tank out of range" do
+      assert Game.act(standard_game(), "ana", {:shoot, "carla"}, @now) == {:error, :out_of_range}
+    end
+
+    test "rejects shooting yourself" do
+      assert Game.act(standard_game(), "ana", {:shoot, "ana"}, @now) ==
+               {:error, :cannot_target_self}
+    end
+
+    test "rejects ghosts and unknown players as targets" do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 1},
+          {"bruno", Hex.new(1, 0, -1), []},
+          {"ghost", nil, hp: 0}
+        ])
+
+      assert Game.act(game, "ana", {:shoot, "ghost"}, @now) == {:error, :invalid_target}
+      assert Game.act(game, "ana", {:shoot, "nobody"}, @now) == {:error, :invalid_target}
+    end
+
+    test "needs 1 AP" do
+      assert Game.act(standard_game(), "bruno", {:shoot, "ana"}, @now) == {:error, :not_enough_ap}
+    end
+  end
+
+  describe "act/4 with :upgrade_range" do
+    test "adds 1 to the range for 1 AP" do
+      {:ok, game} = Game.act(standard_game(), "ana", :upgrade_range, @now)
+
+      assert Game.tank(game, "ana").range == 3
+      assert Game.tank(game, "ana").ap == 2
+    end
+
+    test "needs 1 AP" do
+      assert Game.act(standard_game(), "bruno", :upgrade_range, @now) == {:error, :not_enough_ap}
+    end
+  end
+
+  describe "act/4 with {:give_ap, target_id}" do
+    test "moves 1 AP to a tank within range" do
+      {:ok, game} = Game.act(standard_game(), "ana", {:give_ap, "bruno"}, @now)
+
+      assert Game.tank(game, "ana").ap == 2
+      assert Game.tank(game, "bruno").ap == 1
+    end
+
+    test "rejects a tank out of range" do
+      assert Game.act(standard_game(), "ana", {:give_ap, "carla"}, @now) ==
+               {:error, :out_of_range}
+    end
+
+    test "rejects giving to yourself" do
+      assert Game.act(standard_game(), "ana", {:give_ap, "ana"}, @now) ==
+               {:error, :cannot_target_self}
+    end
+  end
+
+  describe "act/4 with {:vote, target_id}" do
+    test "gives 1 AP to any living tank, however far, and uses up the vote" do
+      {:ok, game} = Game.act(game_with_ghost(has_vote: true), "ghost", {:vote, "bruno"}, @now)
+
+      assert Game.tank(game, "bruno").ap == 1
+      refute Game.tank(game, "ghost").has_vote
+    end
+
+    test "needs a vote left" do
+      assert Game.act(game_with_ghost(has_vote: false), "ghost", {:vote, "ana"}, @now) ==
+               {:error, :no_vote_left}
+    end
+
+    test "living tanks can't vote" do
+      assert Game.act(game_with_ghost([]), "ana", {:vote, "bruno"}, @now) ==
+               {:error, :not_a_ghost}
+    end
+
+    test "ghosts can't use tank actions" do
+      assert Game.act(game_with_ghost(ap: 5), "ghost", :upgrade_range, @now) ==
+               {:error, :tank_destroyed}
+    end
+  end
+
+  describe "act/4 in general" do
+    test "rejects players who aren't in the game" do
+      assert Game.act(standard_game(), "zeca", :upgrade_range, @now) == {:error, :not_in_game}
+    end
+
+    test "rejects frozen tanks" do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 1, frozen: true},
+          {"bruno", Hex.new(3, -3, 0), []}
+        ])
+
+      assert Game.act(game, "ana", :upgrade_range, @now) == {:error, :frozen}
+    end
+
+    test "only works while the game is running" do
+      assert Game.act(lobby_game(), "ana", :upgrade_range, @now) == {:error, :game_not_running}
+    end
+
+    test "rejects unknown actions" do
+      assert Game.act(standard_game(), "ana", :fly, @now) == {:error, :unknown_action}
+    end
+
+    test "keeps only the last 50 events" do
+      game = running_game([{"ana", Hex.new(0, 0, 0), ap: 60}, {"bruno", Hex.new(3, -3, 0), []}])
+
+      game =
+        Enum.reduce(1..60, game, fn _, game ->
+          {:ok, game} = Game.act(game, "ana", :upgrade_range, @now)
+          game
+        end)
+
+      assert length(game.events) == 50
+    end
+  end
+
+  describe "move_targets/2 and tanks_in_range/2" do
+    test "list the open neighbouring cells" do
+      targets = Game.move_targets(standard_game(), "ana")
+
+      # Six neighbours minus the obstacle at (0, -1, 1).
+      assert length(targets) == 5
+      refute Hex.new(0, -1, 1) in targets
+    end
+
+    test "list the living tanks within range, not yourself" do
+      assert Enum.map(Game.tanks_in_range(standard_game(), "ana"), & &1.player_id) == ["bruno"]
+    end
+  end
+end
