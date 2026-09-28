@@ -11,14 +11,11 @@ defmodule Hextank.Game do
   and `:finished`.
   """
 
-  alias Hextank.{Board, Hex, Random, Tank}
+  alias Hextank.{Board, Hex, Random, Settings, Tank}
 
   @min_players 2
   @max_players 20
   @max_events 50
-
-  # Nobody starts within reach of another tank: starting range is 2.
-  @spawn_distance 3
 
   @enforce_keys [:id, :name, :visibility, :creator_id, :tick_interval, :created_at]
   defstruct [
@@ -40,7 +37,9 @@ defmodule Hextank.Game do
     winner_id: nil,
     finished_at: nil,
     # Newest first, at most @max_events of them.
-    events: []
+    events: [],
+    # Board size, rocks, starting HP and range (see Hextank.Settings).
+    settings: Settings.defaults()
   ]
 
   @type player_id :: String.t()
@@ -71,7 +70,8 @@ defmodule Hextank.Game do
           ticks: non_neg_integer(),
           winner_id: player_id() | nil,
           finished_at: DateTime.t() | nil,
-          events: [event()]
+          events: [event()],
+          settings: Settings.t()
         }
 
   @type result :: {:ok, t()} | {:error, atom()}
@@ -80,7 +80,8 @@ defmodule Hextank.Game do
   Builds a new game in the `:lobby` status, without players.
 
   `attrs` must have `:id`, `:name`, `:visibility`, `:creator_id`, `:tick_interval`
-  (in seconds) and `:created_at`.
+  (in seconds) and `:created_at`, and may have `:settings` (already validated with
+  `Hextank.Settings.validate/1`).
   """
   @spec new(map() | keyword()) :: t()
   def new(attrs), do: struct!(__MODULE__, attrs)
@@ -98,7 +99,13 @@ defmodule Hextank.Game do
         {:error, :table_full}
 
       true ->
-        tank = %Tank{player_id: player_id, name: name, seat: next_seat(game)}
+        tank = %Tank{
+          player_id: player_id,
+          name: name,
+          seat: next_seat(game),
+          hp: game.settings.start_hp,
+          range: game.settings.start_range
+        }
 
         game =
           game
@@ -134,7 +141,7 @@ defmodule Hextank.Game do
   @doc """
   Starts the game: builds the board, places every tank on a random free cell and
   starts counting ticks from `now`. Only the creator can start, with at least
-  #{@min_players} players.
+  #{@min_players} players, and the board must have an open cell for everyone.
   """
   @spec start(t(), player_id(), DateTime.t(), integer()) :: result()
   def start(%__MODULE__{status: :lobby} = game, player_id, now, seed) do
@@ -146,30 +153,48 @@ defmodule Hextank.Game do
         {:error, :not_enough_players}
 
       true ->
-        board = Board.generate(map_size(game.tanks), seed)
-        positions = spawn_positions(board, map_size(game.tanks), seed + 1)
-
-        tanks =
-          game
-          |> tanks_by_seat()
-          |> Enum.zip(positions)
-          |> Map.new(fn {tank, position} -> {tank.player_id, %{tank | position: position}} end)
-
-        game =
-          %{
-            game
-            | status: :running,
-              board: board,
-              tanks: tanks,
-              started_at: DateTime.truncate(now, :second)
-          }
-          |> log(%{type: :started}, now)
-
-        {:ok, game}
+        place_tanks(game, now, seed)
     end
   end
 
   def start(_game, _player_id, _now, _seed), do: {:error, :game_already_started}
+
+  defp place_tanks(game, now, seed) do
+    player_count = map_size(game.tanks)
+
+    board =
+      Board.generate(player_count, seed,
+        radius: game.settings.board_radius,
+        obstacle_percent: game.settings.obstacle_percent
+      )
+
+    # Nobody starts within reach of another tank.
+    spawn_distance = game.settings.start_range + 1
+
+    if length(Board.open_cells(board)) < player_count do
+      {:error, :board_too_small}
+    else
+      positions = spawn_positions(board, player_count, spawn_distance, seed + 1)
+
+      tanks =
+        game
+        |> tanks_by_seat()
+        |> Enum.zip(positions)
+        |> Map.new(fn {tank, position} -> {tank.player_id, %{tank | position: position}} end)
+
+      game =
+        %{
+          game
+          | status: :running,
+            board: board,
+            tanks: tanks,
+            started_at: DateTime.truncate(now, :second)
+        }
+        |> log(%{type: :started}, now)
+
+      {:ok, game}
+    end
+  end
 
   ## Ticks
 
@@ -434,15 +459,15 @@ defmodule Hextank.Game do
     %{game | events: Enum.take([event | game.events], @max_events)}
   end
 
-  # Spread tanks out: first pick cells at least @spawn_distance apart from each
+  # Spread tanks out: first pick cells at least `distance` apart from each
   # other; if the board is too crowded for that, fill up with any open cell.
-  defp spawn_positions(board, count, seed) do
+  defp spawn_positions(board, count, distance, seed) do
     cells = board |> Board.open_cells() |> Random.shuffle(seed)
 
     spread =
       cells
       |> Enum.reduce([], fn hex, chosen ->
-        far_enough? = Enum.all?(chosen, &(Hex.distance(&1, hex) >= @spawn_distance))
+        far_enough? = Enum.all?(chosen, &(Hex.distance(&1, hex) >= distance))
         if length(chosen) < count and far_enough?, do: [hex | chosen], else: chosen
       end)
       |> Enum.reverse()

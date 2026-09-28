@@ -45,7 +45,14 @@ defmodule Hextank.TablesTest do
       assert private.id in ana_ids
     end
 
-    test "rejects bad names, visibilities and tick intervals" do
+    test "keeps the chosen settings" do
+      game = create_table(%{settings: %{start_hp: 5}})
+
+      assert game.settings.start_hp == 5
+      assert {:ok, %Game{settings: %{start_hp: 5}}} = Storage.load_game(game.id)
+    end
+
+    test "rejects bad names, visibilities, tick intervals and settings" do
       assert Tables.create_table("ana", "Ana", %{@attrs | name: " x "}) ==
                {:error, :invalid_name}
 
@@ -54,6 +61,9 @@ defmodule Hextank.TablesTest do
 
       assert Tables.create_table("ana", "Ana", %{@attrs | tick_interval: 5}) ==
                {:error, :invalid_tick_interval}
+
+      assert Tables.create_table("ana", "Ana", Map.put(@attrs, :settings, %{start_hp: 0})) ==
+               {:error, :invalid_settings}
     end
   end
 

@@ -14,9 +14,6 @@ defmodule Hextank.Board do
 
   @type t :: %__MODULE__{radius: non_neg_integer(), obstacles: MapSet.t(Hex.t())}
 
-  # About one cell in ten is an obstacle.
-  @obstacle_share 0.1
-
   # The board gets bigger with more players: at least this many cells per player.
   @cells_per_player 15
   @min_radius 4
@@ -36,12 +33,20 @@ defmodule Hextank.Board do
   @doc """
   Builds a board for `player_count` players, with obstacles placed at random
   (repeatable with the same `seed`).
+
+  Options: `:radius` (a number, or `:auto` to grow with the players, the default) and
+  `:obstacle_percent` (how many cells are rocks, default 10).
   """
-  @spec generate(pos_integer(), integer()) :: t()
-  def generate(player_count, seed) do
-    radius = radius_for(player_count)
+  @spec generate(pos_integer(), integer(), keyword()) :: t()
+  def generate(player_count, seed, options \\ []) do
+    radius =
+      case Keyword.get(options, :radius, :auto) do
+        :auto -> radius_for(player_count)
+        radius -> radius
+      end
+
     cells = cells(new(radius))
-    obstacle_count = round(length(cells) * @obstacle_share)
+    obstacle_count = round(length(cells) * Keyword.get(options, :obstacle_percent, 10) / 100)
 
     obstacles =
       cells

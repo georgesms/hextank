@@ -32,6 +32,18 @@ defmodule Hextank.StorageTest do
     assert game.id in Storage.list_table_ids()
   end
 
+  test "a game saved before table settings existed loads with the default settings" do
+    game = game()
+
+    # What version 1 wrote: the game without its :settings field.
+    old_game = Map.delete(game, :settings)
+    path = Path.join([Application.fetch_env!(:hextank, :data_dir), "tables", game.id, "game.bin"])
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, :erlang.term_to_binary({1, old_game}))
+
+    assert Storage.load_game(game.id) == {:ok, game}
+  end
+
   test "an unknown table is not found" do
     assert Storage.load_game(Storage.new_id()) == {:error, :not_found}
   end

@@ -8,7 +8,7 @@ defmodule Hextank.Tables do
   `{:game_updated, game}` after every change.
   """
 
-  alias Hextank.{Game, Storage}
+  alias Hextank.{Game, Settings, Storage}
   alias Hextank.Tables.{Lobby, Table}
 
   @tick_intervals [60, 3_600, 86_400]
@@ -20,8 +20,9 @@ defmodule Hextank.Tables do
   @doc """
   Creates a table, with its creator as the first player.
 
-  `attrs` has `:name` (3 to 40 characters), `:visibility` (`:public` or `:private`)
-  and `:tick_interval` (one of `tick_intervals/0`).
+  `attrs` has `:name` (3 to 40 characters), `:visibility` (`:public` or `:private`),
+  `:tick_interval` (one of `tick_intervals/0`) and optionally `:settings` (see
+  `Hextank.Settings`; missing values get the defaults).
   """
   @spec create_table(String.t(), String.t(), map(), DateTime.t()) ::
           {:ok, Game.t()} | {:error, atom()}
@@ -30,7 +31,8 @@ defmodule Hextank.Tables do
 
     with :ok <- check_name(name),
          :ok <- check_visibility(attrs[:visibility]),
-         :ok <- check_tick_interval(attrs[:tick_interval]) do
+         :ok <- check_tick_interval(attrs[:tick_interval]),
+         {:ok, settings} <- Settings.validate(Map.get(attrs, :settings, %{})) do
       game =
         Game.new(
           id: Storage.new_id(),
@@ -38,7 +40,8 @@ defmodule Hextank.Tables do
           visibility: attrs.visibility,
           creator_id: creator_id,
           tick_interval: attrs.tick_interval,
-          created_at: now
+          created_at: now,
+          settings: settings
         )
 
       {:ok, game} = Game.add_player(game, creator_id, creator_name, now)

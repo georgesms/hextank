@@ -149,6 +149,48 @@ defmodule Hextank.GameTest do
     end
   end
 
+  describe "table settings" do
+    defp lobby_with_settings(settings, player_ids) do
+      game = %{lobby_game() | settings: Map.merge(Hextank.Settings.defaults(), settings)}
+
+      Enum.reduce(tl(player_ids), game, fn player_id, game ->
+        {:ok, game} = Game.add_player(game, player_id, player_id, @now)
+        game
+      end)
+    end
+
+    test "tanks start with the chosen HP and range" do
+      game = lobby_with_settings(%{start_hp: 5, start_range: 1}, ["ana", "bruno"])
+
+      assert %Tank{hp: 5, range: 1} = Game.tank(game, "bruno")
+    end
+
+    test "a fixed board radius and obstacle share are used at the start" do
+      game = lobby_with_settings(%{board_radius: 7, obstacle_percent: 0}, ["ana", "bruno"])
+      {:ok, game} = Game.start(game, "ana", @now, 1)
+
+      assert game.board.radius == 7
+      assert MapSet.size(game.board.obstacles) == 0
+    end
+
+    test "tanks start further apart when their range is bigger" do
+      game = lobby_with_settings(%{start_range: 4, board_radius: 12}, ["ana", "bruno", "carla"])
+      {:ok, game} = Game.start(game, "ana", @now, 3)
+      positions = Enum.map(Map.values(game.tanks), & &1.position)
+
+      for a <- positions, b <- positions, a != b do
+        assert Hex.distance(a, b) >= 5
+      end
+    end
+
+    test "a board without an open cell for everyone can't start" do
+      players = for n <- 1..7, do: "p#{n}"
+      game = lobby_with_settings(%{board_radius: 1, obstacle_percent: 20}, ["ana" | players])
+
+      assert Game.start(game, "ana", @now, 1) == {:error, :board_too_small}
+    end
+  end
+
   describe "catch_up/2" do
     test "does nothing before the first tick is due" do
       game = standard_game()
