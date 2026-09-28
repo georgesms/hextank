@@ -1,0 +1,173 @@
+defmodule Hextank.TablesTest do
+  # Not async: these tests share the table registry, the lobby and the idle timeout.
+  use ExUnit.Case, async: false
+
+  alias Hextank.{Game, Storage, Tables}
+
+  @attrs %{name: "Test table", visibility: :public, tick_interval: 86_400}
+
+  defp create_table(attrs \\ %{}) do
+    {:ok, game} = Tables.create_table("ana", "Ana", Map.merge(@attrs, attrs))
+    game
+  end
+
+  defp running_table(attrs \\ %{}) do
+    game = create_table(attrs)
+    {:ok, _} = Tables.join(game.id, "bruno", "Bruno")
+    {:ok, game} = Tables.start(game.id, "ana")
+    game
+  end
+
+  defp table_pid(id) do
+    [{pid, _}] = Registry.lookup(Hextank.Tables.Registry, id)
+    pid
+  end
+
+  describe "create_table/4" do
+    test "saves a table with the creator as first player" do
+      game = create_table()
+
+      assert {:ok, saved} = Storage.load_game(game.id)
+      assert saved.creator_id == "ana"
+      assert Map.keys(saved.tanks) == ["ana"]
+    end
+
+    test "lists public tables in the lobby, and every table for its players" do
+      public = create_table()
+      private = create_table(%{visibility: :private})
+
+      public_ids = Enum.map(Tables.list_public(), & &1.id)
+      assert public.id in public_ids
+      refute private.id in public_ids
+
+      ana_ids = Enum.map(Tables.list_for_player("ana"), & &1.id)
+      assert public.id in ana_ids
+      assert private.id in ana_ids
+    end
+
+    test "rejects bad names, visibilities and tick intervals" do
+      assert Tables.create_table("ana", "Ana", %{@attrs | name: " x "}) ==
+               {:error, :invalid_name}
+
+      assert Tables.create_table("ana", "Ana", %{@attrs | visibility: :secret}) ==
+               {:error, :invalid_visibility}
+
+      assert Tables.create_table("ana", "Ana", %{@attrs | tick_interval: 5}) ==
+               {:error, :invalid_tick_interval}
+    end
+  end
+
+  describe "changing a table" do
+    test "joins, starts and acts, telling every watcher" do
+      game = create_table()
+      {:ok, _} = Tables.watch(game.id)
+
+      {:ok, _} = Tables.join(game.id, "bruno", "Bruno")
+      assert_receive {:game_updated, %Game{status: :lobby}}
+
+      {:ok, _} = Tables.start(game.id, "ana")
+      assert_receive {:game_updated, %Game{status: :running}}
+
+      assert Tables.act(game.id, "ana", :upgrade_range) == {:error, :not_enough_ap}
+    end
+
+    test "every change is saved to disk" do
+      game = create_table()
+      {:ok, _} = Tables.join(game.id, "bruno", "Bruno")
+
+      {:ok, saved} = Storage.load_game(game.id)
+      assert Map.has_key?(saved.tanks, "bruno")
+    end
+
+    test "unknown and malformed ids are not found" do
+      assert Tables.get(Storage.new_id()) == {:error, :not_found}
+      assert Tables.watch("../secret") == {:error, :not_found}
+    end
+  end
+
+  describe "ticks" do
+    test "a table that wakes up applies the ticks it missed while asleep" do
+      game = running_table()
+
+      # Pretend the game started 3 days ago, while the table was asleep.
+      pid = table_pid(game.id)
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+
+      three_days_ago = DateTime.add(game.started_at, -3 * 86_400, :second)
+      :ok = Storage.save_game(%{game | started_at: three_days_ago})
+
+      {:ok, game} = Tables.get(game.id)
+      assert game.ticks == 3
+      assert Game.tank(game, "ana").ap == 3
+
+      # And the catch-up was saved.
+      assert {:ok, %Game{ticks: 3}} = Storage.load_game(game.id)
+    end
+
+    test "a watched table ticks on time" do
+      game = running_table(%{tick_interval: 60})
+      {:ok, _} = Tables.watch(game.id)
+
+      # A tick message before the tick is due changes nothing.
+      pid = table_pid(game.id)
+      send(pid, :tick)
+      _ = :sys.get_state(pid)
+      refute_received {:game_updated, %Game{ticks: 1}}
+
+      # Move the start back one minute, so the first tick is due right now.
+      :sys.replace_state(pid, fn state ->
+        %{state | game: %{state.game | started_at: DateTime.add(state.game.started_at, -60)}}
+      end)
+
+      send(pid, :tick)
+      assert_receive {:game_updated, %Game{ticks: 1}}
+    end
+  end
+
+  describe "sleeping" do
+    test "a new table only starts a process when it's used" do
+      game = create_table()
+      assert Registry.lookup(Hextank.Tables.Registry, game.id) == []
+
+      {:ok, _} = Tables.get(game.id)
+      assert [{_pid, _}] = Registry.lookup(Hextank.Tables.Registry, game.id)
+    end
+
+    test "a table nobody watches stops after the idle timeout, and wakes up on demand" do
+      game = create_table()
+      {:ok, _} = Tables.get(game.id)
+      pid = table_pid(game.id)
+      ref = Process.monitor(pid)
+
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+
+      # Straight away, even while the Registry may still list the stopped process.
+      assert {:ok, %Game{id: id}} = Tables.get(game.id)
+      assert id == game.id
+      assert table_pid(game.id) != pid
+    end
+
+    test "a watched table stays awake until its watcher is gone" do
+      game = create_table()
+      test_process = self()
+
+      watcher =
+        spawn(fn ->
+          {:ok, _} = Tables.watch(game.id)
+          send(test_process, :watching)
+          receive do: (:stop -> :ok)
+        end)
+
+      assert_receive :watching
+      pid = table_pid(game.id)
+      ref = Process.monitor(pid)
+
+      # Well past the 200 ms idle timeout, the table is still there.
+      refute_receive {:DOWN, ^ref, :process, ^pid, _}, 500
+
+      send(watcher, :stop)
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+    end
+  end
+end

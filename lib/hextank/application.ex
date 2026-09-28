@@ -10,6 +10,10 @@ defmodule Hextank.Application do
     children = [
       HextankWeb.Telemetry,
       {Phoenix.PubSub, name: Hextank.PubSub},
+      # Tables: find a running table by id, start tables on demand, keep summaries.
+      {Registry, keys: :unique, name: Hextank.Tables.Registry},
+      {DynamicSupervisor, name: Hextank.Tables.Supervisor},
+      Hextank.Tables.Lobby,
       # Start a worker by calling: Hextank.Worker.start_link(arg)
       # {Hextank.Worker, arg},
       # Start to serve requests, typically the last entry
