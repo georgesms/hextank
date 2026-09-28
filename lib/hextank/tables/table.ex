@@ -72,6 +72,10 @@ defmodule Hextank.Tables.Table do
     change(state, &Game.start(&1, player_id, now(), seed))
   end
 
+  def handle_call({:freeze, player_id}, _from, state) do
+    change(state, &Game.freeze(&1, player_id, now()))
+  end
+
   def handle_call({:act, player_id, action}, _from, state) do
     change(state, &Game.act(&1, player_id, action, now()))
   end

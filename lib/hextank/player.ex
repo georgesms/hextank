@@ -53,4 +53,36 @@ defmodule Hextank.Player do
   end
 
   def validate_nickname(_nickname), do: {:error, :invalid_nickname}
+
+  @doc """
+  Records a strike for writing a prohibited word (see README, *Moderation*): the
+  first is a warning, the second a final warning, the third a ban. Strikes never
+  expire. `strike` says where it happened (`:table_id`) and which word matched
+  (`:word`); the message itself is not kept.
+
+      iex> player = %Player{id: "ana1234567", nickname: "Ana", created_at: ~U[2026-01-01 00:00:00Z]}
+      iex> {player, :warning} = Player.add_strike(player, %{word: "badword"}, ~U[2026-01-02 00:00:00Z])
+      iex> {player, :final_warning} = Player.add_strike(player, %{word: "badword"}, ~U[2026-01-03 00:00:00Z])
+      iex> {player, :banned} = Player.add_strike(player, %{word: "badword"}, ~U[2026-01-04 00:00:00Z])
+      iex> player.banned_at
+      ~U[2026-01-04 00:00:00Z]
+  """
+  @spec add_strike(t(), map(), DateTime.t()) :: {t(), :warning | :final_warning | :banned}
+  def add_strike(player, strike, now) do
+    player = %{player | strikes: player.strikes ++ [Map.put(strike, :at, now)]}
+
+    case length(player.strikes) do
+      1 -> {player, :warning}
+      2 -> {player, :final_warning}
+      _ -> {%{player | banned_at: player.banned_at || now}, :banned}
+    end
+  end
+
+  @doc "Whether the player is banned."
+  @spec banned?(t()) :: boolean()
+  def banned?(player), do: player.banned_at != nil
+
+  @doc "Lifts a ban and clears the strikes."
+  @spec unban(t()) :: t()
+  def unban(player), do: %{player | banned_at: nil, strikes: []}
 end

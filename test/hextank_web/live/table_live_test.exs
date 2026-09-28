@@ -17,7 +17,7 @@ defmodule HextankWeb.TableLiveTest do
   # A running game between Ana and Bruno that started `days` days ago, so every tank
   # has `days` AP. `change` can adjust the game before it's saved.
   defp running_game(ana, bruno, days, change \\ & &1) do
-    {:ok, game} = Tables.create_table(ana.id, "Ana", @attrs)
+    {:ok, game} = Tables.create_table(ana, @attrs)
     {:ok, _} = Tables.join(game.id, bruno.id, "Bruno")
     {:ok, game} = Tables.start(game.id, ana.id)
     wait_until_asleep(game.id)
@@ -44,7 +44,7 @@ defmodule HextankWeb.TableLiveTest do
 
   describe "before the start" do
     test "players join, and the creator starts the game", ctx do
-      {:ok, game} = Tables.create_table(ctx.ana.id, "Ana", @attrs)
+      {:ok, game} = Tables.create_table(ctx.ana, @attrs)
 
       {:ok, bruno_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
       bruno_view |> element("#join-table") |> render_click()
@@ -111,7 +111,7 @@ defmodule HextankWeb.TableLiveTest do
     test "a ghost votes to give a living tank 1 AP", ctx do
       {carla_conn, carla} = log_in_new_player(build_conn(), "Carla")
 
-      {:ok, game} = Tables.create_table(ctx.ana.id, "Ana", @attrs)
+      {:ok, game} = Tables.create_table(ctx.ana, @attrs)
       {:ok, _} = Tables.join(game.id, ctx.bruno.id, "Bruno")
       {:ok, _} = Tables.join(game.id, carla.id, "Carla")
       {:ok, game} = Tables.start(game.id, ctx.ana.id)

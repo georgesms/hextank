@@ -53,11 +53,12 @@ defmodule HextankWeb.LobbyLiveTest do
   test "lists your tables and other people's public tables, not their private ones",
        %{conn: conn, player: player} do
     attrs = %{name: "Someone's table", tick_interval: 86_400}
-    {:ok, mine} = Tables.create_table(player.id, "Ana", Map.put(attrs, :visibility, :private))
-    {:ok, open} = Tables.create_table("other-player", "Zé", Map.put(attrs, :visibility, :public))
+    {:ok, other} = Hextank.Players.create("Zé")
+    {:ok, mine} = Tables.create_table(player, Map.put(attrs, :visibility, :private))
+    {:ok, open} = Tables.create_table(other, Map.put(attrs, :visibility, :public))
 
     {:ok, hidden} =
-      Tables.create_table("other-player", "Zé", Map.put(attrs, :visibility, :private))
+      Tables.create_table(other, Map.put(attrs, :visibility, :private))
 
     {:ok, view, _html} = live(conn, ~p"/")
 

@@ -26,3 +26,6 @@ config :hextank, :data_dir, Path.expand("../tmp/test_data", __DIR__)
 
 # Tables go to sleep quickly in tests, to exercise waking them up again.
 config :hextank, :table_idle_timeout, 200
+
+# A harmless word for moderation tests. Never put real slurs in tests (CLAUDE.md).
+config :hextank, :extra_prohibited_words, ["badword"]

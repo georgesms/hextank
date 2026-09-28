@@ -77,6 +77,21 @@ defmodule Hextank.Storage do
     if valid_id?(id), do: read_term(player_file(id)), else: {:error, :not_found}
   end
 
+  @doc "The ids of every saved player."
+  @spec list_player_ids() :: [String.t()]
+  def list_player_ids do
+    case File.ls(Path.join(data_dir(), "players")) do
+      {:ok, names} ->
+        names
+        |> Enum.filter(&String.ends_with?(&1, ".bin"))
+        |> Enum.map(&Path.basename(&1, ".bin"))
+        |> Enum.filter(&valid_id?/1)
+
+      {:error, :enoent} ->
+        []
+    end
+  end
+
   ## Paths
 
   defp data_dir, do: Application.fetch_env!(:hextank, :data_dir)

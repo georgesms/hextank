@@ -8,7 +8,8 @@ defmodule Hextank.Tables do
   `{:game_updated, game}` after every change.
   """
 
-  alias Hextank.{Game, Settings, Storage}
+  alias Hextank.{Game, Player, Players, Settings, Storage}
+  alias Hextank.Players.Bans
   alias Hextank.Tables.{Lobby, Table}
 
   @tick_intervals [60, 3_600, 86_400]
@@ -18,18 +19,20 @@ defmodule Hextank.Tables do
   def tick_intervals, do: @tick_intervals
 
   @doc """
-  Creates a table, with its creator as the first player.
+  Creates a table, with its creator as the first player. The name goes through
+  moderation (`Hextank.Players.screen/3`).
 
   `attrs` has `:name` (3 to 40 characters), `:visibility` (`:public` or `:private`),
   `:tick_interval` (one of `tick_intervals/0`) and optionally `:settings` (see
   `Hextank.Settings`; missing values get the defaults).
   """
-  @spec create_table(String.t(), String.t(), map(), DateTime.t()) ::
-          {:ok, Game.t()} | {:error, atom()}
-  def create_table(creator_id, creator_name, attrs, now \\ DateTime.utc_now()) do
+  @spec create_table(Player.t(), map(), DateTime.t()) :: {:ok, Game.t()} | {:error, term()}
+  def create_table(%Player{} = creator, attrs, now \\ DateTime.utc_now()) do
     name = attrs |> Map.get(:name, "") |> String.trim()
 
-    with :ok <- check_name(name),
+    with :ok <- check_not_banned(creator.id),
+         :ok <- check_name(name),
+         :ok <- Players.screen(creator, name),
          :ok <- check_visibility(attrs[:visibility]),
          :ok <- check_tick_interval(attrs[:tick_interval]),
          {:ok, settings} <- Settings.validate(Map.get(attrs, :settings, %{})) do
@@ -38,17 +41,21 @@ defmodule Hextank.Tables do
           id: Storage.new_id(),
           name: name,
           visibility: attrs.visibility,
-          creator_id: creator_id,
+          creator_id: creator.id,
           tick_interval: attrs.tick_interval,
           created_at: now,
           settings: settings
         )
 
-      {:ok, game} = Game.add_player(game, creator_id, creator_name, now)
+      {:ok, game} = Game.add_player(game, creator.id, creator.nickname, now)
       Storage.save_game(game)
       Lobby.put(game)
       {:ok, game}
     end
+  end
+
+  defp check_not_banned(player_id) do
+    if Bans.banned?(player_id), do: {:error, :banned}, else: :ok
   end
 
   defp check_name(name) do
@@ -78,8 +85,10 @@ defmodule Hextank.Tables do
     call(id, :watch)
   end
 
-  @doc "Joins a table that hasn't started yet."
-  def join(id, player_id, name), do: call(id, {:join, player_id, name})
+  @doc "Joins a table that hasn't started yet. Banned players can't."
+  def join(id, player_id, name) do
+    with :ok <- check_not_banned(player_id), do: call(id, {:join, player_id, name})
+  end
 
   @doc "Leaves a table that hasn't started yet."
   def leave(id, player_id), do: call(id, {:leave, player_id})
@@ -89,6 +98,9 @@ defmodule Hextank.Tables do
 
   @doc "A player acts. See `Hextank.Game.act/4` for the actions."
   def act(id, player_id, action), do: call(id, {:act, player_id, action})
+
+  @doc "Freezes a banned player's place at a table (see `Hextank.Game.freeze/3`)."
+  def freeze(id, player_id), do: call(id, {:freeze, player_id})
 
   @doc "Public tables waiting for players or running, newest first."
   defdelegate list_public(), to: Lobby

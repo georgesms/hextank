@@ -2,12 +2,14 @@ defmodule Hextank.TablesTest do
   # Not async: these tests share the table registry, the lobby and the idle timeout.
   use ExUnit.Case, async: false
 
-  alias Hextank.{Game, Storage, Tables}
+  alias Hextank.{Game, Player, Storage, Tables}
+
+  @ana %Player{id: "ana", nickname: "Ana", created_at: ~U[2026-01-01 00:00:00Z]}
 
   @attrs %{name: "Test table", visibility: :public, tick_interval: 86_400}
 
   defp create_table(attrs \\ %{}) do
-    {:ok, game} = Tables.create_table("ana", "Ana", Map.merge(@attrs, attrs))
+    {:ok, game} = Tables.create_table(@ana, Map.merge(@attrs, attrs))
     game
   end
 
@@ -53,16 +55,16 @@ defmodule Hextank.TablesTest do
     end
 
     test "rejects bad names, visibilities, tick intervals and settings" do
-      assert Tables.create_table("ana", "Ana", %{@attrs | name: " x "}) ==
+      assert Tables.create_table(@ana, %{@attrs | name: " x "}) ==
                {:error, :invalid_name}
 
-      assert Tables.create_table("ana", "Ana", %{@attrs | visibility: :secret}) ==
+      assert Tables.create_table(@ana, %{@attrs | visibility: :secret}) ==
                {:error, :invalid_visibility}
 
-      assert Tables.create_table("ana", "Ana", %{@attrs | tick_interval: 5}) ==
+      assert Tables.create_table(@ana, %{@attrs | tick_interval: 5}) ==
                {:error, :invalid_tick_interval}
 
-      assert Tables.create_table("ana", "Ana", Map.put(@attrs, :settings, %{start_hp: 0})) ==
+      assert Tables.create_table(@ana, Map.put(@attrs, :settings, %{start_hp: 0})) ==
                {:error, :invalid_settings}
     end
   end
@@ -92,6 +94,30 @@ defmodule Hextank.TablesTest do
     test "unknown and malformed ids are not found" do
       assert Tables.get(Storage.new_id()) == {:error, :not_found}
       assert Tables.watch("../secret") == {:error, :not_found}
+    end
+  end
+
+  describe "bans" do
+    test "a banned player can't create or join tables, and their place is frozen" do
+      {:ok, bruno} = Hextank.Players.create("Bruno")
+
+      # Bruno waits in one table's lobby and plays in another.
+      lobby = create_table()
+      {:ok, _} = Tables.join(lobby.id, bruno.id, "Bruno")
+      game = create_table()
+      {:ok, _} = Tables.join(game.id, bruno.id, "Bruno")
+      {:ok, _} = Tables.start(game.id, "ana")
+
+      :ok = Hextank.Players.ban(bruno)
+
+      assert Tables.join(create_table().id, bruno.id, "Bruno") == {:error, :banned}
+      assert Tables.create_table(bruno, @attrs) == {:error, :banned}
+
+      {:ok, lobby} = Tables.get(lobby.id)
+      refute Map.has_key?(lobby.tanks, bruno.id)
+
+      {:ok, game} = Tables.get(game.id)
+      assert Game.tank(game, bruno.id).frozen
     end
   end
 

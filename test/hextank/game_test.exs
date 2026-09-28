@@ -191,6 +191,33 @@ defmodule Hextank.GameTest do
     end
   end
 
+  describe "freeze/3" do
+    test "removes a banned player from a game that hasn't started" do
+      {:ok, game} = Game.freeze(lobby_game(["ana", "bruno"]), "bruno", @now)
+      assert Game.tank(game, "bruno") == nil
+    end
+
+    test "freezes the tank of a running game: it stays on the board and can't act" do
+      {:ok, game} = Game.freeze(standard_game(), "ana", @now)
+
+      assert %Tank{frozen: true, position: %Hex{}} = Game.tank(game, "ana")
+      assert Game.act(game, "ana", :upgrade_range, @now) == {:error, :frozen}
+    end
+
+    test "a frozen tank can still be shot" do
+      game = running_game([{"ana", Hex.new(0, 0, 0), []}, {"bruno", Hex.new(1, 0, -1), ap: 1}])
+      {:ok, game} = Game.freeze(game, "ana", @now)
+
+      {:ok, game} = Game.act(game, "bruno", {:shoot, "ana"}, @now)
+      assert Game.tank(game, "ana").hp == 2
+    end
+
+    test "leaves finished games alone" do
+      game = %{standard_game() | status: :finished}
+      assert Game.freeze(game, "ana", @now) == {:ok, game}
+    end
+  end
+
   describe "catch_up/2" do
     test "does nothing before the first tick is due" do
       game = standard_game()

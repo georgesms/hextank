@@ -57,7 +57,7 @@ defmodule HextankWeb.LobbyLive do
       }
     }
 
-    case Tables.create_table(player.id, player.nickname, attrs) do
+    case Tables.create_table(player, attrs) do
       {:ok, game} ->
         {:noreply, push_navigate(socket, to: ~p"/tables/#{game.id}")}
 

@@ -14,6 +14,8 @@ defmodule Hextank.Application do
       {Registry, keys: :unique, name: Hextank.Tables.Registry},
       {DynamicSupervisor, name: Hextank.Tables.Supervisor},
       Hextank.Tables.Lobby,
+      # Banned player ids, kept in memory.
+      Hextank.Players.Bans,
       # Start a worker by calling: Hextank.Worker.start_link(arg)
       # {Hextank.Worker, arg},
       # Start to serve requests, typically the last entry

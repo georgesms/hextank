@@ -196,6 +196,24 @@ defmodule Hextank.Game do
     end
   end
 
+  @doc """
+  What happens to a banned player's place at this table: before the start they are
+  removed; during the game their tank stays on the board, frozen, and never acts
+  again (it can still be shot). Finished games don't change.
+  """
+  @spec freeze(t(), player_id(), DateTime.t()) :: result()
+  def freeze(%__MODULE__{status: :lobby} = game, player_id, now) do
+    remove_player(game, player_id, now)
+  end
+
+  def freeze(%__MODULE__{status: :running} = game, player_id, _now) do
+    if Map.has_key?(game.tanks, player_id),
+      do: {:ok, update_tank(game, player_id, &%{&1 | frozen: true})},
+      else: {:error, :not_in_game}
+  end
+
+  def freeze(game, _player_id, _now), do: {:ok, game}
+
   ## Ticks
 
   @doc """
