@@ -8,7 +8,8 @@ defmodule HextankWeb.TableLive do
 
     * click a cell: shows the shortest path there and its cost; click it again (or
       double-click) to drive there, 1 AP per cell;
-    * click a tank: shows whether it's within your range; double-click to shoot it;
+    * click a tank: shows whether it's within your range; double-click to shoot it,
+      or to give it 1 AP (the player picks which in the panel);
     * click your own tank: shows your range; double-click to add 1 to it;
     * hover a tank: its stats (HP, AP, range).
 
@@ -47,6 +48,8 @@ defmodule HextankWeb.TableLive do
         socket =
           socket
           |> assign(selection: nil, board_layout: nil, now: DateTime.utc_now())
+          # What a double-click on another tank does: :shoot or :give_ap.
+          |> assign(:double_click, :shoot)
           |> assign(chat_form: chat_form(), sent_at: [], sent_count: 0)
           |> assign_game(game)
           # Newest first: the chat box shows them bottom-up (flex-col-reverse), so it
@@ -219,9 +222,15 @@ defmodule HextankWeb.TableLive do
     cond do
       not can_select?(socket.assigns) -> {:noreply, socket}
       player_id == socket.assigns.current_player.id -> act(socket, :upgrade_range)
-      true -> act(socket, {:shoot, player_id})
+      true -> act(socket, {socket.assigns.double_click, player_id})
     end
   end
+
+  def handle_event("double_click", %{"action" => "shoot"}, socket),
+    do: {:noreply, assign(socket, :double_click, :shoot)}
+
+  def handle_event("double_click", %{"action" => "give_ap"}, socket),
+    do: {:noreply, assign(socket, :double_click, :give_ap)}
 
   # The panel's buttons do the same for the current selection.
   def handle_event("move_here", _params, socket) do
@@ -354,7 +363,12 @@ defmodule HextankWeb.TableLive do
                 phx-hook=".Board"
                 class="rounded-3xl border border-base-300 bg-base-200/40 p-2 sm:p-4"
               >
-                <.selection_bar details={@details} me={@me} can_select={can_select?(assigns)} />
+                <.selection_bar
+                  details={@details}
+                  me={@me}
+                  can_select={can_select?(assigns)}
+                  double_click={@double_click}
+                />
                 <svg
                   id="board"
                   viewBox={@board_layout.view_box}
@@ -409,6 +423,7 @@ defmodule HextankWeb.TableLive do
               me={@me}
               next_ap_in={next_ap_in(@game, @now)}
               enabled={enabled_actions(assigns)}
+              double_click={@double_click}
             />
             <.player_list game={@game} current_player={@current_player} />
             <.chat_panel
@@ -431,6 +446,7 @@ defmodule HextankWeb.TableLive do
   attr :details, :map, default: nil
   attr :me, :any, required: true
   attr :can_select, :boolean, required: true
+  attr :double_click, :atom, required: true
 
   defp selection_bar(assigns) do
     ~H"""
@@ -474,12 +490,17 @@ defmodule HextankWeb.TableLive do
         <% %{kind: :enemy, in_range?: true} = details -> %>
           <span>
             {ngettext(
-              "%{name} is 1 cell away, within your range of %{range}. Double-click to shoot for 1 AP.",
-              "%{name} is %{count} cells away, within your range of %{range}. Double-click to shoot for 1 AP.",
+              "%{name} is 1 cell away, within your range of %{range}.",
+              "%{name} is %{count} cells away, within your range of %{range}.",
               details.distance,
               name: details.target.name,
               range: @me.range
             )}
+            <%= if @double_click == :shoot do %>
+              {gettext("Double-click to shoot for 1 AP.")}
+            <% else %>
+              {gettext("Double-click to give 1 AP.")}
+            <% end %>
           </span>
         <% %{kind: :enemy} = details -> %>
           <span class="text-base-content/70">
@@ -575,6 +596,7 @@ defmodule HextankWeb.TableLive do
   attr :me, :any, required: true
   attr :next_ap_in, :string, required: true
   attr :enabled, :list, default: [], doc: "the actions that fit the selection"
+  attr :double_click, :atom, default: :shoot
 
   defp my_panel(%{me: nil} = assigns) do
     ~H"""
@@ -671,6 +693,23 @@ defmodule HextankWeb.TableLive do
         >
           <.icon name="hero-arrow-trending-up" class="size-4" /> {gettext("Range +1")}
         </button>
+      </div>
+      <div class="mt-4">
+        <p class="text-xs text-base-content/60">
+          {gettext("A double-click on another tank:")}
+        </p>
+        <div id="double-click-choice" class="join mt-1 w-full">
+          <button
+            :for={{action, label} <- [shoot: gettext("Shoots it"), give_ap: gettext("Gives it 1 AP")]}
+            id={"double-click-#{action}"}
+            phx-click="double_click"
+            phx-value-action={action}
+            aria-pressed={to_string(@double_click == action)}
+            class={["btn btn-sm join-item flex-1", @double_click == action && "btn-neutral"]}
+          >
+            {label}
+          </button>
+        </div>
       </div>
       <p class="mt-3 text-xs text-base-content/60">
         {gettext(

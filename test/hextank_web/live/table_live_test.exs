@@ -159,6 +159,23 @@ defmodule HextankWeb.TableLiveTest do
       assert Game.tank(game, ctx.bruno.id).hp == 2
     end
 
+    test "the panel can make a double-click on an enemy give AP instead", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      assert has_element?(view, "#double-click-shoot[aria-pressed=true]")
+
+      view |> element("#double-click-give_ap") |> render_click()
+      assert has_element?(view, "#double-click-give_ap[aria-pressed=true]")
+
+      view |> element("#tank-#{ctx.bruno.id}") |> render_click()
+      assert has_element?(view, "#selection-info", "Double-click to give 1 AP")
+
+      render_hook(view, "tank_double", %{"player" => ctx.bruno.id})
+
+      {:ok, game} = Tables.get(game.id)
+      assert %{ap: 2, hp: 3} = Game.tank(game, ctx.bruno.id)
+    end
+
     test "the panel always shows every action, enabled when it fits the selection", ctx do
       game = running_game(ctx.ana, ctx.bruno, 2, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
