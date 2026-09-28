@@ -80,6 +80,16 @@ defmodule Hextank.Tables.Table do
     change(state, &Game.act(&1, player_id, action, now()))
   end
 
+  # Deleting happens inside the table process: no other request can reach the game
+  # between the files going away and the process stopping, so nothing saves it again.
+  def handle_call(:delete, _from, state) do
+    id = state.game.id
+    Storage.delete_table(id)
+    Lobby.delete(id)
+    Phoenix.PubSub.broadcast(Hextank.PubSub, "table:#{id}", :table_deleted)
+    {:stop, :normal, :ok, state}
+  end
+
   # Brings the game up to date, then applies one change from `Hextank.Game`.
   defp change(state, fun) do
     game = Game.catch_up(state.game, now())

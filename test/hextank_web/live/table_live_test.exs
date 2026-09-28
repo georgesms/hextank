@@ -67,6 +67,15 @@ defmodule HextankWeb.TableLiveTest do
     end
   end
 
+  test "a deleted table sends its pages back to the lobby", ctx do
+    game = running_game(ctx.ana, ctx.bruno, 1)
+    {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+    :ok = Tables.delete(game.id)
+
+    assert_redirect(view, "/")
+  end
+
   test "an unknown table sends you back to the lobby", %{ana_conn: conn} do
     assert {:error, {:live_redirect, %{to: "/"}}} = live(conn, ~p"/tables/#{Storage.new_id()}")
   end

@@ -31,6 +31,7 @@ defmodule HextankWeb.Messages do
   def error(:no_vote_left), do: gettext("You've already voted this round.")
   def error(:frozen), do: gettext("Your tank is frozen.")
   def error(:not_found), do: gettext("This table doesn't exist.")
+  def error(:table_deleted), do: gettext("This table was deleted.")
 
   def error({:prohibited, :warning}),
     do: gettext("That text has a prohibited word, so it wasn't sent. Warning 1 of 2.")

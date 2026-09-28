@@ -25,7 +25,8 @@ defmodule Hextank.Tables.Lobby do
           player_ids: [String.t()],
           tick_interval: pos_integer(),
           created_at: DateTime.t(),
-          finished_at: DateTime.t() | nil
+          finished_at: DateTime.t() | nil,
+          action_counts: %{optional(atom()) => non_neg_integer()}
         }
 
   @doc false
@@ -36,6 +37,14 @@ defmodule Hextank.Tables.Lobby do
   @doc "Adds or updates the summary of a game. Doesn't wait for an answer."
   @spec put(Game.t()) :: :ok
   def put(game), do: GenServer.cast(__MODULE__, {:put, summary(game)})
+
+  @doc "Forgets a deleted table. Doesn't wait for an answer."
+  @spec delete(String.t()) :: :ok
+  def delete(id), do: GenServer.cast(__MODULE__, {:delete, id})
+
+  @doc "Every table, newest first. For the admin page."
+  @spec list_all() :: [summary()]
+  def list_all, do: GenServer.call(__MODULE__, {:list, fn _summary -> true end})
 
   @doc "The public tables that are waiting for players or running, newest first."
   @spec list_public() :: [summary()]
@@ -61,7 +70,8 @@ defmodule Hextank.Tables.Lobby do
       player_ids: Map.keys(game.tanks),
       tick_interval: game.tick_interval,
       created_at: game.created_at,
-      finished_at: game.finished_at
+      finished_at: game.finished_at,
+      action_counts: game.action_counts
     }
   end
 
@@ -104,6 +114,8 @@ defmodule Hextank.Tables.Lobby do
   def handle_cast({:put, summary}, summaries) do
     {:noreply, Map.put(summaries, summary.id, summary)}
   end
+
+  def handle_cast({:delete, id}, summaries), do: {:noreply, Map.delete(summaries, id)}
 
   @impl true
   def handle_call({:list, keep?}, _from, summaries) do

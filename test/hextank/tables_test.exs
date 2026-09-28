@@ -161,6 +161,31 @@ defmodule Hextank.TablesTest do
     end
   end
 
+  describe "delete/1" do
+    test "removes the files, the lobby entry and the process, and tells the watchers" do
+      game = running_table()
+      {:ok, _game} = Tables.watch(game.id)
+      pid = table_pid(game.id)
+      ref = Process.monitor(pid)
+
+      assert Tables.delete(game.id) == :ok
+
+      assert_receive :table_deleted
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+      assert Storage.load_game(game.id) == {:error, :not_found}
+      refute Enum.any?(Tables.list_for_player("ana"), &(&1.id == game.id))
+      assert Tables.get(game.id) == {:error, :not_found}
+    end
+
+    test "wakes a sleeping table to delete it, and an unknown one is not found" do
+      game = create_table()
+
+      assert Tables.delete(game.id) == :ok
+      assert Storage.load_game(game.id) == {:error, :not_found}
+      assert Tables.delete(game.id) == {:error, :not_found}
+    end
+  end
+
   describe "sleeping" do
     test "a new table only starts a process when it's used" do
       game = create_table()

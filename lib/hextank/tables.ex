@@ -5,7 +5,8 @@ defmodule Hextank.Tables do
   Each table runs as a `Hextank.Tables.Table` process only while it's in use. The
   functions here find the process, starting it from disk if needed, and talk to it.
   Watchers (the table pages) subscribe to `"table:<id>"` and get
-  `{:game_updated, game}` after every change.
+  `{:game_updated, game}` after every change, and `:table_deleted` if the table is
+  deleted.
   """
 
   alias Hextank.{Game, Player, Players, Settings, Storage}
@@ -101,6 +102,13 @@ defmodule Hextank.Tables do
 
   @doc "Freezes a banned player's place at a table (see `Hextank.Game.freeze/3`)."
   def freeze(id, player_id), do: call(id, {:freeze, player_id})
+
+  @doc """
+  Deletes a table: its files, its lobby summary and its process. Pages showing it
+  get `:table_deleted`. For the admin page; there is no undo.
+  """
+  @spec delete(String.t()) :: :ok | {:error, :not_found}
+  def delete(id), do: call(id, :delete)
 
   @doc "Public tables waiting for players or running, newest first."
   defdelegate list_public(), to: Lobby

@@ -315,6 +315,11 @@ defmodule HextankWeb.TableLive do
   @impl true
   def handle_info({:game_updated, game}, socket), do: {:noreply, assign_game(socket, game)}
 
+  def handle_info(:table_deleted, socket) do
+    {:noreply,
+     socket |> put_flash(:error, Messages.error(:table_deleted)) |> push_navigate(to: ~p"/")}
+  end
+
   def handle_info({:chat_message, message}, socket) do
     mark_read(socket.assigns.game, socket.assigns.current_player)
     {:noreply, stream_insert(socket, :messages, message, at: 0)}
