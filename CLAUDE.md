@@ -286,8 +286,9 @@ code can be read side by side with the guide.
   positions), not with randomness.
 - `Game.catch_up/2`: test zero, one and many missed ticks, and a ghost that must not
   collect more than one vote.
-- `Storage`: use a fresh tmp dir per test (ExUnit's `@tag :tmp_dir`), never the dev
-  data folder.
+- Tests use their own data folder (`tmp/test_data`), emptied at the start of every
+  `mix test` run by the `test` alias, never the dev data folder. Tests stay
+  independent by using fresh ids (`Storage.new_id/0`).
 - `Table` GenServer: a few tests for the wiring (start, act, broadcast, tick, save,
   stop when idle, reload and catch up). Use a very short tick interval and idle
   timeout, or send the messages directly.
