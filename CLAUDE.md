@@ -97,7 +97,8 @@ lib/hextank/players/bans.ex   Agent with banned player ids
 lib/hextank/tables.ex         public API used by the web layer
 lib/hextank/tables/table.ex   GenServer, one per active table
 lib/hextank/tables/lobby.ex   GenServer with a summary of every table, cleanup
-lib/hextank_web/live/         LiveViews (lobby, table, account)
+lib/hextank/admin.ex          admins, statistics (on demand), bulk deletion
+lib/hextank_web/live/         LiveViews (lobby, table, account, admin)
 lib/hextank_web/controllers/  welcome, rejoin links, banned page (later: dormant, Google)
 priv/moderation/prohibited_words.txt   the word list (approved by the human)
 priv/gettext/pt_BR/           Portuguese translations
@@ -156,6 +157,9 @@ data/google/<sub>             contains the linked player_id
   `:extra_prohibited_words`. `prohibited_words.txt` changes only with the human's
   approval.
 - Unbanning or clearing strikes happens only when the human asks.
+- Admins are the player ids in `ADMIN_PLAYER_IDS` (`:admin_player_ids` config). Admin
+  LiveViews live in their own `live_session` with `HextankWeb.AdminHook`, which checks
+  on every mount. Deleting tables is admin-only and has no undo: confirm in the UI.
 
 ## Translations
 
@@ -178,7 +182,11 @@ the rules that follow from it.
   table is in use and stops itself after a few idle minutes. Missed ticks are applied
   with `Game.catch_up/2` on start. Never add a global scheduler or job queue for ticks.
 - **Nothing reads all tables.** The lobby reads the `Lobby` GenServer's summaries; only
-  boot scans the data folder.
+  boot scans the data folder. The one exception is the admin page, which `stat`s each
+  chat file (never reads it), and only when an admin opens it or presses Refresh.
+- **No stored statistics.** The admin page works its numbers out on demand. Don't add
+  a counter file, an event log on disk or a timer for statistics; a few integers in
+  `%Game{}` (like `action_counts`) are fine.
 - **Store the minimum.** No derived data in `%Game{}` (board cells are recomputed from
   the radius), event log capped at ~50 entries, chat history read as the last ~100
   lines.

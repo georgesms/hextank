@@ -52,7 +52,9 @@ the diplomacy, alliances and betrayals as much as the tactics.
 | Another tank | Says whether it's within your range | Shoots it, or gives it 1 AP (if in range) |
 | Your own tank | Highlights your range | Range +1 |
 
-Hovering a tank shows its stats (HP, AP, range). A bar above the board explains the
+Hovering a tank shows its stats as emojis: ❤️ HP, ⚡ AP and 🎯 range, repeated up to
+4 times and then counted (`7 × ⚡`); the panel and the player list show them the same
+way. A bar above the board explains the
 current selection. The **Your tank** panel always shows every action as a button
 (**Move here**, **Shoot**, **Give 1 AP**, **Range +1**), enabled when it fits the
 selection, which is handy on touch screens. It also has a switch that picks what a
@@ -214,7 +216,10 @@ files on disk instead of a database:
 - **`LobbyLive`** – list public tables and your own tables, create one, join one.
 - **`TableLive`** – the board as inline SVG, the player's tank stats, the action
   buttons, a list of all players and ghosts, an event log, the chat.
-- **`AccountLive`** – nickname, your rejoin link (copy, reset), Google login.
+- **`AccountLive`** – nickname, your rejoin link (copy, reset), your player id, Google
+  login.
+- **`AdminLive`** – statistics and bulk table deletion, for admins only (see *Admin
+  page*).
 - **`DormantController`** – static dormant pages (see *Deployment*).
 - **`AuthController`** – rejoin links and the Google login redirect and callback.
 - **Translations** – English in the templates, pt-BR in `priv/gettext/pt_BR`, chosen
@@ -280,6 +285,36 @@ files on disk instead of a database:
 - **Unban or clear strikes:** only by the human, from the remote IEx console
   (`Hextank.Players.unban(player_id)`). No admin page.
 
+### Admin page
+
+`/admin` is for the players listed in `ADMIN_PLAYER_IDS` (comma-separated player ids;
+players see their id on the account page). Other players are sent back to the lobby,
+and the check runs on every LiveView mount, not only in the router. For admins, the
+header has an **Admin** link. The page has:
+
+- **Statistics:** tables (waiting, running, finished, public, private), new tables per
+  day for the last 14 days, players (registered, banned, at a table), actions used by
+  kind, chat volume, and the server (table processes awake, BEAM memory).
+- **All tables,** filterable by status, with checkboxes to **delete several at once**.
+  A table is deleted inside its own process, so no action can save it again halfway;
+  open pages of a deleted table go back to the lobby.
+
+**What it stores: almost nothing.** Every number is worked out when the page opens or
+**Refresh** is pressed, from what the app keeps anyway:
+
+| Number | Comes from | Cost |
+| --- | --- | --- |
+| Tables, players at tables, new tables per day | `Lobby` summaries, already in memory | none |
+| Actions by kind | `action_counts` in each `%Game{}` (a few integers), copied into the summary | ~100 bytes per table |
+| Chat volume | the size of each `chat.jsonl` (`File.stat`, the file is never read) | one `stat` per table, only when the page opens |
+| Registered and banned players | the players folder listing, the `Bans` Agent | one folder listing |
+| Awake tables, memory | the `DynamicSupervisor`, `:erlang.memory/0` | none |
+
+Left out on purpose, because they would need a new file written on every action or
+message, or reading every chat: history over time (numbers cover the tables that
+exist now; an expired table stops counting), messages counted one by one (the chat
+volume is in bytes), and per-player activity.
+
 ### Other limits
 
 - Nickname 2–20 characters, table name 3–40, chat message up to 500.
@@ -341,6 +376,8 @@ generated `telemetry.ex`, production log level `:warning`, a little swap
 
 - The board stores only its radius and obstacles; cells are recomputed.
 - The game keeps only the last ~50 events.
+- No statistics are stored, except a few action counters per game: the admin page
+  works them out when it opens (see *Admin page*).
 - LiveView:
   - the static board (cells, obstacles) is its own component, sent once and never again;
   - tanks are rendered with a keyed comprehension, so an action only sends the tanks that
@@ -395,7 +432,7 @@ Check the billing page after the first month.
 | Region | `gru` (São Paulo), or whichever is closest to the players |
 | Machines | **exactly one**. A volume belongs to one machine and our files can't be shared |
 | Volume | `hextank_data`, 1 GB, mounted at `/data` |
-| Environment | `DATA_DIR=/data`, `PHX_HOST=<app>.fly.dev` |
+| Environment | `DATA_DIR=/data`, `PHX_HOST=<app>.fly.dev`, `ADMIN_PLAYER_IDS=<your player id>` |
 | Secrets | `SECRET_KEY_BASE`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (`fly secrets set`) |
 | Snapshots | Fly's daily volume snapshots (kept 5 days by default) |
 
@@ -628,7 +665,7 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [ ] Trim `telemetry.ex`, production log level `:warning`
 - [ ] `DATA_DIR` read in `runtime.exs`; save format versioned in `Storage`
 - [ ] Dormant view: idle timers in `app.js`, `DormantController` with a layout
-      without `app.js`, for tables and the lobby
+      without `app.js`, for tables and the lobby (the admin page needs the timers too)
 - [ ] Load test locally: 1000 tables, a few hundred LiveViews; measure with
       LiveDashboard and write the real numbers here
 - [ ] Human: install `flyctl`, sign up, add a card, choose name and region
@@ -641,6 +678,10 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] Table settings: board radius, tick interval, obstacle density, start HP/range
 - [x] Board controls: click to preview, second click or double-click to act, multi-cell
       moves along the shortest path, stats on hover
+- [x] Every action as a button in the tank panel; choose whether a double-click on
+      another tank shoots it or gives it AP
+- [x] Stats as emojis: ❤️ HP, ⚡ AP, 🎯 range
+- [x] Admin page: statistics computed on demand, bulk table deletion
 - [ ] Table option "Google login required" (makes bans stick)
 - [ ] Spectator mode
 - [ ] Notifications (email or web push) – needs a mailer or a service worker
