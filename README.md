@@ -18,7 +18,12 @@ the diplomacy, alliances and betrayals as much as the tactics.
 
 - **Board:** a hexagon-shaped map of pointy-top hex cells, with a few **obstacles**
   (rocks) that no tank can enter.
-- **Starting position:** each player's tank is placed on a random free cell.
+- **Board size:** grows with the number of players: at least 15 cells per player,
+  radius at least 4 (2 players: 61 cells; 20 players: 331 cells). About one cell in
+  ten is an obstacle.
+- **Starting position:** each player's tank is placed on a random free cell, at least
+  3 steps from every other tank when the board has room, so nobody starts within
+  reach of anyone.
 - **Health:** each tank starts with **3 HP**. At 0 HP the tank is destroyed.
 - **Range:** each tank starts with range **2**. Range is the
   [hex distance](https://www.redblobgames.com/grids/hexagons/#distances) between two
@@ -133,15 +138,21 @@ files on disk instead of a database:
   `corners/2`.
 - **`Hextank.Board`** – the board radius and a `MapSet` of obstacle hexes. The cells
   themselves are **not stored**: they are `Hex.range(Hex.new(0, 0, 0), radius)`.
-- **`Hextank.Tank`** – `%Tank{player_id, name, position, hp, ap, range}`.
-- **`Hextank.Game`** – the whole game state and the rules. Every action is a function
-  that takes a game and returns `{:ok, game}` or `{:error, reason}`:
-  - `new/1`, `add_player/3`, `start/2` (takes `now`)
-  - `move/3`, `shoot/3`, `upgrade_range/2`, `give_ap/3`
-  - `tick/1` (hand out AP to the living and votes to ghosts)
-  - `catch_up/2` (takes `now`, applies `tick/1` once per missed interval)
-  - `ghost_vote/3`
-  - `winner/1`
+- **`Hextank.Tank`** – `%Tank{player_id, name, seat, position, hp, ap, range,
+  has_vote, frozen}`. A tank with 0 HP is a ghost.
+- **`Hextank.Random`** – a shuffle that always gives the same order for the same seed,
+  so randomness is repeatable in tests.
+- **`Hextank.Game`** – the whole game state and the rules. Functions that change the
+  game return `{:ok, game}` or `{:error, reason}`, and take `now` (and a `seed` where
+  randomness is needed):
+  - lobby: `new/1`, `add_player/4`, `remove_player/3`, `start/4`
+  - `act/4` with one of `{:move, hex}`, `{:shoot, target_id}`, `:upgrade_range`,
+    `{:give_ap, target_id}`, `{:vote, target_id}` (ghosts only); it also detects the
+    winner
+  - `tick/2` (hand out AP to the living and votes to ghosts), `catch_up/2` (apply
+    every tick missed by `now`), `next_tick_at/1`
+  - questions for the UI: `move_targets/2`, `tanks_in_range/2`, `tank_at/2`,
+    `living_tanks/1`, `tanks_by_seat/1`
 
 ### Processes and storage (`lib/hextank/tables/`, `lib/hextank/storage.ex`)
 
@@ -219,7 +230,7 @@ files on disk instead of a database:
 
 - **The list:** `priv/moderation/prohibited_words.txt`, one word per line, English and
   Portuguese, focused on **hate speech** (slurs, not general swearing). Seeded from a
-  public list and curated by the human. It's compiled into `Hextank.Moderation`
+  public list and approved by the human. It's compiled into `Hextank.Moderation`
   (`@external_resource`), so checking costs no disk reads. Changing the list needs a
   deploy.
 - **Normalizing before matching** (the same steps on the text and on the list):
@@ -486,18 +497,19 @@ Each phase should end with something working and tested.
 ### Who writes what
 
 The project is small (roughly 3,000–4,000 lines of Elixir and HEEx including tests).
-Because learning Elixir is a goal, the work is split: the human writes the pure core,
-where the language basics live, and Claude writes the OTP and web layers, explaining
-them along the way.
+**Claude writes all the code; the human learns Elixir by reviewing it.** Each phase is a
+branch with small commits and a pull request, and comes with a review guide: reading
+order, new Elixir ideas explained, and the places that deserve the closest look (see
+CLAUDE.md, *Review workflow*).
 
 | Phase | Written by | Effort | Confidence | Main risk | Human's part |
 |---|---|---|---|---|---|
 | 0 – Setup | Claude | Small | High | Erlang build on the machine; not overwriting our docs | Install system packages (done) |
-| 1 – Hex math | Claude, at the human's request (done) | Small (~150 lines + doctests) | Very high | Almost none: fully specified by the guide | Read it; ask about anything unclear |
-| 2 – Game rules | **Human** | Small–medium (~400 lines + tests) | High | `catch_up/2` details: ghost votes not piling up, no ticks after game over, when each tick is due | Write it and decide rule questions; Claude reviews and writes the tricky tests |
-| 3 – Processes + storage | Claude | Medium | Medium–high | OTP races (an action arriving while an idle table stops), lobby summaries in sync, safe file writes, timer tests | Review carefully |
+| 1 – Hex math | Claude (done) | Small (~150 lines + doctests) | Very high | Almost none: fully specified by the guide | Read it; ask about anything unclear |
+| 2 – Game rules | Claude | Small–medium (~400 lines + tests) | High | `catch_up/2` details: ghost votes not piling up, no ticks after game over, when each tick is due | Review; decide rule questions the README doesn't answer |
+| 3 – Processes + storage | Claude | Medium | Medium–high | OTP races (an action arriving while an idle table stops), lobby summaries in sync, safe file writes, timer tests | Review carefully, following the review guide |
 | 4 – Browser UI + identity | Claude | Medium | High for behaviour, medium for looks | Whether it looks good and feels nice to play, on a phone too | Playtest, review the Portuguese texts |
-| 5 – Chat + moderation | Claude, **human writes `Moderation`** | Medium | High | Private-message leaks, ban reaching every open page (dedicated tests) | Write the word check, curate the word list |
+| 5 – Chat + moderation | Claude | Medium | High | Private-message leaks, ban reaching every open page (dedicated tests) | Review; approve the word list |
 | 6 – Google login | Claude | Small–medium (~150 lines + tests) | High | Getting the OpenID Connect checks right (`state`, `aud`, `iss`) | Google Cloud console setup (~15 min) |
 | 7 – Frugal deploy | Claude | Medium | Medium | Needs a Fly account and the `fly` commands; real numbers may differ from the estimates | Fly account, approve and run the deploy, check the load-test results |
 | 8 – Nice to have | Decide per item | Varies | Varies | Web push is the hardest (keys, service worker) | Pick what's worth it |
@@ -524,18 +536,18 @@ them along the way.
 - [x] Doctests for every function, checked against the guide's examples
 
 ### Phase 2 – Game rules (`Hextank.Game`)
-- [ ] Board of radius `R` with random obstacles
-- [ ] Add and remove players in a lobby state (2–20), then start the game (random
+- [x] Board of radius `R` with random obstacles
+- [x] Add and remove players in a lobby state (2–20), then start the game (random
       placement)
-- [ ] Move, shoot, upgrade range, give AP, with every rule from above validated,
+- [x] Move, shoot, upgrade range, give AP, with every rule from above validated,
       including the *Details*
-- [ ] Death turns a tank into a ghost
-- [ ] Tick: AP for the living, a vote for each ghost
-- [ ] `catch_up/2`: apply every tick missed since the last one, given `now`
-- [ ] Ghost vote
-- [ ] Winner detection, game over state
-- [ ] Event log capped at the last ~50 events
-- [ ] Unit tests for every rule and every error case
+- [x] Death turns a tank into a ghost
+- [x] Tick: AP for the living, a vote for each ghost
+- [x] `catch_up/2`: apply every tick missed since the last one, given `now`
+- [x] Ghost vote
+- [x] Winner detection, game over state
+- [x] Event log capped at the last ~50 events
+- [x] Unit tests for every rule and every error case
 
 ### Phase 3 – Tables as processes, saved on disk
 - [ ] `Storage`: save / load `game.bin` (temp file + rename)
@@ -570,8 +582,8 @@ them along the way.
 - [ ] History: the last ~100 messages on open
 - [ ] Unread counts with `reads.bin`
 - [ ] Length limits and chat rate limit
-- [ ] Human: `Moderation.check/2` with normalization, and the curated
-      `prohibited_words.txt`
+- [ ] `Moderation.check/2` with normalization
+- [ ] `prohibited_words.txt` seeded from a public list; human approves it
 - [ ] Moderation on chat, private messages, nicknames and table names
 - [ ] Strikes (warning, final warning, ban), `Bans` Agent, banned players' pages closed
       at once, frozen tanks
