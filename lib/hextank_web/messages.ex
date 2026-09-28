@@ -111,12 +111,14 @@ defmodule HextankWeb.Messages do
 
   @doc """
   A tank's stats on two lines, for the hover tooltip: "Ana" then
-  "3 HP · 2 AP · range 2".
+  "❤️❤️❤️ · ⚡⚡ · 🎯🎯" (HP, AP and range, see `GameComponents.stat_text/2`).
   """
   @spec tank_stats(Hextank.Tank.t()) :: String.t()
   def tank_stats(tank) do
     stats =
-      gettext("%{hp} HP · %{ap} AP · range %{range}", hp: tank.hp, ap: tank.ap, range: tank.range)
+      Enum.map_join([hp: tank.hp, ap: tank.ap, range: tank.range], " · ", fn {kind, count} ->
+        HextankWeb.GameComponents.stat_text(kind, count)
+      end)
 
     frozen = if tank.frozen, do: " · " <> gettext("frozen"), else: ""
     tank.name <> "\n" <> stats <> frozen

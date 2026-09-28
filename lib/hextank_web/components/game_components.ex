@@ -199,21 +199,46 @@ defmodule HextankWeb.GameComponents do
     """
   end
 
-  @doc "Hit points as hearts: full for the HP left, empty up to the starting HP."
-  attr :hp, :integer, required: true
-  attr :max, :integer, required: true
+  ## Stats as emojis
 
-  def hearts(assigns) do
+  @emoji %{hp: "❤️", ap: "⚡", range: "🎯"}
+
+  @doc """
+  A tank stat (`:hp`, `:ap` or `:range`) as emojis: repeated up to 4 times, then
+  counted, so a big number stays short.
+
+      iex> GameComponents.stat_text(:hp, 3)
+      "❤️❤️❤️"
+
+      iex> GameComponents.stat_text(:ap, 7)
+      "7 × ⚡"
+
+      iex> GameComponents.stat_text(:range, 0)
+      "0 × 🎯"
+  """
+  @spec stat_text(:hp | :ap | :range, non_neg_integer()) :: String.t()
+  def stat_text(kind, count) when count in 1..4, do: String.duplicate(@emoji[kind], count)
+  def stat_text(kind, count), do: "#{count} × #{@emoji[kind]}"
+
+  @doc "A tank stat as emojis, with the number in words for hovering and screen readers."
+  attr :kind, :atom, required: true, values: [:hp, :ap, :range]
+  attr :value, :integer, required: true
+  attr :id, :string, default: nil
+  attr :class, :any, default: nil
+
+  def stat(assigns) do
+    assigns = assign(assigns, :label, stat_label(assigns.kind, assigns.value))
+
     ~H"""
-    <span class="inline-flex gap-0.5" title={gettext("%{hp} HP", hp: @hp)}>
-      <.icon
-        :for={i <- 1..@max}
-        name="hero-heart-solid"
-        class={["size-4", if(i <= @hp, do: "text-error", else: "text-base-content/15")]}
-      />
+    <span id={@id} role="img" aria-label={@label} title={@label} class={["whitespace-nowrap", @class]}>
+      {stat_text(@kind, @value)}
     </span>
     """
   end
+
+  defp stat_label(:hp, count), do: gettext("%{hp} HP", hp: count)
+  defp stat_label(:ap, count), do: gettext("%{ap} AP", ap: count)
+  defp stat_label(:range, count), do: gettext("range %{range}", range: count)
 
   @doc "Whether the board should be shown for this game."
   def board?(%Game{board: %Board{}}), do: true

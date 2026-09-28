@@ -642,17 +642,17 @@ defmodule HextankWeb.TableLive do
       <div class="flex items-center gap-2">
         <.seat_dot seat={@me.seat} class="size-4" />
         <h2 class="font-bold">{gettext("Your tank")}</h2>
-        <span class="ml-auto"><.hearts hp={@me.hp} max={@game.settings.start_hp} /></span>
+        <.stat id="my-hp" kind={:hp} value={@me.hp} class="ml-auto" />
       </div>
 
       <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
         <div class="rounded-xl bg-base-100 p-2">
           <dt class="text-xs text-base-content/60">{gettext("Action points")}</dt>
-          <dd id="my-ap" class="text-2xl font-bold">{@me.ap}</dd>
+          <dd class="pt-1 text-lg"><.stat id="my-ap" kind={:ap} value={@me.ap} /></dd>
         </div>
         <div class="rounded-xl bg-base-100 p-2">
           <dt class="text-xs text-base-content/60">{gettext("Range")}</dt>
-          <dd id="my-range" class="text-2xl font-bold">{@me.range}</dd>
+          <dd class="pt-1 text-lg"><.stat id="my-range" kind={:range} value={@me.range} /></dd>
         </div>
         <div class="rounded-xl bg-base-100 p-2">
           <dt class="text-xs text-base-content/60">{gettext("Next AP")}</dt>
@@ -757,11 +757,9 @@ defmodule HextankWeb.TableLive do
               <span class="ml-auto text-xs">{gettext("ghost")}</span>
             <% true -> %>
               <span class="ml-auto flex items-center gap-3 text-xs text-base-content/70">
-                <span title={gettext("Action points")}>{gettext("%{ap} AP", ap: tank.ap)}</span>
-                <span title={gettext("Range")}>
-                  <.icon name="hero-viewfinder-circle-micro" class="size-3.5" />{tank.range}
-                </span>
-                <.hearts hp={tank.hp} max={@game.settings.start_hp} />
+                <.stat kind={:ap} value={tank.ap} />
+                <.stat kind={:range} value={tank.range} />
+                <.stat kind={:hp} value={tank.hp} />
               </span>
           <% end %>
         </li>

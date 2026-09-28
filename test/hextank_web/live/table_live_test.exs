@@ -95,12 +95,12 @@ defmodule HextankWeb.TableLiveTest do
       game = running_game(ctx.ana, ctx.bruno, 2)
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
 
-      assert view |> element("#my-ap") |> render() =~ "2"
+      assert has_element?(view, "#my-ap[aria-label='2 AP']", "⚡⚡")
 
       view |> element("#action-upgrade") |> render_click()
 
-      assert view |> element("#my-ap") |> render() =~ "1"
-      assert view |> element("#my-range") |> render() =~ "3"
+      assert has_element?(view, "#my-ap[aria-label='1 AP']", "⚡")
+      assert has_element?(view, "#my-range[aria-label='range 3']", "🎯🎯🎯")
     end
 
     test "a click shows the path and its cost, a second click drives there", ctx do
@@ -217,14 +217,14 @@ defmodule HextankWeb.TableLiveTest do
       assert has_element?(view, "#highlights-range")
 
       render_hook(view, "tank_double", %{"player" => ctx.ana.id})
-      assert view |> element("#my-range") |> render() =~ "3"
+      assert has_element?(view, "#my-range[aria-label='range 3']")
     end
 
     test "every tank carries its stats for the hover tooltip", ctx do
       game = running_game(ctx.ana, ctx.bruno, 2)
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
 
-      assert view |> element("#tank-#{ctx.bruno.id}") |> render() =~ "3 HP · 2 AP · range 2"
+      assert view |> element("#tank-#{ctx.bruno.id}") |> render() =~ "❤️❤️❤️ · ⚡⚡ · 🎯🎯"
     end
 
     test "without AP, acting fails with a message", ctx do
@@ -241,9 +241,9 @@ defmodule HextankWeb.TableLiveTest do
       {:ok, ana_view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
       {:ok, bruno_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
 
-      assert has_element?(bruno_view, "#player-#{ctx.ana.id}", "1 AP")
+      assert has_element?(bruno_view, "#player-#{ctx.ana.id} [aria-label='1 AP']")
       ana_view |> element("#action-upgrade") |> render_click()
-      assert has_element?(bruno_view, "#player-#{ctx.ana.id}", "0 AP")
+      assert has_element?(bruno_view, "#player-#{ctx.ana.id} [aria-label='0 AP']", "0 × ⚡")
     end
 
     test "a ghost votes to give a living tank 1 AP", ctx do
