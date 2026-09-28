@@ -18,7 +18,12 @@ the diplomacy, alliances and betrayals as much as the tactics.
 
 - **Board:** a hexagon-shaped map of pointy-top hex cells, with a few **obstacles**
   (rocks) that no tank can enter.
-- **Starting position:** each player's tank is placed on a random free cell.
+- **Board size:** grows with the number of players: at least 15 cells per player,
+  radius at least 4 (2 players: 61 cells; 20 players: 331 cells). About one cell in
+  ten is an obstacle.
+- **Starting position:** each player's tank is placed on a random free cell, at least
+  3 steps from every other tank when the board has room, so nobody starts within
+  reach of anyone.
 - **Health:** each tank starts with **3 HP**. At 0 HP the tank is destroyed.
 - **Range:** each tank starts with range **2**. Range is the
   [hex distance](https://www.redblobgames.com/grids/hexagons/#distances) between two
@@ -133,15 +138,21 @@ files on disk instead of a database:
   `corners/2`.
 - **`Hextank.Board`** – the board radius and a `MapSet` of obstacle hexes. The cells
   themselves are **not stored**: they are `Hex.range(Hex.new(0, 0, 0), radius)`.
-- **`Hextank.Tank`** – `%Tank{player_id, name, position, hp, ap, range}`.
-- **`Hextank.Game`** – the whole game state and the rules. Every action is a function
-  that takes a game and returns `{:ok, game}` or `{:error, reason}`:
-  - `new/1`, `add_player/3`, `start/2` (takes `now`)
-  - `move/3`, `shoot/3`, `upgrade_range/2`, `give_ap/3`
-  - `tick/1` (hand out AP to the living and votes to ghosts)
-  - `catch_up/2` (takes `now`, applies `tick/1` once per missed interval)
-  - `ghost_vote/3`
-  - `winner/1`
+- **`Hextank.Tank`** – `%Tank{player_id, name, seat, position, hp, ap, range,
+  has_vote, frozen}`. A tank with 0 HP is a ghost.
+- **`Hextank.Random`** – a shuffle that always gives the same order for the same seed,
+  so randomness is repeatable in tests.
+- **`Hextank.Game`** – the whole game state and the rules. Functions that change the
+  game return `{:ok, game}` or `{:error, reason}`, and take `now` (and a `seed` where
+  randomness is needed):
+  - lobby: `new/1`, `add_player/4`, `remove_player/3`, `start/4`
+  - `act/4` with one of `{:move, hex}`, `{:shoot, target_id}`, `:upgrade_range`,
+    `{:give_ap, target_id}`, `{:vote, target_id}` (ghosts only); it also detects the
+    winner
+  - `tick/2` (hand out AP to the living and votes to ghosts), `catch_up/2` (apply
+    every tick missed by `now`), `next_tick_at/1`
+  - questions for the UI: `move_targets/2`, `tanks_in_range/2`, `tank_at/2`,
+    `living_tanks/1`, `tanks_by_seat/1`
 
 ### Processes and storage (`lib/hextank/tables/`, `lib/hextank/storage.ex`)
 
@@ -525,18 +536,18 @@ CLAUDE.md, *Review workflow*).
 - [x] Doctests for every function, checked against the guide's examples
 
 ### Phase 2 – Game rules (`Hextank.Game`)
-- [ ] Board of radius `R` with random obstacles
-- [ ] Add and remove players in a lobby state (2–20), then start the game (random
+- [x] Board of radius `R` with random obstacles
+- [x] Add and remove players in a lobby state (2–20), then start the game (random
       placement)
-- [ ] Move, shoot, upgrade range, give AP, with every rule from above validated,
+- [x] Move, shoot, upgrade range, give AP, with every rule from above validated,
       including the *Details*
-- [ ] Death turns a tank into a ghost
-- [ ] Tick: AP for the living, a vote for each ghost
-- [ ] `catch_up/2`: apply every tick missed since the last one, given `now`
-- [ ] Ghost vote
-- [ ] Winner detection, game over state
-- [ ] Event log capped at the last ~50 events
-- [ ] Unit tests for every rule and every error case
+- [x] Death turns a tank into a ghost
+- [x] Tick: AP for the living, a vote for each ghost
+- [x] `catch_up/2`: apply every tick missed since the last one, given `now`
+- [x] Ghost vote
+- [x] Winner detection, game over state
+- [x] Event log capped at the last ~50 events
+- [x] Unit tests for every rule and every error case
 
 ### Phase 3 – Tables as processes, saved on disk
 - [ ] `Storage`: save / load `game.bin` (temp file + rename)
