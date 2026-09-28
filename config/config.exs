@@ -13,6 +13,9 @@ config :hextank,
 # A table nobody uses for this long saves and stops (see README, Lazy ticks).
 config :hextank, :table_idle_timeout, :timer.minutes(5)
 
+# Players who may open /admin. Set from ADMIN_PLAYER_IDS in config/runtime.exs.
+config :hextank, :admin_player_ids, []
+
 # Configure the endpoint
 config :hextank, HextankWeb.Endpoint,
   url: [host: "localhost"],

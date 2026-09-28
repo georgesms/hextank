@@ -26,6 +26,10 @@ defmodule Hextank.Players.Bans do
   @spec banned?(String.t()) :: boolean()
   def banned?(player_id), do: Agent.get(__MODULE__, &MapSet.member?(&1, player_id))
 
+  @doc "How many players are banned."
+  @spec count() :: non_neg_integer()
+  def count, do: Agent.get(__MODULE__, &MapSet.size/1)
+
   @doc "Marks a player as banned."
   @spec add(String.t()) :: :ok
   def add(player_id), do: Agent.update(__MODULE__, &MapSet.put(&1, player_id))

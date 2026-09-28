@@ -70,6 +70,15 @@ defmodule Hextank.Storage do
 
   ## Chat
 
+  @doc "The size of a table's chat file in bytes (0 without one). Doesn't read it."
+  @spec chat_size(String.t()) :: non_neg_integer()
+  def chat_size(table_id) do
+    case File.stat(table_file(table_id, "chat.jsonl")) do
+      {:ok, stat} -> stat.size
+      {:error, _reason} -> 0
+    end
+  end
+
   @doc """
   Adds one chat message (a map that JSON can encode) at the end of the table's chat
   file. Appending is safe with several writers: each message is one small write.

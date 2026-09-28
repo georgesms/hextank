@@ -23,6 +23,15 @@ end
 config :hextank, HextankWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# Admins, by player id, comma-separated (see Hextank.Admin). Tests set their own.
+if config_env() != :test do
+  admin_ids = System.get_env("ADMIN_PLAYER_IDS", "")
+
+  config :hextank,
+         :admin_player_ids,
+         admin_ids |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+end
+
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
   config :hextank, HextankWeb.Endpoint,
