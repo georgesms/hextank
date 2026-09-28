@@ -49,12 +49,15 @@ the diplomacy, alliances and betrayals as much as the tactics.
 | On the board | Click | Second click / double-click |
 | --- | --- | --- |
 | An empty cell | Highlights the shortest path and its cost | Drives there |
-| An enemy tank | Says whether it's within your range | Shoots it (if in range) |
+| Another tank | Says whether it's within your range | Shoots it, or gives it 1 AP (if in range) |
 | Your own tank | Highlights your range | Range +1 |
 
 Hovering a tank shows its stats (HP, AP, range). A bar above the board explains the
-current selection and has the same actions as buttons (handy on touch screens), plus
-**Give 1 AP** for a tank within range. Escape cancels.
+current selection. The **Your tank** panel always shows every action as a button
+(**Move here**, **Shoot**, **Give 1 AP**, **Range +1**), enabled when it fits the
+selection, which is handy on touch screens. It also has a switch that picks what a
+double-click on another tank does: shoot it (the default) or give it 1 AP. Escape
+cancels.
 
 ### Ghosts (eliminated players)
 
