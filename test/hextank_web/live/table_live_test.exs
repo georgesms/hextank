@@ -143,7 +143,7 @@ defmodule HextankWeb.TableLiveTest do
 
       assert has_element?(view, "#selection-info", "out of your range")
       assert has_element?(view, "#highlights-target_out_of_range")
-      refute has_element?(view, "#selection-shoot")
+      assert has_element?(view, "#action-shoot[disabled]")
     end
 
     test "an enemy within range: a click says so, a double-click shoots", ctx do
@@ -157,6 +157,39 @@ defmodule HextankWeb.TableLiveTest do
 
       {:ok, game} = Tables.get(game.id)
       assert Game.tank(game, ctx.bruno.id).hp == 2
+    end
+
+    test "the panel always shows every action, enabled when it fits the selection", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 2, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      for id <- ~w(action-move action-shoot action-give) do
+        assert has_element?(view, "##{id}[disabled]")
+      end
+
+      refute has_element?(view, "#action-upgrade[disabled]")
+
+      # Bruno is right next to Ana: both tank actions fit, moving doesn't.
+      view |> element("#tank-#{ctx.bruno.id}") |> render_click()
+      refute has_element?(view, "#action-shoot[disabled]")
+      assert has_element?(view, "#action-move[disabled]")
+
+      view |> element("#action-give") |> render_click()
+
+      {:ok, game} = Tables.get(game.id)
+      assert %{ap: 3, hp: 3} = Game.tank(game, ctx.bruno.id)
+    end
+
+    test "the Move here button drives to the selected cell", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 2)
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      target = cell_at_path_length(game, ctx.ana.id, 2)
+
+      view |> element("##{cell_id(target)}") |> render_click()
+      view |> element("#action-move") |> render_click()
+
+      {:ok, game} = Tables.get(game.id)
+      assert %{position: ^target, ap: 0} = Game.tank(game, ctx.ana.id)
     end
 
     test "your own tank: a click shows your range, a double-click adds 1", ctx do

@@ -12,9 +12,10 @@ defmodule HextankWeb.TableLive do
     * click your own tank: shows your range; double-click to add 1 to it;
     * hover a tank: its stats (HP, AP, range).
 
-  The bar under the board explains the current selection and has buttons for the
-  same actions (handy on touch screens). Escape cancels. No rule is checked here:
-  `Hextank.Game` decides, we only show its answer.
+  The bar above the board explains the current selection. The "Your tank" panel
+  always shows every action as a button, enabled when it fits the selection (handy
+  on touch screens). Escape cancels. No rule is checked here: `Hextank.Game`
+  decides, we only show its answer.
 
   The chat panel shows the table chat and your private messages (see
   `Hextank.Chat`). Messages are a LiveView stream: once sent to the browser, the
@@ -157,6 +158,18 @@ defmodule HextankWeb.TableLive do
 
   defp can_select?(_assigns), do: false
 
+  # The panel's buttons that fit the selection right now. Only a hint for the
+  # player: `Game` checks every action again anyway.
+  defp enabled_actions(%{me: me, details: details} = assigns) do
+    if can_select?(assigns) and me.ap >= 1,
+      do: [:upgrade | selection_actions(details)],
+      else: []
+  end
+
+  defp selection_actions(%{kind: :path, affordable?: true}), do: [:move]
+  defp selection_actions(%{kind: :enemy, in_range?: true}), do: [:shoot, :give_ap]
+  defp selection_actions(_details), do: []
+
   ## Events from the page
 
   @impl true
@@ -210,7 +223,7 @@ defmodule HextankWeb.TableLive do
     end
   end
 
-  # The buttons under the board do the same for the current selection.
+  # The panel's buttons do the same for the current selection.
   def handle_event("move_here", _params, socket) do
     case socket.assigns.selection do
       {:cell, hex} -> act(socket, {:move, hex})
@@ -395,6 +408,7 @@ defmodule HextankWeb.TableLive do
               game={@game}
               me={@me}
               next_ap_in={next_ap_in(@game, @now)}
+              enabled={enabled_actions(assigns)}
             />
             <.player_list game={@game} current_player={@current_player} />
             <.chat_panel
@@ -413,7 +427,7 @@ defmodule HextankWeb.TableLive do
     """
   end
 
-  # Under the board: what the selection means, and buttons to act on it.
+  # Above the board: what the selection means. The buttons are in the panel.
   attr :details, :map, default: nil
   attr :me, :any, required: true
   attr :can_select, :boolean, required: true
@@ -439,9 +453,6 @@ defmodule HextankWeb.TableLive do
               details.cost
             )}
           </span>
-          <button id="move-here" phx-click="move_here" class="btn btn-success btn-sm">
-            {gettext("Move here")}
-          </button>
         <% %{kind: :path} = details -> %>
           <span class="text-warning">
             {ngettext(
@@ -460,9 +471,6 @@ defmodule HextankWeb.TableLive do
               range: @me.range
             )}
           </span>
-          <button id="selection-upgrade" phx-click="upgrade" disabled={@me.ap < 1} class="btn btn-sm">
-            {gettext("Range +1")}
-          </button>
         <% %{kind: :enemy, in_range?: true} = details -> %>
           <span>
             {ngettext(
@@ -473,17 +481,6 @@ defmodule HextankWeb.TableLive do
               range: @me.range
             )}
           </span>
-          <button
-            id="selection-shoot"
-            phx-click="shoot"
-            disabled={@me.ap < 1}
-            class="btn btn-error btn-sm"
-          >
-            {gettext("Shoot")}
-          </button>
-          <button id="selection-give" phx-click="give_ap" disabled={@me.ap < 1} class="btn btn-sm">
-            {gettext("Give 1 AP")}
-          </button>
         <% %{kind: :enemy} = details -> %>
           <span class="text-base-content/70">
             {ngettext(
@@ -577,6 +574,7 @@ defmodule HextankWeb.TableLive do
   attr :game, Game, required: true
   attr :me, :any, required: true
   attr :next_ap_in, :string, required: true
+  attr :enabled, :list, default: [], doc: "the actions that fit the selection"
 
   defp my_panel(%{me: nil} = assigns) do
     ~H"""
@@ -640,16 +638,44 @@ defmodule HextankWeb.TableLive do
         </div>
       </dl>
 
-      <button
-        id="action-upgrade"
-        phx-click="upgrade"
-        disabled={@me.ap < 1}
-        class="btn mt-4 w-full gap-1.5"
-      >
-        <.icon name="hero-arrow-trending-up" class="size-4" /> {gettext("Range +1")}
-      </button>
+      <div id="actions" class="mt-4 grid grid-cols-2 gap-2">
+        <button
+          id="action-move"
+          phx-click="move_here"
+          disabled={:move not in @enabled}
+          class="btn btn-success gap-1.5"
+        >
+          <.icon name="hero-arrow-right-circle" class="size-4" /> {gettext("Move here")}
+        </button>
+        <button
+          id="action-shoot"
+          phx-click="shoot"
+          disabled={:shoot not in @enabled}
+          class="btn btn-error gap-1.5"
+        >
+          <.icon name="hero-fire" class="size-4" /> {gettext("Shoot")}
+        </button>
+        <button
+          id="action-give"
+          phx-click="give_ap"
+          disabled={:give_ap not in @enabled}
+          class="btn btn-info gap-1.5"
+        >
+          <.icon name="hero-gift" class="size-4" /> {gettext("Give 1 AP")}
+        </button>
+        <button
+          id="action-upgrade"
+          phx-click="upgrade"
+          disabled={:upgrade not in @enabled}
+          class="btn gap-1.5"
+        >
+          <.icon name="hero-arrow-trending-up" class="size-4" /> {gettext("Range +1")}
+        </button>
+      </div>
       <p class="mt-3 text-xs text-base-content/60">
-        {gettext("Every action costs 1 AP; driving costs 1 AP per cell.")}
+        {gettext(
+          "Pick a cell or a tank on the board first. Every action costs 1 AP; driving costs 1 AP per cell."
+        )}
       </p>
     </div>
     """
