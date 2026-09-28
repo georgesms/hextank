@@ -470,6 +470,16 @@ defmodule Hextank.GameTest do
 
       assert length(game.events) == 50
     end
+
+    test "counts each kind of action that succeeded" do
+      game = standard_game()
+      {:ok, game} = Game.act(game, "ana", :upgrade_range, @now)
+      {:ok, game} = Game.act(game, "ana", {:give_ap, "bruno"}, @now)
+      {:ok, game} = Game.act(game, "ana", :upgrade_range, @now)
+      {:error, :not_enough_ap} = Game.act(game, "ana", :upgrade_range, @now)
+
+      assert game.action_counts == %{upgrade_range: 2, give_ap: 1}
+    end
   end
 
   describe "path/3, check_target/3 and tanks_in_range/2" do

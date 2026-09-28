@@ -18,7 +18,7 @@ defmodule Hextank.Storage do
 
   alias Hextank.{Game, Player, Settings}
 
-  @format_version 2
+  @format_version 3
 
   # Ids end up in file paths, so they must never contain "/" or "..".
   @id_format ~r/\A[A-Za-z0-9_-]{8,32}\z/
@@ -175,10 +175,16 @@ defmodule Hextank.Storage do
 
   # One clause per save format. When the format changes, bump @format_version and
   # add a clause here that upgrades the old shape.
+  defp decode({3, term}), do: term
+
+  # Version 2 games were saved before action counts existed: they start from zero.
+  defp decode({2, %Game{} = game}), do: Map.put_new(game, :action_counts, %{})
   defp decode({2, term}), do: term
 
   # Version 1 games were saved before table settings existed: they get the defaults,
-  # which are exactly the rules they were played with.
-  defp decode({1, %Game{} = game}), do: Map.put_new(game, :settings, Settings.defaults())
+  # which are exactly the rules they were played with. Then on as version 2.
+  defp decode({1, %Game{} = game}),
+    do: decode({2, Map.put_new(game, :settings, Settings.defaults())})
+
   defp decode({1, term}), do: term
 end

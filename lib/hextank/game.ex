@@ -39,7 +39,10 @@ defmodule Hextank.Game do
     # Newest first, at most @max_events of them.
     events: [],
     # Board size, rocks, starting HP and range (see Hextank.Settings).
-    settings: Settings.defaults()
+    settings: Settings.defaults(),
+    # How many times each kind of action was used (:move => 12, ...), for the
+    # admin page. A few integers per game.
+    action_counts: %{}
   ]
 
   @type player_id :: String.t()
@@ -71,7 +74,8 @@ defmodule Hextank.Game do
           winner_id: player_id() | nil,
           finished_at: DateTime.t() | nil,
           events: [event()],
-          settings: Settings.t()
+          settings: Settings.t(),
+          action_counts: %{optional(atom()) => non_neg_integer()}
         }
 
   @type result :: {:ok, t()} | {:error, atom()}
@@ -276,11 +280,19 @@ defmodule Hextank.Game do
     with {:ok, tank} <- fetch_player(game, player_id),
          :ok <- check_not_frozen(tank),
          {:ok, game, event} <- perform(game, tank, action) do
-      {:ok, game |> log(event, now) |> check_winner(now)}
+      {:ok, game |> count_action(action) |> log(event, now) |> check_winner(now)}
     end
   end
 
   def act(_game, _player_id, _action, _now), do: {:error, :game_not_running}
+
+  defp count_action(game, action) do
+    kind = action_kind(action)
+    %{game | action_counts: Map.update(game.action_counts, kind, 1, &(&1 + 1))}
+  end
+
+  defp action_kind({kind, _argument}), do: kind
+  defp action_kind(kind), do: kind
 
   defp perform(game, tank, {:move, target}) do
     with :ok <- check_alive(tank),
