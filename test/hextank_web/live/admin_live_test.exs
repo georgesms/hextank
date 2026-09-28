@@ -46,7 +46,7 @@ defmodule HextankWeb.AdminLiveTest do
     assert has_element?(view, "#delete-selected[disabled]")
 
     view |> form("#tables-form", %{"ids" => [first.id, second.id]}) |> render_change()
-    assert has_element?(view, "#delete-selected", "Delete 2 tables")
+    assert has_element?(view, "#delete-selected", "Delete selected (2)")
 
     view |> element("#delete-selected") |> render_click()
 

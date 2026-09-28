@@ -97,20 +97,16 @@ defmodule HextankWeb.AdminLive do
 
         <div id="stats" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <.stat_card id="stats-tables" title={gettext("Tables")} value={@stats.total}>
-            <:line>{gettext("%{count} waiting", count: @stats.by_status.lobby)}</:line>
-            <:line>{gettext("%{count} running", count: @stats.by_status.running)}</:line>
-            <:line>{gettext("%{count} finished", count: @stats.by_status.finished)}</:line>
-            <:line>
-              {gettext("%{public} public, %{private} private",
-                public: @stats.public,
-                private: @stats.total - @stats.public
-              )}
-            </:line>
+            <:line>{gettext("Waiting")}: {@stats.by_status.lobby}</:line>
+            <:line>{gettext("Running")}: {@stats.by_status.running}</:line>
+            <:line>{gettext("Finished")}: {@stats.by_status.finished}</:line>
+            <:line>{gettext("Public tables")}: {@stats.public}</:line>
+            <:line>{gettext("Private tables")}: {@stats.total - @stats.public}</:line>
           </.stat_card>
 
           <.stat_card id="stats-players" title={gettext("Players")} value={@server.players}>
-            <:line>{gettext("%{count} at a table", count: @stats.seated_players)}</:line>
-            <:line>{gettext("%{count} banned", count: @server.banned)}</:line>
+            <:line>{gettext("At a table")}: {@stats.seated_players}</:line>
+            <:line>{gettext("Banned")}: {@server.banned}</:line>
           </.stat_card>
 
           <.stat_card
@@ -124,18 +120,9 @@ defmodule HextankWeb.AdminLive do
           </.stat_card>
 
           <.stat_card id="stats-chat" title={gettext("Chat")} value={format_bytes(@stats.chat_bytes)}>
-            <:line>
-              {ngettext(
-                "1 table with messages",
-                "%{count} tables with messages",
-                @stats.tables_with_chat
-              )}
-            </:line>
-            <:line>{gettext("Server")}</:line>
-            <:line>
-              {ngettext("1 table awake", "%{count} tables awake", @server.awake_tables)}
-            </:line>
-            <:line>{gettext("%{size} of memory", size: format_bytes(@server.memory_bytes))}</:line>
+            <:line>{gettext("Tables with messages")}: {@stats.tables_with_chat}</:line>
+            <:line>{gettext("Tables awake")}: {@server.awake_tables}</:line>
+            <:line>{gettext("Server memory")}: {format_bytes(@server.memory_bytes)}</:line>
           </.stat_card>
         </div>
 
@@ -186,7 +173,7 @@ defmodule HextankWeb.AdminLive do
               }
               class="btn btn-error btn-sm"
             >
-              {ngettext("Delete 1 table", "Delete %{count} tables", MapSet.size(@selected))}
+              {gettext("Delete selected (%{count})", count: MapSet.size(@selected))}
             </button>
           </div>
 
@@ -227,7 +214,7 @@ defmodule HextankWeb.AdminLive do
                       · {gettext("Private")}
                     </span>
                   </td>
-                  <td><.status_badge status={table.status} /></td>
+                  <td class="whitespace-nowrap"><.status_badge status={table.status} /></td>
                   <td>{length(table.player_ids)}</td>
                   <td>{table.action_counts |> Map.values() |> Enum.sum()}</td>
                   <td class="whitespace-nowrap">{format_bytes(table.chat_bytes)}</td>
