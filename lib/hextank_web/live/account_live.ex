@@ -98,6 +98,12 @@ defmodule HextankWeb.AccountLive do
           </p>
           <button class="btn btn-primary">{gettext("Save")}</button>
         </.form>
+
+        <p id="player-id" class="text-xs text-base-content/50">
+          {gettext("Your player id: %{id}. It isn't secret; the site's admins use it.",
+            id: @current_player.id
+          )}
+        </p>
       </div>
     </Layouts.app>
     """

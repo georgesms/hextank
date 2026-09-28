@@ -34,6 +34,14 @@ defmodule HextankWeb.Layouts do
 
         <div class="ml-auto flex items-center gap-2 sm:gap-3">
           <.link
+            :if={Hextank.Admin.admin?(@current_player)}
+            navigate={~p"/admin"}
+            id="admin-link"
+            class="rounded-full px-3 py-1.5 text-sm font-medium transition hover:bg-base-200"
+          >
+            {gettext("Admin")}
+          </.link>
+          <.link
             :if={@current_player}
             navigate={~p"/account"}
             id="account-link"

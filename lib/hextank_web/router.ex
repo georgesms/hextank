@@ -37,6 +37,12 @@ defmodule HextankWeb.Router do
       live "/tables/:id", TableLive
       live "/account", AccountLive
     end
+
+    # Its own live_session, so moving here from a player page goes through the
+    # router again. AdminHook lets only admins in.
+    live_session :admin, on_mount: [HextankWeb.PlayerHook, HextankWeb.AdminHook] do
+      live "/admin", AdminLive
+    end
   end
 
   # Other scopes may use custom stacks.
