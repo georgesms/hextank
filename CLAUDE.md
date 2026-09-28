@@ -48,24 +48,19 @@ review it.
 
 ## Review workflow
 
-1. **One branch per phase**, e.g. `phase-2-game-rules`, created from an up-to-date
-   `main`.
-2. **Small commits**, one idea each, each passing `mix precommit`. A reviewer should be
-   able to read the branch commit by commit.
-3. **Push the branch** and give the human the GitHub compare link
-   (`https://github.com/georgesms/hextank/compare/main...<branch>`) to open a pull
-   request and review it there.
-4. **With the link, write a review guide** in the reply:
-   - what the phase does, in a few sentences;
-   - the reading order: which file or commit first;
+1. **Work directly on `main`** (decided by the human after Phase 4): no feature
+   branches or pull requests. Start from an up-to-date `main` (`git pull`).
+2. **Small commits**, one idea each, each compiling with `--warnings-as-errors` and the
+   last one of a step passing `mix precommit`. The human reviews commit by commit.
+3. **Push to `main`** after each finished step.
+4. **Write a review guide** in the reply when a step or phase is done:
+   - what it does, in a few sentences;
+   - the commits and the reading order;
    - the Elixir and OTP ideas that appear for the first time, briefly explained;
    - the places that deserve the closest look (tricky logic, races, security);
    - any decision made on the human's behalf, so it can be overruled.
-5. **Review comments are addressed with new commits** on the same branch (no force-push
-   during review), then push again.
-6. **The human merges** the pull request on GitHub. Claude never pushes to `main` directly
-   once the phase workflow is in use, and never merges.
-7. After the merge: `git switch main && git pull`, then start the next phase.
+5. **Review comments are addressed with new commits.** Never rewrite pushed history
+   (no force-push on `main`).
 
 ## Commands
 

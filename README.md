@@ -498,10 +498,10 @@ Each phase should end with something working and tested.
 ### Who writes what
 
 The project is small (roughly 3,000–4,000 lines of Elixir and HEEx including tests).
-**Claude writes all the code; the human learns Elixir by reviewing it.** Each phase is a
-branch with small commits and a pull request, and comes with a review guide: reading
-order, new Elixir ideas explained, and the places that deserve the closest look (see
-CLAUDE.md, *Review workflow*).
+**Claude writes all the code; the human learns Elixir by reviewing it.** Phases 2–4
+were reviewed as pull requests; from Phase 5 on, work goes straight to `main` in small
+commits, each step with a review guide: reading order, new Elixir ideas explained, and
+the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 
 | Phase | Written by | Effort | Confidence | Main risk | Human's part |
 |---|---|---|---|---|---|
