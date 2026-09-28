@@ -3,16 +3,17 @@ defmodule Hextank.Storage do
   All reading and writing of files (see README, *Architecture*). Nothing else in
   the app touches `File`.
 
-  Data lives under the `:data_dir` config, one folder per table:
+  Data lives under the `:data_dir` config:
 
       tables/<id>/game.bin    the %Game{}, rewritten after every change
+      players/<id>.bin        a %Player{}
 
   Terms are saved with `:erlang.term_to_binary/1`, wrapped as `{version, term}` so a
   future change to the shape of `%Game{}` can still read old files (see CLAUDE.md,
   *Deployment rules*).
   """
 
-  alias Hextank.Game
+  alias Hextank.{Game, Player}
 
   @format_version 1
 
@@ -64,6 +65,18 @@ defmodule Hextank.Storage do
     :ok
   end
 
+  ## Players
+
+  @doc "Saves a player, replacing the previous save."
+  @spec save_player(Player.t()) :: :ok
+  def save_player(%Player{id: id} = player), do: write_term(player_file(id), player)
+
+  @doc "Loads a saved player."
+  @spec load_player(term()) :: {:ok, Player.t()} | {:error, :not_found}
+  def load_player(id) do
+    if valid_id?(id), do: read_term(player_file(id)), else: {:error, :not_found}
+  end
+
   ## Paths
 
   defp data_dir, do: Application.fetch_env!(:hextank, :data_dir)
@@ -75,6 +88,11 @@ defmodule Hextank.Storage do
   end
 
   defp table_file(id, name), do: Path.join(table_dir(id), name)
+
+  defp player_file(id) do
+    if not valid_id?(id), do: raise(ArgumentError, "invalid id: #{inspect(id)}")
+    Path.join([data_dir(), "players", id <> ".bin"])
+  end
 
   ## Terms on disk
 
