@@ -23,3 +23,6 @@ config :phoenix,
 
 # Tests never touch the dev data folder. Storage tests use their own @tag :tmp_dir.
 config :hextank, :data_dir, Path.expand("../tmp/test_data", __DIR__)
+
+# Tables go to sleep quickly in tests, to exercise waking them up again.
+config :hextank, :table_idle_timeout, 200
