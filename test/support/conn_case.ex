@@ -34,4 +34,10 @@ defmodule HextankWeb.ConnCase do
   setup _tags do
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc "Creates a player and returns a conn logged in as them."
+  def log_in_new_player(conn, nickname \\ "Ana") do
+    {:ok, player} = Hextank.Players.create(nickname)
+    {Plug.Test.init_test_session(conn, %{"player_id" => player.id}), player}
+  end
 end
