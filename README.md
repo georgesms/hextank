@@ -1,0 +1,628 @@
+# HexTank
+
+A web version of **Tank Tactics** (originally *Tank Turn Tactics*, designed by Luke
+Muscat at Halfbrick Studios), played on a **pointy-top hexagonal board**.
+
+Built with Elixir, Phoenix and LiveView. Players join a **table** (one game room), get a
+tank somewhere on the board, and slowly earn Action Points over real time. The fun is in
+the diplomacy, alliances and betrayals as much as the tactics.
+
+> Hex grid math follows Red Blob Games' guide:
+> <https://www.redblobgames.com/grids/hexagons/>
+
+---
+
+## Rules
+
+### Setup
+
+- **Board:** a hexagon-shaped map of pointy-top hex cells, with a few **obstacles**
+  (rocks) that no tank can enter.
+- **Starting position:** each player's tank is placed on a random free cell.
+- **Health:** each tank starts with **3 HP**. At 0 HP the tank is destroyed.
+- **Range:** each tank starts with range **2**. Range is the
+  [hex distance](https://www.redblobgames.com/grids/hexagons/#distances) between two
+  cells, so "within range 2" means "at most 2 steps away".
+- **Action Points:** each tank starts with **0 AP**.
+
+### Action Points (AP)
+
+- Every **tick** (24 hours by default, configurable per table) every living tank gets
+  **1 AP**.
+- AP can be saved for later. There is no cap.
+- Every action costs **1 AP**:
+
+| Action          | Effect                                                                   |
+| --------------- | ------------------------------------------------------------------------ |
+| **Move**        | Move to one of the 6 neighbouring cells. It must be on the board, not an obstacle and not occupied. |
+| **Shoot**       | Deal **1 damage** to any tank within your range. Always hits.            |
+| **Upgrade**     | Increase your range by +1, permanently.                                 |
+| **Give AP**     | Give 1 of your AP to any tank within your range.                         |
+
+### Ghosts (eliminated players)
+
+- A tank at 0 HP is removed from the board and its player becomes a **ghost**.
+- Every tick, each ghost gets **one vote**. A ghost can spend it to give **1 AP** to any
+  living tank, anywhere on the board, no range needed.
+- Unused votes do not accumulate: a ghost has at most one vote at a time.
+- This is what makes the game political: players you eliminate will spend the rest of
+  the game feeding AP to your enemies.
+
+### Victory
+
+- The **last tank standing** wins.
+
+### Details
+
+- You can't shoot yourself or give AP to yourself.
+- AP can only be given to living tanks. Ghosts vote only for living tanks.
+- Range has no maximum.
+- Actions are resolved in the order they reach the table. Two players can never act
+  "at the same time".
+- Ticks are counted from the moment the game starts (a game started at 14:32 gets its
+  AP every day at 14:32).
+
+### Tables
+
+- Anyone can create a table and chooses:
+  - **public**: listed in the lobby, anyone can join;
+  - **private**: not listed, joined only through an **invite link** (`/join/<code>`).
+- A game needs **2 to 20 players**. The creator starts it; nobody can join after the
+  start. Before the start, players can leave.
+- A finished table becomes **read-only** and is deleted **30 days** after it ends.
+- A table that never starts expires after **7 days**.
+
+---
+
+## Hexagonal board
+
+We use **cube coordinates** `{q, r, s}` with the constraint `q + r + s = 0`, exactly as
+described by Red Blob Games. The board is a large hexagon of a given `radius` around
+the origin `{0, 0, 0}`.
+
+We always work with all three coordinates `q`, `r` and `s`, in the code and in the
+docs, even though any one of them can be computed from the other two.
+
+A radius-1 board has 7 cells. Written as `(q, r, s)`, pointy-top hexes sit in rows that
+shift half a cell each:
+
+```
+           (0,-1,+1)   (+1,-1,0)
+   (-1,0,+1)    (0,0,0)    (+1,0,-1)
+           (-1,+1,0)   (0,+1,-1)
+```
+
+A board of radius `N` has `3N² + 3N + 1` cells (radius 5 → 91 cells).
+
+The pieces of the guide we need, and where they go:
+
+| Concept (guide section)            | Used for                                  |
+| ---------------------------------- | ----------------------------------------- |
+| Cube coordinates                   | Every position in the game                |
+| Neighbors (6 directions)           | Movement                                  |
+| Distances                          | Range checks for shoot / give AP          |
+| Movement range / "range" (`N` steps) | Building the board, highlighting reach  |
+| Rings / spirals                    | Optional: nicer spawn placement           |
+| Hex to pixel (pointy-top)          | Drawing the board in SVG                  |
+
+We draw each cell as an SVG `<polygon>` with `phx-click` and the cell's `q`, `r` and `s`
+as values, so we never need *pixel to hex* conversion: the browser already tells us
+which hex was clicked.
+
+---
+
+## Architecture
+
+Kept deliberately small. Three layers, each only talking to the one below it, and plain
+files on disk instead of a database:
+
+```
+ HextankWeb (LiveView)          renders the board and chat, sends player intents
+        │
+ Hextank.Tables (processes)     one GenServer per *active* table, timers, PubSub
+        │                 │
+        │           Hextank.Storage   game.bin + chat.jsonl per table, on disk
+        │
+ Hextank.Game  +  Hextank.Hex   pure functions, no processes, no disk, no clock
+```
+
+### Pure core (`lib/hextank/`)
+
+- **`Hextank.Hex`** – a `%Hex{q, r, s}` struct and the math: `new/3`, `add/2`,
+  `distance/2`, `neighbor/2`, `neighbors/1`, `range/2`, `ring/2`, `to_pixel/2`,
+  `corners/2`.
+- **`Hextank.Board`** – the board radius and a `MapSet` of obstacle hexes. The cells
+  themselves are **not stored**: they are `Hex.range(Hex.new(0, 0, 0), radius)`.
+- **`Hextank.Tank`** – `%Tank{player_id, name, position, hp, ap, range}`.
+- **`Hextank.Game`** – the whole game state and the rules. Every action is a function
+  that takes a game and returns `{:ok, game}` or `{:error, reason}`:
+  - `new/1`, `add_player/3`, `start/2` (takes `now`)
+  - `move/3`, `shoot/3`, `upgrade_range/2`, `give_ap/3`
+  - `tick/1` (hand out AP to the living and votes to ghosts)
+  - `catch_up/2` (takes `now`, applies `tick/1` once per missed interval)
+  - `ghost_vote/3`
+  - `winner/1`
+
+### Processes and storage (`lib/hextank/tables/`, `lib/hextank/storage.ex`)
+
+- **`Hextank.Tables.Table`** – a GenServer holding one `%Game{}`. It only runs while
+  the table is in use (see *Lazy ticks* below). It calls the pure functions, saves the
+  game after every change, runs the tick timer while alive, and broadcasts on
+  `Phoenix.PubSub`.
+- **`Registry`** to find a running table by id, **`DynamicSupervisor`** to start
+  tables on demand.
+- **`Hextank.Tables.Lobby`** – a GenServer holding a small summary of every table
+  (name, public or private, status, players), built from disk at boot and updated on
+  every save. The lobby page reads this, so it never has to wake up or load 1000
+  tables. It also deletes expired tables, at boot and once a day while running.
+- **`Hextank.Storage`** – reads and writes the files of one table:
+  - `data/tables/<id>/game.bin` – the `%Game{}` via `:erlang.term_to_binary/1`,
+    rewritten on each change (write to a temp file, then rename, so a crash never
+    leaves half a file).
+  - `data/tables/<id>/chat.jsonl` – one JSON line per chat message, **append only**.
+- **`Hextank.Chat`** – append and read chat messages (table chat and private
+  messages) through `Storage`, broadcast them on PubSub. Chat is **not** part of
+  `%Game{}`.
+- **`Hextank.Tables`** – the public API the web layer uses (`create_table`, `join`,
+  `act`, `subscribe`, `send_message`, ...).
+
+### Players and moderation (`lib/hextank/players/`, `lib/hextank/moderation.ex`)
+
+- **`Hextank.Player`** (pure) – `%Player{id, nickname, token_version, google_sub,
+  strikes, banned_at}` and the strike rules (`add_strike/2`).
+- **`Hextank.Players`** – load and save players (`data/players/<id>.bin`), look one up
+  by Google account (`data/google/<sub>`), build and check rejoin links.
+- **`Hextank.Players.Bans`** – an `Agent` with the set of banned player ids and Google
+  accounts, loaded at boot, so checking a ban never touches the disk.
+- **`Hextank.Moderation`** (pure) – `check(text, words)` returns `:ok` or
+  `{:error, :prohibited}`. The production word list is compiled into the module.
+
+### Web (`lib/hextank_web/`)
+
+- **`LobbyLive`** – list public tables and your own tables, create one, join one.
+- **`TableLive`** – the board as inline SVG, the player's tank stats, the action
+  buttons, a list of all players and ghosts, an event log, the chat.
+- **`AccountLive`** – nickname, your rejoin link (copy, reset), Google login.
+- **`DormantController`** – static dormant pages (see *Deployment*).
+- **`AuthController`** – rejoin links and the Google login redirect and callback.
+- **Translations** – English in the templates, pt-BR in `priv/gettext/pt_BR`, chosen
+  from the browser's language with a switch in the page header.
+
+---
+
+## Players, identity and moderation
+
+### Identity: no accounts, optional Google
+
+- **First visit:** you pick a nickname and get a random player id, stored in the
+  session cookie (kept for 1 year, not just until the browser closes).
+- **Rejoin link:** after joining your first table you see a personal link
+  (`/rejoin/<token>`) with "bookmark this, it's your key". Opening it on any
+  device logs you back in as the same player, in every table.
+  - The token is signed with `Phoenix.Token` and contains `{player_id, token_version}`,
+    so nothing extra is stored. "Reset my link" bumps `token_version`, which makes
+    old links stop working.
+  - It works like a password: never logged, never shown to other players.
+- **Login with Google (optional):** "Log in with Google" links your player to your
+  Google account, so you can come back from any device without the link.
+  - Plain OpenID Connect written by hand with `Req` (a small HTTP client, our one
+    added dependency): no auth library, about 150 lines.
+  - Asks only for the `openid` scope, so we get a stable Google id (`sub`) and **no
+    email, no name, no photo**. We store only `sub → player_id`.
+  - Checks: a random `state` in the session against login forgery; `aud` equals our
+    client id; `iss` is Google. The ID token comes straight from Google's token
+    endpoint over HTTPS, so OpenID Connect allows skipping its signature check.
+  - Logging in with a Google account already linked to another player switches to
+    that player. The previous identity is still reachable with its own rejoin link.
+
+### Moderation: prohibited words, two warnings, then a ban
+
+- **The list:** `priv/moderation/prohibited_words.txt`, one word per line, English and
+  Portuguese, focused on **hate speech** (slurs, not general swearing). Seeded from a
+  public list and curated by the human. It's compiled into `Hextank.Moderation`
+  (`@external_resource`), so checking costs no disk reads. Changing the list needs a
+  deploy.
+- **Normalizing before matching** (the same steps on the text and on the list):
+  lowercase, remove accents (`ã` → `a`), undo common letter swaps (`4` → `a`, `3` → `e`,
+  `0` → `o`, `1` → `i`, `@` → `a`, `$` → `s`), shorten repeated letters (`aaaa` → `a`).
+  Then split into words and compare **whole words** only, so innocent words that
+  contain a bad one are not blocked.
+- **What is checked:** chat messages, private messages, nicknames, table names.
+- **What happens:**
+  - A text with a prohibited word is **not sent or saved**, and the player gets a
+    strike.
+  - Strike 1: "Warning 1 of 2".
+  - Strike 2: "Final warning".
+  - Strike 3: **ban**.
+  - Strikes don't expire. Each strike records the time, the table and the matched word
+    (not the whole message).
+- **A banned player** can't create or join tables, act, chat or vote. All their open
+  pages are closed at once (PubSub message on `"player:<id>"`). Their tank stays on the
+  board, frozen: it can be shot but never acts again. If they linked Google, that
+  Google account stays banned too.
+- **Limits:** word lists are easy to get around and blind to context. An anonymous
+  player can also come back as a new player. Google-linked bans stick; a later table
+  option can require Google login.
+- **Unban or clear strikes:** only by the human, from the remote IEx console
+  (`Hextank.Players.unban(player_id)`). No admin page.
+
+### Other limits
+
+- Nickname 2–20 characters, table name 3–40, chat message up to 500.
+- Chat rate limit: 5 messages per 10 seconds per player.
+- Times are shown relative ("next AP in 3 h 12 min"), computed on the server. No
+  timezone database needed, and they work on the dormant pages too.
+
+---
+
+## Frugality
+
+Target: **about 1000 tables and a few hundred players online at once on a single
+`shared-cpu-1x` machine with 256 MB**, and the machine off when nobody is playing.
+Every design choice below serves that target. Estimates, to be measured.
+
+### Stack
+
+- `mix phx.new hextank --no-ecto --no-mailer`: no database server, no connection
+  pool, no mailer. Gettext stays for pt-BR; translations are compiled into modules, so
+  they cost almost nothing at runtime.
+- Games are files on a volume (`term_to_binary`), chat is append-only JSON lines (Elixir's
+  built-in `JSON` module, no dependency).
+- Nothing beyond what Phoenix and OTP give us: no Oban, Redis, Presence, clustering or
+  JS framework. Registry, DynamicSupervisor, Agent, PubSub and `Process.send_after/3`
+  are enough.
+- Tailwind and esbuild run at build time only. `mix phx.digest` pre-compresses assets.
+
+### Lazy ticks: sleeping tables
+
+Tables don't need a process between visits. The AP ticks are computed from the clock:
+
+1. Someone opens a table → `Hextank.Tables` starts its GenServer under the
+   DynamicSupervisor, which loads `game.bin` and calls `Game.catch_up(game, now)`.
+2. While players are on the page, the GenServer's timer runs `Game.tick/1` on time
+   (needed for 1-minute games, where players watch AP arrive).
+3. After a few minutes with no activity, the GenServer saves and **stops itself**
+   (GenServer timeout). The table now costs zero memory and zero CPU.
+
+The same `catch_up/2` also handles app restarts: there is only one code path.
+
+### Scale to zero
+
+Because nothing needs to run between visits, the Fly machine stops when idle
+(`auto_stop_machines = "stop"`, `min_machines_running = 0`) and starts on the next
+request in about 1–2 s. Game files survive on the volume.
+
+### BEAM on one shared vCPU (`rel/vm.args.eex`)
+
+```
++S 1:1 +SDcpu 1:1 +SDio 2                # one scheduler, few dirty schedulers
++sbwt none +sbwtdcpu none +sbwtdio none  # no busy-waiting, saves CPU credits
+```
+
+Plus: always run as a `mix release`, remove the periodic measurements from the
+generated `telemetry.ex`, production log level `:warning`, a little swap
+(`swap_size_mb`) as a safety net.
+
+### Small data
+
+- The board stores only its radius and obstacles; cells are recomputed.
+- The game keeps only the last ~50 events.
+- LiveView:
+  - the static board (cells, obstacles) is its own component, sent once and never again;
+  - tanks are rendered with a keyed comprehension, so an action only sends the tanks that
+    changed;
+  - chat messages use `stream/3`, so the server forgets them after sending them to
+    the browser;
+  - LiveView processes hibernate when idle (the default, keep it).
+
+### Chat
+
+- **Live delivery** uses PubSub topics and doesn't need the table process:
+  `"table:<id>:chat"` for table chat, `"table:<id>:player:<player_id>"` for private
+  messages.
+- **History** is the last ~100 lines of `chat.jsonl`. Private messages are in the same
+  file with a `to` field and the server filters them, so a player never receives
+  someone else's messages.
+- **Unread counts**: a "last read at" per player, kept in a small
+  `data/tables/<id>/reads.bin` so chat state stays out of `%Game{}`.
+- **Limits of the file approach:** no search, no direct messages outside tables, no
+  global chat. If we ever want those, move to SQLite (still in the same machine). Only
+  `Storage` and `Chat` change; the core stays the same.
+
+---
+
+## Deployment (Fly.io)
+
+Why Fly.io: it is the cheapest host that fits this design (a persistent volume for the
+game files, websockets, scale to zero), and nearly the whole deploy can be automated
+from the terminal. Railway ($5 flat) is the fallback if Fly stops suiting us.
+
+### Expected cost
+
+| Item | Price | Notes |
+| --- | --- | --- |
+| `shared-cpu-1x` 256 MB machine | $1.94/month if always on | Less with scale to zero |
+| 1 GB volume | $0.15/month | Billed even while the machine is stopped |
+| Stopped machine root filesystem | ~$0.15/GB/month | Our image is small |
+| Shared IPv4, HTTPS certificate | free | No dedicated IPv4 needed |
+| Egress | $0.02/GB (NA/EU) | Tiny for a text-and-SVG game |
+
+**Realistic total: about $0.50–2.50 per month.** No free tier: a card is required.
+Check the billing page after the first month.
+
+### Setup
+
+| Setting | Value |
+| --- | --- |
+| App name | `hextank` (or the closest free name) |
+| Region | `gru` (São Paulo), or whichever is closest to the players |
+| Machines | **exactly one**. A volume belongs to one machine and our files can't be shared |
+| Volume | `hextank_data`, 1 GB, mounted at `/data` |
+| Environment | `DATA_DIR=/data`, `PHX_HOST=<app>.fly.dev` |
+| Secrets | `SECRET_KEY_BASE`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (`fly secrets set`) |
+| Snapshots | Fly's daily volume snapshots (kept 5 days by default) |
+
+The heart of `fly.toml`:
+
+```toml
+app = "hextank"
+primary_region = "gru"
+swap_size_mb = 256
+
+[env]
+  PHX_HOST = "hextank.fly.dev"
+  DATA_DIR = "/data"
+  PORT = "8080"
+
+[mounts]
+  source = "hextank_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+```
+
+### Things the app must do for this to work
+
+- **Read `DATA_DIR`** in `config/runtime.exs` for `:data_dir`.
+- **Stopping is always safe**, because every change is saved right away. When Fly stops
+  the machine (idle, deploy, host move), nothing is lost. The release handles
+  `SIGTERM` gracefully.
+- **Inactive tabs go dormant** (see *Dormant view* below). Fly only stops the machine
+  when there are no open connections, and a LiveView tab left open keeps its websocket
+  open forever. Without this, one forgotten tab keeps the machine running all month.
+- **Save format is versioned.** `Storage` writes `{version, game}`, so a deploy that
+  changes `%Game{}` can still load files written by the previous version (see
+  CLAUDE.md).
+
+### Dormant view
+
+An inactive table tab leaves the live table for a plain, static page, and comes back
+with one click.
+
+**When a tab goes dormant** (timers in `app.js`, one small hook on the table page):
+
+| Condition | Limit |
+| --- | --- |
+| Tab hidden (another tab, minimised) | 5 minutes |
+| Tab visible but no click, key or scroll | 30 minutes (long enough to watch a 1-minute game) |
+
+When a limit is reached, the browser goes to `/tables/:id/dormant`. That's a normal
+page load, so the LiveView and its websocket close.
+
+**The dormant page** (`DormantController`, not a LiveView):
+- Shows the table name, "You've been away. The table keeps going: your tank still earns
+  AP", and a big **Back to the table** button linking to `/tables/:id`.
+- Reads only the `Lobby` summary. It doesn't start the table process or load
+  `game.bin`, so opening it costs almost nothing.
+- Uses a minimal layout **without `app.js`**: no LiveSocket, no websocket, nothing to
+  keep the machine awake.
+- Nothing is missed: when the player comes back, the table page loads fresh and
+  `catch_up/2` has already applied every missed tick.
+
+The lobby page gets the same treatment, with its own dormant page linking back to
+`/`.
+
+### Who does what
+
+**Once, by the human (~15 minutes):**
+1. Install `flyctl` (`curl -L https://fly.io/install.sh | sh`).
+2. `fly auth signup` (or `fly auth login`) and add a card.
+3. Choose the app name and region.
+4. Approve the first deploy.
+
+**Once, by the human, for Google login (~15 minutes):**
+1. In the Google Cloud console, create a project and an OAuth consent screen
+   (External, app name, support email, scope `openid` only).
+2. Create an OAuth client of type "Web application" with these redirect URIs:
+   `http://localhost:4000/auth/google/callback` and
+   `https://<app>.fly.dev/auth/google/callback`.
+3. Publish the consent screen. With only the `openid` scope, Google doesn't require
+   an app review.
+4. Put the client id and secret in a local, uncommitted `.env` for development. Claude
+   runs `fly secrets set` for production, after approval.
+
+**By Claude, from the terminal, once `flyctl` is logged in:**
+1. `mix phx.gen.release --docker`: Dockerfile and release scripts.
+2. `fly launch --no-deploy`, then edit `fly.toml` as above.
+3. `fly volumes create hextank_data --size 1 --region gru`.
+4. `fly deploy --ha=false` (**after the human approves**).
+5. Check it: `fly status`, `fly logs`, open the URL, play a quick game.
+
+**Every later deploy:** Claude runs `mix precommit`, then `fly deploy` after the human
+says yes. Later, a GitHub Actions workflow can do it on every push to `main`
+(`flyctl deploy --remote-only` with a `FLY_API_TOKEN` secret from
+`fly tokens create deploy`). Then deploys need no one.
+
+### Operating it
+
+| Task | Command |
+| --- | --- |
+| Is it up? | `fly status` |
+| What's happening? | `fly logs` |
+| Inspect live tables | `fly ssh console`, then `/app/bin/hextank remote` for an IEx shell |
+| Download a backup | `fly ssh console -C "tar czf - /data" > backup-$(date +%F).tgz` |
+| Roll back | `fly releases`, then `fly deploy --image <previous image>` |
+| Restore from a snapshot | `fly volumes snapshots list <volume id>`, then create a new volume from it |
+| Unban a player (human only) | In the remote IEx shell: `Hextank.Players.unban("<player id>")` |
+
+Fly's snapshots cover a lost volume. The occasional manual backup covers our own
+mistakes, e.g. a bad deploy that corrupts game files.
+
+---
+
+## Feature roadmap
+
+Each phase should end with something working and tested.
+
+### Who writes what
+
+The project is small (roughly 3,000–4,000 lines of Elixir and HEEx including tests).
+Because learning Elixir is a goal, the work is split: the human writes the pure core,
+where the language basics live, and Claude writes the OTP and web layers, explaining
+them along the way.
+
+| Phase | Written by | Effort | Confidence | Main risk | Human's part |
+|---|---|---|---|---|---|
+| 0 – Setup | Claude | Small | High | Erlang build on the machine; not overwriting our docs | Install system packages (done) |
+| 1 – Hex math | Claude, at the human's request (done) | Small (~150 lines + doctests) | Very high | Almost none: fully specified by the guide | Read it; ask about anything unclear |
+| 2 – Game rules | **Human** | Small–medium (~400 lines + tests) | High | `catch_up/2` details: ghost votes not piling up, no ticks after game over, when each tick is due | Write it and decide rule questions; Claude reviews and writes the tricky tests |
+| 3 – Processes + storage | Claude | Medium | Medium–high | OTP races (an action arriving while an idle table stops), lobby summaries in sync, safe file writes, timer tests | Review carefully |
+| 4 – Browser UI + identity | Claude | Medium | High for behaviour, medium for looks | Whether it looks good and feels nice to play, on a phone too | Playtest, review the Portuguese texts |
+| 5 – Chat + moderation | Claude, **human writes `Moderation`** | Medium | High | Private-message leaks, ban reaching every open page (dedicated tests) | Write the word check, curate the word list |
+| 6 – Google login | Claude | Small–medium (~150 lines + tests) | High | Getting the OpenID Connect checks right (`state`, `aud`, `iss`) | Google Cloud console setup (~15 min) |
+| 7 – Frugal deploy | Claude | Medium | Medium | Needs a Fly account and the `fly` commands; real numbers may differ from the estimates | Fly account, approve and run the deploy, check the load-test results |
+| 8 – Nice to have | Decide per item | Varies | Varies | Web push is the hardest (keys, service worker) | Pick what's worth it |
+
+### Phase 0 – Project setup
+- [x] Erlang 29.1.1 and Elixir 1.20.4 with mise, pinned in `mise.toml`
+- [x] `mix phx.new hextank --no-ecto --no-mailer` (Phoenix 1.8.15, LiveView 1.2),
+      moved into place keeping our README.md and CLAUDE.md
+- [x] Keep the generated `AGENTS.md` (Phoenix's usage rules); CLAUDE.md points to it
+- [x] Removed `dns_cluster` (no clustering)
+- [x] `git init`, `.gitignore` with `priv/data` and `.env`
+- [x] `mix precommit` alias (generated by Phoenix 1.8)
+- [x] `config :hextank, :data_dir` (`priv/data` in dev, `tmp/test_data` in test,
+      `DATA_DIR` in prod)
+- [x] pt-BR locale set up in gettext
+
+### Phase 1 – Hex math (`Hextank.Hex`)
+- [x] Cube coordinate struct `%Hex{q, r, s}`; `Hex.new(q, r, s)` rejects any
+      `q + r + s != 0`
+- [x] add / subtract / scale, the 6 directions, neighbors
+- [x] distance
+- [x] range (all hexes within `N`) and ring
+- [x] pointy-top hex-to-pixel and hex corners for SVG
+- [x] Doctests for every function, checked against the guide's examples
+
+### Phase 2 – Game rules (`Hextank.Game`)
+- [ ] Board of radius `R` with random obstacles
+- [ ] Add and remove players in a lobby state (2–20), then start the game (random
+      placement)
+- [ ] Move, shoot, upgrade range, give AP, with every rule from above validated,
+      including the *Details*
+- [ ] Death turns a tank into a ghost
+- [ ] Tick: AP for the living, a vote for each ghost
+- [ ] `catch_up/2`: apply every tick missed since the last one, given `now`
+- [ ] Ghost vote
+- [ ] Winner detection, game over state
+- [ ] Event log capped at the last ~50 events
+- [ ] Unit tests for every rule and every error case
+
+### Phase 3 – Tables as processes, saved on disk
+- [ ] `Storage`: save / load `game.bin` (temp file + rename)
+- [ ] `Table` GenServer: loads and catches up on start, saves after every change
+- [ ] Tick timer while alive, with a configurable interval (1 minute or 24h)
+- [ ] Stops itself after a few idle minutes; started again on demand
+- [ ] Registry + DynamicSupervisor
+- [ ] `Lobby` GenServer with table summaries, built from disk at boot
+- [ ] Expired tables deleted (finished: 30 days, never started: 7 days)
+- [ ] PubSub broadcast of every state change
+
+### Phase 4 – Playable in the browser, with identity
+- [ ] Players: nickname and random id in a 1-year session cookie, saved in
+      `data/players/`
+- [ ] Rejoin link (`Phoenix.Token`), shown after the first join; reset on the account
+      page
+- [ ] Lobby: public tables and your tables; create public or private; invite links for
+      private tables
+- [ ] Board rendered as SVG hexes: static board component + keyed tanks
+- [ ] Works on a phone: the board scales, cells are big enough to tap
+- [ ] Click your tank, see move targets and range highlighted
+- [ ] Action buttons, error flash messages
+- [ ] Ghost panel to cast the daily vote
+- [ ] Live updates for every player at the table
+- [ ] Event log ("Ana shot Bruno", "a ghost gave Carla 1 AP")
+- [ ] Relative times ("next AP in 3 h 12 min")
+- [ ] English and pt-BR texts, language from the browser, switch in the header
+
+### Phase 5 – Chat and moderation (diplomacy is half the game)
+- [ ] Table chat: append to `chat.jsonl`, broadcast on PubSub, `stream/3` in the page
+- [ ] Private messages between players at the same table
+- [ ] History: the last ~100 messages on open
+- [ ] Unread counts with `reads.bin`
+- [ ] Length limits and chat rate limit
+- [ ] Human: `Moderation.check/2` with normalization, and the curated
+      `prohibited_words.txt`
+- [ ] Moderation on chat, private messages, nicknames and table names
+- [ ] Strikes (warning, final warning, ban), `Bans` Agent, banned players' pages closed
+      at once, frozen tanks
+
+### Phase 6 – Google login (optional for players)
+- [ ] Human: Google Cloud console setup (see *Deployment*)
+- [ ] Add the `Req` dependency
+- [ ] `/auth/google` redirect with `state`, callback exchanging the code with `Req`
+- [ ] Check `state`, `aud` and `iss`; store only `sub → player_id`
+- [ ] Link Google to the current player, or switch to the already linked player
+- [ ] Banned Google accounts refused
+- [ ] Tests with `Req.Test` stubs (never calling Google in tests)
+
+### Phase 7 – Frugal deploy (see *Deployment*)
+- [ ] `mix phx.gen.release --docker`, with the `vm.args.eex` flags above
+- [ ] Trim `telemetry.ex`, production log level `:warning`
+- [ ] `DATA_DIR` read in `runtime.exs`; save format versioned in `Storage`
+- [ ] Dormant view: idle timers in `app.js`, `DormantController` with a layout
+      without `app.js`, for tables and the lobby
+- [ ] Load test locally: 1000 tables, a few hundred LiveViews; measure with
+      LiveDashboard and write the real numbers here
+- [ ] Human: install `flyctl`, sign up, add a card, choose name and region
+- [ ] `fly launch --no-deploy`, `fly.toml` as above, create the volume, set secrets
+- [ ] First deploy (approved), check status, logs, play a game on the live URL
+- [ ] Check scale to zero really happens (`fly status` after ~10 idle minutes)
+- [ ] Later: GitHub Actions deploy on push to `main`
+
+### Phase 8 – Nice to have
+- [ ] Table settings: board radius, tick interval, obstacle density, start HP/range
+- [ ] Table option "Google login required" (makes bans stick)
+- [ ] Spectator mode
+- [ ] Notifications (email or web push) – needs a mailer or a service worker
+- [ ] SQLite, only if we want chat search or direct messages outside tables
+
+### Possible rule variants (not planned, keep in mind)
+- Obstacles block line of sight (would use the guide's *line drawing*)
+- Spend 3 AP to heal 1 HP
+- The killer takes the victim's remaining AP
+- Ghost votes only count when 3+ ghosts vote for the same player (original jury rule)
+- Hearts / AP pickups spawning on the board
+
+---
+
+## Development
+
+```bash
+mise install       # Erlang and Elixir, versions from mise.toml
+mix setup          # install deps and build assets
+mix phx.server     # run at http://localhost:4000
+mix test           # run the tests
+mix precommit      # format + warnings + tests, run before every commit
+```
+
+See [CLAUDE.md](CLAUDE.md) for the contributing guide.
