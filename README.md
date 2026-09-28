@@ -71,7 +71,8 @@ the diplomacy, alliances and betrayals as much as the tactics.
 
 - Anyone can create a table and chooses:
   - **public**: listed in the lobby, anyone can join;
-  - **private**: not listed, joined only through an **invite link** (`/join/<code>`).
+  - **private**: not listed, joined only through the table's link (`/tables/<id>`).
+    Table ids are random and unguessable, so the link itself is the invitation.
 - A game needs **2 to 20 players**. The creator starts it; nobody can join after the
   start. Before the start, players can leave.
 - A finished table becomes **read-only** and is deleted **30 days** after it ends.
@@ -207,9 +208,9 @@ files on disk instead of a database:
 
 - **First visit:** you pick a nickname and get a random player id, stored in the
   session cookie (kept for 1 year, not just until the browser closes).
-- **Rejoin link:** after joining your first table you see a personal link
-  (`/rejoin/<token>`) with "bookmark this, it's your key". Opening it on any
-  device logs you back in as the same player, in every table.
+- **Rejoin link:** the account page shows a personal link (`/rejoin/<token>`) with
+  "bookmark this, it's your key", and the lobby reminds you it exists. Opening it on
+  any device logs you back in as the same player, in every table.
   - The token is signed with `Phoenix.Token` and contains `{player_id, token_version}`,
     so nothing extra is stored. "Reset my link" bumps `token_version`, which makes
     old links stop working.
@@ -560,21 +561,21 @@ CLAUDE.md, *Review workflow*).
 - [x] PubSub broadcast of every state change
 
 ### Phase 4 – Playable in the browser, with identity
-- [ ] Players: nickname and random id in a 1-year session cookie, saved in
+- [x] Players: nickname and random id in a 1-year session cookie, saved in
       `data/players/`
-- [ ] Rejoin link (`Phoenix.Token`), shown after the first join; reset on the account
-      page
-- [ ] Lobby: public tables and your tables; create public or private; invite links for
-      private tables
-- [ ] Board rendered as SVG hexes: static board component + keyed tanks
-- [ ] Works on a phone: the board scales, cells are big enough to tap
-- [ ] Click your tank, see move targets and range highlighted
-- [ ] Action buttons, error flash messages
-- [ ] Ghost panel to cast the daily vote
-- [ ] Live updates for every player at the table
-- [ ] Event log ("Ana shot Bruno", "a ghost gave Carla 1 AP")
-- [ ] Relative times ("next AP in 3 h 12 min")
-- [ ] English and pt-BR texts, language from the browser, switch in the header
+- [x] Rejoin link (`Phoenix.Token`) on the account page, with a reminder in the lobby;
+      reset on the account page
+- [x] Lobby: public tables and your tables; create public or private; the table's link
+      is the invitation
+- [x] Board rendered as SVG hexes: static board component + keyed tanks
+- [x] Works on a phone: the board scales, cells are big enough to tap
+- [x] Click your tank, see move targets and range highlighted
+- [x] Action buttons, error flash messages
+- [x] Ghost panel to cast the daily vote
+- [x] Live updates for every player at the table
+- [x] Event log ("Ana shot Bruno", "a ghost gave Carla 1 AP")
+- [x] Relative times ("next AP in 3 h 12 min")
+- [x] English and pt-BR texts, language from the browser, switch in the header
 
 ### Phase 5 – Chat and moderation (diplomacy is half the game)
 - [ ] Table chat: append to `chat.jsonl`, broadcast on PubSub, `stream/3` in the page
