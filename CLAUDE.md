@@ -6,10 +6,12 @@ first: it has the rules of the game, the architecture and the roadmap.
 ## The two goals of this project
 
 1. **Build a working Tank Tactics game on a hex board.**
-2. **Learn Elixir while doing it.** The owner of this repo is learning the language.
+2. **Learn Elixir while doing it.** The owner of this repo is learning the language
+   **by reviewing**: Claude writes all the code, the human reads and reviews it.
 
 Goal 2 shapes everything below: code should be **simple and readable before clever**.
-When in doubt, write the version a beginner can follow.
+When in doubt, write the version a beginner can follow, because a beginner has to
+review it.
 
 ## Guidance for Claude
 
@@ -18,22 +20,18 @@ When in doubt, write the version a beginner can follow.
 - When you introduce an Elixir or OTP concept for the first time in the project
   (pattern matching in function heads, `with`, guards, GenServer, PubSub, ...), explain it
   briefly **in your reply**, not in long code comments.
-- Follow the README's **"Who writes what"** table:
-  - **Phase 2 (`Board`, `Tank`, `Game`) is written by the human.** (Phase 1, `Hex`, was
-    written by Claude at the human's request.) Don't write
-    that code unless explicitly asked. Instead: explain concepts, point at the
-    relevant section of the Red Blob guide, review what was written, suggest
-    improvements as explanations or small snippets, and write the tricky tests
-    (e.g. `catch_up/2`) when asked.
-  - **`Hextank.Moderation` (Phase 5) is written by the human** too, same approach. The
-    human also curates `priv/moderation/prohibited_words.txt`.
-  - Everything else in phases 0 and 3–7 is written by Claude. Introduce each OTP piece (GenServer,
-    Registry, DynamicSupervisor, Agent, PubSub) with a short explanation of what it
-    is and why it's used here.
-  - Be extra careful in Phase 3 (process lifecycle races, safe file writes) and point
-    out anything the human should review closely.
-  - Never deploy or run `fly` commands that change anything without the human's
-    approval (see *Deployment rules*).
+- **Claude writes all the code; the human reviews it.** Follow the review workflow
+  below. Introduce each OTP piece (GenServer, Registry, DynamicSupervisor, Agent,
+  PubSub) with a short explanation of what it is and why it's used here.
+- The one thing the human owns is **approving `priv/moderation/prohibited_words.txt`**
+  (Phase 5). Claude may seed it from a public list, but must not type slurs itself,
+  and the human reviews and approves the list.
+- Be extra careful in Phase 3 (process lifecycle races, safe file writes) and point
+  out anything the human should review closely.
+- Rule questions the README doesn't answer are the human's to decide: ask, don't
+  guess.
+- Never deploy or run `fly` commands that change anything without the human's
+  approval (see *Deployment rules*).
 - Work in small steps that follow the roadmap phases. Finish and test one piece before
   starting the next.
 - Don't add dependencies without asking. Phoenix, LiveView and what
@@ -47,6 +45,27 @@ When in doubt, write the version a beginner can follow.
 - Don't implement the "possible rule variants" from the README unless asked.
 - Tick the roadmap checkboxes in README.md when a feature is done.
 - Run `mix precommit` before saying something is finished.
+
+## Review workflow
+
+1. **One branch per phase**, e.g. `phase-2-game-rules`, created from an up-to-date
+   `main`.
+2. **Small commits**, one idea each, each passing `mix precommit`. A reviewer should be
+   able to read the branch commit by commit.
+3. **Push the branch** and give the human the GitHub compare link
+   (`https://github.com/georgesms/hextank/compare/main...<branch>`) to open a pull
+   request and review it there.
+4. **With the link, write a review guide** in the reply:
+   - what the phase does, in a few sentences;
+   - the reading order: which file or commit first;
+   - the Elixir and OTP ideas that appear for the first time, briefly explained;
+   - the places that deserve the closest look (tricky logic, races, security);
+   - any decision made on the human's behalf, so it can be overruled.
+5. **Review comments are addressed with new commits** on the same branch (no force-push
+   during review), then push again.
+6. **The human merges** the pull request on GitHub. Claude never pushes to `main` directly
+   once the phase workflow is in use, and never merges.
+7. After the merge: `git switch main && git pull`, then start the next phase.
 
 ## Commands
 
@@ -82,7 +101,7 @@ lib/hextank/tables/table.ex   GenServer, one per active table
 lib/hextank/tables/lobby.ex   GenServer with a summary of every table, cleanup
 lib/hextank_web/live/         LiveViews (lobby, table, account)
 lib/hextank_web/controllers/  dormant pages, rejoin links, Google login
-priv/moderation/prohibited_words.txt   the word list (curated by the human)
+priv/moderation/prohibited_words.txt   the word list (approved by the human)
 priv/gettext/pt_BR/           Portuguese translations
 rel/vm.args.eex               BEAM flags for one shared vCPU
 test/hextank/                 tests mirror lib/
@@ -134,8 +153,8 @@ data/google/<sub>             contains the linked player_id
 - Checking bans reads the `Bans` Agent, never the disk. A ban broadcasts on
   `"player:<id>"`, and every LiveView of that player handles it by leaving.
 - **Never write real slurs in code, tests or replies.** Tests pass their own harmless
-  list to `Moderation.check/2` (e.g. `["badword"]`). Only the human edits
-  `prohibited_words.txt`.
+  list to `Moderation.check/2` (e.g. `["badword"]`). `prohibited_words.txt`
+  changes only with the human's approval.
 - Unbanning or clearing strikes happens only when the human asks.
 
 ## Translations

@@ -219,7 +219,7 @@ files on disk instead of a database:
 
 - **The list:** `priv/moderation/prohibited_words.txt`, one word per line, English and
   Portuguese, focused on **hate speech** (slurs, not general swearing). Seeded from a
-  public list and curated by the human. It's compiled into `Hextank.Moderation`
+  public list and approved by the human. It's compiled into `Hextank.Moderation`
   (`@external_resource`), so checking costs no disk reads. Changing the list needs a
   deploy.
 - **Normalizing before matching** (the same steps on the text and on the list):
@@ -486,18 +486,19 @@ Each phase should end with something working and tested.
 ### Who writes what
 
 The project is small (roughly 3,000–4,000 lines of Elixir and HEEx including tests).
-Because learning Elixir is a goal, the work is split: the human writes the pure core,
-where the language basics live, and Claude writes the OTP and web layers, explaining
-them along the way.
+**Claude writes all the code; the human learns Elixir by reviewing it.** Each phase is a
+branch with small commits and a pull request, and comes with a review guide: reading
+order, new Elixir ideas explained, and the places that deserve the closest look (see
+CLAUDE.md, *Review workflow*).
 
 | Phase | Written by | Effort | Confidence | Main risk | Human's part |
 |---|---|---|---|---|---|
 | 0 – Setup | Claude | Small | High | Erlang build on the machine; not overwriting our docs | Install system packages (done) |
-| 1 – Hex math | Claude, at the human's request (done) | Small (~150 lines + doctests) | Very high | Almost none: fully specified by the guide | Read it; ask about anything unclear |
-| 2 – Game rules | **Human** | Small–medium (~400 lines + tests) | High | `catch_up/2` details: ghost votes not piling up, no ticks after game over, when each tick is due | Write it and decide rule questions; Claude reviews and writes the tricky tests |
-| 3 – Processes + storage | Claude | Medium | Medium–high | OTP races (an action arriving while an idle table stops), lobby summaries in sync, safe file writes, timer tests | Review carefully |
+| 1 – Hex math | Claude (done) | Small (~150 lines + doctests) | Very high | Almost none: fully specified by the guide | Read it; ask about anything unclear |
+| 2 – Game rules | Claude | Small–medium (~400 lines + tests) | High | `catch_up/2` details: ghost votes not piling up, no ticks after game over, when each tick is due | Review; decide rule questions the README doesn't answer |
+| 3 – Processes + storage | Claude | Medium | Medium–high | OTP races (an action arriving while an idle table stops), lobby summaries in sync, safe file writes, timer tests | Review carefully, following the review guide |
 | 4 – Browser UI + identity | Claude | Medium | High for behaviour, medium for looks | Whether it looks good and feels nice to play, on a phone too | Playtest, review the Portuguese texts |
-| 5 – Chat + moderation | Claude, **human writes `Moderation`** | Medium | High | Private-message leaks, ban reaching every open page (dedicated tests) | Write the word check, curate the word list |
+| 5 – Chat + moderation | Claude | Medium | High | Private-message leaks, ban reaching every open page (dedicated tests) | Review; approve the word list |
 | 6 – Google login | Claude | Small–medium (~150 lines + tests) | High | Getting the OpenID Connect checks right (`state`, `aud`, `iss`) | Google Cloud console setup (~15 min) |
 | 7 – Frugal deploy | Claude | Medium | Medium | Needs a Fly account and the `fly` commands; real numbers may differ from the estimates | Fly account, approve and run the deploy, check the load-test results |
 | 8 – Nice to have | Decide per item | Varies | Varies | Web push is the hardest (keys, service worker) | Pick what's worth it |
@@ -570,8 +571,8 @@ them along the way.
 - [ ] History: the last ~100 messages on open
 - [ ] Unread counts with `reads.bin`
 - [ ] Length limits and chat rate limit
-- [ ] Human: `Moderation.check/2` with normalization, and the curated
-      `prohibited_words.txt`
+- [ ] `Moderation.check/2` with normalization
+- [ ] `prohibited_words.txt` seeded from a public list; human approves it
 - [ ] Moderation on chat, private messages, nicknames and table names
 - [ ] Strikes (warning, final warning, ban), `Bans` Agent, banned players' pages closed
       at once, frozen tanks
