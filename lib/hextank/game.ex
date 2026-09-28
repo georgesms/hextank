@@ -262,9 +262,10 @@ defmodule Hextank.Game do
   ## Actions
 
   @doc """
-  A player acts. Every action costs 1 AP, except a ghost's vote.
+  A player acts. Every action costs 1 AP (moving: 1 AP per cell), except a ghost's
+  vote.
 
-    * `{:move, hex}` – move to a neighbouring free cell
+    * `{:move, hex}` – drive to a free cell along the shortest path, 1 AP per cell
     * `{:shoot, target_id}` – 1 damage to a tank within range
     * `:upgrade_range` – range + 1
     * `{:give_ap, target_id}` – give 1 AP to a tank within range
@@ -283,11 +284,11 @@ defmodule Hextank.Game do
 
   defp perform(game, tank, {:move, target}) do
     with :ok <- check_alive(tank),
-         :ok <- check_ap(tank),
-         :ok <- check_adjacent(tank.position, target),
-         :ok <- check_open(game, target) do
-      game = update_tank(game, tank.player_id, &%{&1 | ap: &1.ap - 1, position: target})
-      {:ok, game, %{type: :moved, actor: tank.player_id}}
+         {:ok, path} <- path(game, tank.player_id, target),
+         :ok <- check_ap(tank, length(path)) do
+      steps = length(path)
+      game = update_tank(game, tank.player_id, &%{&1 | ap: &1.ap - steps, position: target})
+      {:ok, game, %{type: :moved, actor: tank.player_id, steps: steps}}
     end
   end
 
@@ -386,11 +387,9 @@ defmodule Hextank.Game do
   defp check_alive(tank), do: if(Tank.alive?(tank), do: :ok, else: {:error, :tank_destroyed})
   defp check_ghost(tank), do: if(Tank.ghost?(tank), do: :ok, else: {:error, :not_a_ghost})
   defp check_vote(tank), do: if(tank.has_vote, do: :ok, else: {:error, :no_vote_left})
-  defp check_ap(tank), do: if(tank.ap >= 1, do: :ok, else: {:error, :not_enough_ap})
 
-  defp check_adjacent(from, to) do
-    if Hex.distance(from, to) == 1, do: :ok, else: {:error, :not_adjacent}
-  end
+  defp check_ap(tank, cost \\ 1),
+    do: if(tank.ap >= cost, do: :ok, else: {:error, :not_enough_ap})
 
   defp check_in_range(tank, target) do
     if Hex.distance(tank.position, target.position) <= tank.range,
@@ -434,6 +433,40 @@ defmodule Hextank.Game do
 
       _ ->
         []
+    end
+  end
+
+  @doc """
+  The shortest path the player's tank would drive to reach `target`, around rocks
+  and other tanks: the cells to cross, `target` included. Its length is the AP cost.
+  Doesn't check the tank has enough AP (`act/4` does).
+  """
+  @spec path(t(), player_id(), Hex.t()) :: {:ok, [Hex.t()]} | {:error, atom()}
+  def path(game, player_id, target) do
+    with %Tank{position: %Hex{} = from} <- tank(game, player_id),
+         :ok <- check_open(game, target) do
+      open? = &(check_open(game, &1) == :ok)
+
+      case Hex.find_path(from, target, open?, Board.cell_count(game.board.radius)) do
+        {:ok, path} -> {:ok, path}
+        :error -> {:error, :unreachable}
+      end
+    else
+      {:error, reason} -> {:error, reason}
+      _no_tank_on_board -> {:error, :tank_destroyed}
+    end
+  end
+
+  @doc """
+  Whether the player could shoot (or give AP to) `target_id` right now, ignoring
+  AP: `:ok`, or the reason why not (`:out_of_range`, `:cannot_target_self`, ...).
+  """
+  @spec check_target(t(), player_id(), player_id()) :: :ok | {:error, atom()}
+  def check_target(game, player_id, target_id) do
+    with {:ok, tank} <- fetch_player(game, player_id),
+         :ok <- check_alive(tank),
+         {:ok, target} <- fetch_target(game, tank, target_id) do
+      check_in_range(tank, target)
     end
   end
 

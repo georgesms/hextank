@@ -184,6 +184,61 @@ defmodule Hextank.Hex do
   end
 
   @doc """
+  The shortest path from `start` to `goal`, stepping only on hexes where
+  `passable?.(hex)` is true, in at most `max_steps` steps. Returns the hexes to walk
+  through, `start` excluded and `goal` included, or `:error` if there's no such path.
+
+  A breadth-first search: look at every hex 1 step away, then 2 steps, and so on,
+  remembering where each hex was reached from, until the goal is found.
+
+      iex> Hex.find_path(Hex.new(0, 0, 0), Hex.new(2, 0, -2), fn _ -> true end, 10)
+      {:ok, [Hex.new(1, 0, -1), Hex.new(2, 0, -2)]}
+
+      iex> wall = Hex.new(1, 0, -1)
+      iex> {:ok, path} = Hex.find_path(Hex.new(0, 0, 0), Hex.new(2, 0, -2), &(&1 != wall), 10)
+      iex> {length(path), wall in path}
+      {3, false}
+
+      iex> Hex.find_path(Hex.new(0, 0, 0), Hex.new(3, 0, -3), fn _ -> true end, 2)
+      :error
+  """
+  # redblobgames: "Movement range" (breadth-first search around obstacles)
+  @spec find_path(t(), t(), (t() -> boolean()), non_neg_integer()) :: {:ok, [t()]} | :error
+  def find_path(start, goal, passable?, max_steps) do
+    search([start], %{start => nil}, goal, passable?, max_steps)
+  end
+
+  # `came_from` maps each hex reached to the hex it was reached from.
+  defp search(_frontier, came_from, goal, _passable?, _steps_left)
+       when is_map_key(came_from, goal) do
+    {:ok, trace_back(came_from, goal, [])}
+  end
+
+  defp search([], _came_from, _goal, _passable?, _steps_left), do: :error
+  defp search(_frontier, _came_from, _goal, _passable?, 0), do: :error
+
+  defp search(frontier, came_from, goal, passable?, steps_left) do
+    # One step further: every new passable neighbour of the current frontier.
+    {next_frontier, came_from} =
+      for hex <- frontier, neighbor <- neighbors(hex), reduce: {[], came_from} do
+        {next, came_from} ->
+          if Map.has_key?(came_from, neighbor) or not passable?.(neighbor),
+            do: {next, came_from},
+            else: {[neighbor | next], Map.put(came_from, neighbor, hex)}
+      end
+
+    search(next_frontier, came_from, goal, passable?, steps_left - 1)
+  end
+
+  # Walk back from the goal to the start (whose came_from is nil), start excluded.
+  defp trace_back(came_from, hex, path) do
+    case Map.fetch!(came_from, hex) do
+      nil -> path
+      previous -> trace_back(came_from, previous, [hex | path])
+    end
+  end
+
+  @doc """
   The pixel position `{x, y}` of the centre of a pointy-top hex of the given `size`
   (the distance from the centre to a corner). `Hex.new(0, 0, 0)` is at `{0.0, 0.0}`.
 

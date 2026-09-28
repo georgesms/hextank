@@ -265,18 +265,33 @@ defmodule Hextank.GameTest do
   end
 
   describe "act/4 with {:move, hex}" do
-    test "moves to a neighbouring cell for 1 AP" do
-      {:ok, game} = Game.act(standard_game(), "ana", {:move, Hex.new(1, 0, -1)}, @now)
+    test "drives along the shortest path for 1 AP per cell" do
+      {:ok, game} = Game.act(standard_game(), "ana", {:move, Hex.new(2, 0, -2)}, @now)
 
       tank = Game.tank(game, "ana")
-      assert tank.position == Hex.new(1, 0, -1)
-      assert tank.ap == 2
-      assert [%{type: :moved, actor: "ana"} | _] = game.events
+      assert tank.position == Hex.new(2, 0, -2)
+      assert tank.ap == 1
+      assert [%{type: :moved, actor: "ana", steps: 2} | _] = game.events
     end
 
-    test "rejects a cell that isn't next to the tank" do
-      assert Game.act(standard_game(), "ana", {:move, Hex.new(2, 0, -2)}, @now) ==
-               {:error, :not_adjacent}
+    test "drives around rocks, paying for the detour" do
+      # Straight ahead, (0, -1, 1) is a rock: 3 cells instead of 2.
+      {:ok, game} = Game.act(standard_game(), "ana", {:move, Hex.new(0, -2, 2)}, @now)
+      assert Game.tank(game, "ana").ap == 0
+    end
+
+    test "needs 1 AP per cell of the path" do
+      game = running_game([{"ana", Hex.new(0, 0, 0), ap: 1}, {"bruno", Hex.new(3, -3, 0), []}])
+
+      assert Game.act(game, "ana", {:move, Hex.new(2, 0, -2)}, @now) == {:error, :not_enough_ap}
+    end
+
+    test "rejects a cell that can't be reached" do
+      game = running_game([{"ana", Hex.new(0, 0, 0), ap: 9}, {"bruno", Hex.new(-3, 3, 0), []}])
+      walled_in = [Hex.new(2, -3, 1), Hex.new(2, -2, 0), Hex.new(3, -2, -1)]
+      game = %{game | board: Board.new(3, walled_in)}
+
+      assert Game.act(game, "ana", {:move, Hex.new(3, -3, 0)}, @now) == {:error, :unreachable}
     end
 
     test "rejects an obstacle" do
@@ -296,7 +311,7 @@ defmodule Hextank.GameTest do
       assert Game.act(game, "ana", {:move, Hex.new(1, 0, -1)}, @now) == {:error, :cell_occupied}
     end
 
-    test "needs 1 AP" do
+    test "needs 1 AP even for a neighbouring cell" do
       assert Game.act(standard_game(), "bruno", {:move, Hex.new(2, 0, -2)}, @now) ==
                {:error, :not_enough_ap}
     end
@@ -457,13 +472,22 @@ defmodule Hextank.GameTest do
     end
   end
 
-  describe "move_targets/2 and tanks_in_range/2" do
-    test "list the open neighbouring cells" do
-      targets = Game.move_targets(standard_game(), "ana")
+  describe "path/3, check_target/3 and tanks_in_range/2" do
+    test "path/3 gives the cells to cross, whatever the AP" do
+      assert {:ok, path} = Game.path(standard_game(), "bruno", Hex.new(0, -2, 2))
+      assert List.last(path) == Hex.new(0, -2, 2)
+      refute Hex.new(0, -1, 1) in path
+    end
 
-      # Six neighbours minus the obstacle at (0, -1, 1).
-      assert length(targets) == 5
-      refute Hex.new(0, -1, 1) in targets
+    test "path/3 explains why a cell can't be a destination" do
+      assert Game.path(standard_game(), "ana", Hex.new(0, -1, 1)) == {:error, :obstacle}
+      assert Game.path(standard_game(), "ana", Hex.new(2, -1, -1)) == {:error, :cell_occupied}
+    end
+
+    test "check_target/3 says whether a tank is within range" do
+      assert Game.check_target(standard_game(), "ana", "bruno") == :ok
+      assert Game.check_target(standard_game(), "ana", "carla") == {:error, :out_of_range}
+      assert Game.check_target(standard_game(), "ana", "ana") == {:error, :cannot_target_self}
     end
 
     test "list the living tanks within range, not yourself" do
