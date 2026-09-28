@@ -189,14 +189,15 @@ defmodule HextankWeb.GameComponents do
     """
   end
 
-  @doc "Hit points as hearts."
+  @doc "Hit points as hearts: full for the HP left, empty up to the starting HP."
   attr :hp, :integer, required: true
+  attr :max, :integer, required: true
 
   def hearts(assigns) do
     ~H"""
     <span class="inline-flex gap-0.5" title={gettext("%{hp} HP", hp: @hp)}>
       <.icon
-        :for={i <- 1..3}
+        :for={i <- 1..@max}
         name="hero-heart-solid"
         class={["size-4", if(i <= @hp, do: "text-error", else: "text-base-content/15")]}
       />

@@ -31,6 +31,8 @@ defmodule HextankWeb.Messages do
   def error(:no_vote_left), do: gettext("You've already voted this round.")
   def error(:frozen), do: gettext("Your tank is frozen.")
   def error(:not_found), do: gettext("This table doesn't exist.")
+  def error(:invalid_settings), do: gettext("Those table settings aren't allowed.")
+  def error(:board_too_small), do: gettext("The board is too small for this many players.")
   def error(:invalid_name), do: gettext("A table name has 3 to 40 characters.")
   def error(:invalid_nickname), do: gettext("A nickname has 2 to 20 letters, digits or spaces.")
   def error(_reason), do: gettext("Something went wrong.")
@@ -88,6 +90,35 @@ defmodule HextankWeb.Messages do
   @spec ago(integer()) :: String.t()
   def ago(seconds) when seconds < 60, do: gettext("just now")
   def ago(seconds), do: gettext("%{time} ago", time: duration(seconds))
+
+  @doc "The label of a board size setting."
+  @spec board_radius(:auto | pos_integer()) :: String.t()
+  def board_radius(:auto), do: gettext("Automatic (grows with players)")
+
+  def board_radius(radius) do
+    gettext("Radius %{radius} (%{cells} cells)",
+      radius: radius,
+      cells: Hextank.Board.cell_count(radius)
+    )
+  end
+
+  @doc "The label of a rocks setting."
+  @spec obstacles(non_neg_integer()) :: String.t()
+  def obstacles(0), do: gettext("None")
+  def obstacles(5), do: gettext("Few (5%)")
+  def obstacles(10), do: gettext("Normal (10%)")
+  def obstacles(percent), do: gettext("Many (%{percent}%)", percent: percent)
+
+  @doc "A table's settings as {label, value} pairs, for showing them."
+  @spec settings_summary(Hextank.Settings.t()) :: [{String.t(), String.t()}]
+  def settings_summary(settings) do
+    [
+      {gettext("Board size"), board_radius(settings.board_radius)},
+      {gettext("Rocks"), obstacles(settings.obstacle_percent)},
+      {gettext("Starting HP"), to_string(settings.start_hp)},
+      {gettext("Starting range"), to_string(settings.start_range)}
+    ]
+  end
 
   @doc "A game's status, for badges."
   @spec status(Game.status()) :: String.t()

@@ -22,6 +22,25 @@ defmodule HextankWeb.LobbyLiveTest do
     assert html =~ "Friday tanks"
   end
 
+  test "the chosen settings are saved and shown in the waiting room",
+       %{conn: conn, player: player} do
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    {:ok, table_view, _html} =
+      view
+      |> form("#new-table-form",
+        table: %{name: "Custom", board_radius: "7", obstacle_percent: "0", start_hp: "5"}
+      )
+      |> render_submit()
+      |> follow_redirect(conn)
+
+    [summary] = Tables.list_for_player(player.id)
+    {:ok, game} = Tables.get(summary.id)
+
+    assert %{board_radius: 7, obstacle_percent: 0, start_hp: 5, start_range: 2} = game.settings
+    assert has_element?(table_view, "#table-settings")
+  end
+
   test "a bad table name shows an error and creates nothing", %{conn: conn, player: player} do
     {:ok, view, _html} = live(conn, ~p"/")
 

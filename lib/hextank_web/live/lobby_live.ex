@@ -6,7 +6,7 @@ defmodule HextankWeb.LobbyLive do
 
   use HextankWeb, :live_view
 
-  alias Hextank.Tables
+  alias Hextank.{Settings, Tables}
   alias HextankWeb.Messages
 
   import HextankWeb.GameComponents, only: [status_badge: 1]
@@ -28,7 +28,16 @@ defmodule HextankWeb.LobbyLive do
   end
 
   defp new_table_form(params \\ %{}) do
-    defaults = %{"name" => "", "visibility" => "public", "tick_interval" => "86400"}
+    defaults = %{
+      "name" => "",
+      "visibility" => "public",
+      "tick_interval" => "86400",
+      "board_radius" => "auto",
+      "obstacle_percent" => "10",
+      "start_hp" => "3",
+      "start_range" => "2"
+    }
+
     to_form(Map.merge(defaults, params), as: :table)
   end
 
@@ -39,7 +48,13 @@ defmodule HextankWeb.LobbyLive do
     attrs = %{
       name: params["name"] || "",
       visibility: if(params["visibility"] == "private", do: :private, else: :public),
-      tick_interval: parse_interval(params["tick_interval"])
+      tick_interval: parse_integer(params["tick_interval"]),
+      settings: %{
+        board_radius: parse_radius(params["board_radius"]),
+        obstacle_percent: parse_integer(params["obstacle_percent"]),
+        start_hp: parse_integer(params["start_hp"]),
+        start_range: parse_integer(params["start_range"])
+      }
     }
 
     case Tables.create_table(player.id, player.nickname, attrs) do
@@ -54,7 +69,11 @@ defmodule HextankWeb.LobbyLive do
     end
   end
 
-  defp parse_interval(value) do
+  defp parse_radius("auto"), do: :auto
+  defp parse_radius(value), do: parse_integer(value)
+
+  # Unparseable values become nil, which Tables.create_table/4 rejects.
+  defp parse_integer(value) do
     case Integer.parse(to_string(value)) do
       {seconds, ""} -> seconds
       _ -> nil
@@ -119,6 +138,43 @@ defmodule HextankWeb.LobbyLive do
               label={gettext("Game speed")}
               options={for s <- Tables.tick_intervals(), do: {Messages.tick_interval(s), s}}
             />
+            <details id="more-settings" class="mb-3">
+              <summary class="cursor-pointer select-none py-1 text-sm font-semibold text-base-content/70 hover:text-base-content">
+                {gettext("More settings")}
+              </summary>
+              <div class="mt-2">
+                <.input
+                  field={@form[:board_radius]}
+                  type="select"
+                  label={gettext("Board size")}
+                  options={
+                    for r <- Settings.allowed(:board_radius), do: {Messages.board_radius(r), r}
+                  }
+                />
+                <.input
+                  field={@form[:obstacle_percent]}
+                  type="select"
+                  label={gettext("Rocks")}
+                  options={
+                    for p <- Settings.allowed(:obstacle_percent), do: {Messages.obstacles(p), p}
+                  }
+                />
+                <div class="grid grid-cols-2 gap-3">
+                  <.input
+                    field={@form[:start_hp]}
+                    type="select"
+                    label={gettext("Starting HP")}
+                    options={Settings.allowed(:start_hp)}
+                  />
+                  <.input
+                    field={@form[:start_range]}
+                    type="select"
+                    label={gettext("Starting range")}
+                    options={Settings.allowed(:start_range)}
+                  />
+                </div>
+              </div>
+            </details>
             <button id="create-table" class="btn btn-primary mt-2 w-full">
               {gettext("Create table")}
             </button>

@@ -267,6 +267,16 @@ defmodule HextankWeb.TableLive do
         )}
       </p>
 
+      <dl id="table-settings" class="mt-5 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+        <div
+          :for={{label, value} <- Messages.settings_summary(@game.settings)}
+          class="rounded-xl bg-base-100 p-3"
+        >
+          <dt class="text-xs text-base-content/60">{label}</dt>
+          <dd class="mt-0.5 font-semibold">{value}</dd>
+        </div>
+      </dl>
+
       <label for="share-link" class="mt-6 block text-sm font-semibold">
         {gettext("Invite friends with this link")}
       </label>
@@ -363,7 +373,7 @@ defmodule HextankWeb.TableLive do
       <div class="flex items-center gap-2">
         <.seat_dot seat={@me.seat} class="size-4" />
         <h2 class="font-bold">{gettext("Your tank")}</h2>
-        <span class="ml-auto"><.hearts hp={@me.hp} /></span>
+        <span class="ml-auto"><.hearts hp={@me.hp} max={@game.settings.start_hp} /></span>
       </div>
 
       <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -480,7 +490,7 @@ defmodule HextankWeb.TableLive do
                 <span title={gettext("Range")}>
                   <.icon name="hero-viewfinder-circle-micro" class="size-3.5" />{tank.range}
                 </span>
-                <.hearts hp={tank.hp} />
+                <.hearts hp={tank.hp} max={@game.settings.start_hp} />
               </span>
           <% end %>
         </li>
