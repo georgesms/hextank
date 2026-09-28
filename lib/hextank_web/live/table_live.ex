@@ -41,7 +41,7 @@ defmodule HextankWeb.TableLive do
         socket =
           socket
           |> assign(mode: nil, board_layout: nil, now: DateTime.utc_now())
-          |> assign(chat_form: chat_form(), sent_at: [])
+          |> assign(chat_form: chat_form(), sent_at: [], sent_count: 0)
           |> assign_game(game)
           # Newest first: the chat box shows them bottom-up (flex-col-reverse), so it
           # stays scrolled to the latest message without any JavaScript.
@@ -148,7 +148,9 @@ defmodule HextankWeb.TableLive do
          |> clear_flash()
          |> assign(
            chat_form: chat_form(params["to"] || ""),
-           sent_at: Enum.take([now | sent_at], 5)
+           sent_at: Enum.take([now | sent_at], 5),
+           # A new id for the text box: the browser swaps in a fresh, empty one.
+           sent_count: socket.assigns.sent_count + 1
          )}
 
       {:error, reason} ->
@@ -297,6 +299,7 @@ defmodule HextankWeb.TableLive do
             <.chat_panel
               streams={@streams}
               form={@chat_form}
+              sent_count={@sent_count}
               game={@game}
               me={@me}
               current_player={@current_player}
@@ -562,6 +565,7 @@ defmodule HextankWeb.TableLive do
 
   attr :streams, :map, required: true
   attr :form, :map, required: true
+  attr :sent_count, :integer, required: true
   attr :game, Game, required: true
   attr :me, :any, required: true
   attr :current_player, :any, required: true
@@ -607,7 +611,8 @@ defmodule HextankWeb.TableLive do
         </select>
         <div class="flex gap-2">
           <input
-            id="chat-text"
+            id={"chat-text-#{@sent_count}"}
+            phx-mounted={@sent_count > 0 && JS.focus()}
             name={@form[:text].name}
             value={@form[:text].value}
             maxlength="500"
