@@ -550,14 +550,14 @@ CLAUDE.md, *Review workflow*).
 - [x] Unit tests for every rule and every error case
 
 ### Phase 3 – Tables as processes, saved on disk
-- [ ] `Storage`: save / load `game.bin` (temp file + rename)
-- [ ] `Table` GenServer: loads and catches up on start, saves after every change
-- [ ] Tick timer while alive, with a configurable interval (1 minute or 24h)
-- [ ] Stops itself after a few idle minutes; started again on demand
-- [ ] Registry + DynamicSupervisor
-- [ ] `Lobby` GenServer with table summaries, built from disk at boot
-- [ ] Expired tables deleted (finished: 30 days, never started: 7 days)
-- [ ] PubSub broadcast of every state change
+- [x] `Storage`: save / load `game.bin` (temp file + rename)
+- [x] `Table` GenServer: loads and catches up on start, saves after every change
+- [x] Tick timer while alive, with a configurable interval (1 minute or 24h)
+- [x] Stops itself after a few idle minutes; started again on demand
+- [x] Registry + DynamicSupervisor
+- [x] `Lobby` GenServer with table summaries, built from disk at boot
+- [x] Expired tables deleted (finished: 30 days, never started: 7 days)
+- [x] PubSub broadcast of every state change
 
 ### Phase 4 – Playable in the browser, with identity
 - [ ] Players: nickname and random id in a 1-year session cookie, saved in

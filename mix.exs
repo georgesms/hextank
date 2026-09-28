@@ -76,6 +76,8 @@ defmodule Hextank.MixProject do
   #     $ mix setup
   #
   # See the documentation for `Mix` for more info on aliases.
+  defp clean_test_data(_args), do: File.rm_rf!("tmp/test_data")
+
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
@@ -86,6 +88,8 @@ defmodule Hextank.MixProject do
         "esbuild hextank --minify",
         "phx.digest"
       ],
+      # Every test run starts with an empty data folder.
+      test: [&clean_test_data/1, "test"],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
     ]
   end

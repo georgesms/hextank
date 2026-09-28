@@ -10,6 +10,9 @@ import Config
 config :hextank,
   generators: [timestamp_type: :utc_datetime]
 
+# A table nobody uses for this long saves and stops (see README, Lazy ticks).
+config :hextank, :table_idle_timeout, :timer.minutes(5)
+
 # Configure the endpoint
 config :hextank, HextankWeb.Endpoint,
   url: [host: "localhost"],
