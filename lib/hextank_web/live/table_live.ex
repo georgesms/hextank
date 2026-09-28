@@ -7,11 +7,15 @@ defmodule HextankWeb.TableLive do
   Acting works in two steps: pick an action (move, shoot, give AP), then click a
   highlighted cell. Clicking your own tank is a shortcut for "move". Escape cancels.
   No rule is checked here: `Hextank.Game` decides, we only show its answer.
+
+  The chat panel shows the table chat and your private messages (see
+  `Hextank.Chat`). Messages are a LiveView stream: once sent to the browser, the
+  server forgets them.
   """
 
   use HextankWeb, :live_view
 
-  alias Hextank.{Board, Game, Hex, Tables, Tank}
+  alias Hextank.{Board, Chat, Game, Hex, Tables, Tank}
   alias HextankWeb.Messages
 
   import HextankWeb.GameComponents
@@ -26,12 +30,22 @@ defmodule HextankWeb.TableLive do
 
     case result do
       {:ok, game} ->
-        if connected?(socket), do: schedule_clock(game)
+        player = socket.assigns.current_player
+
+        if connected?(socket) do
+          schedule_clock(game)
+          Chat.subscribe_private(id, player.id)
+          mark_read(game, player)
+        end
 
         socket =
           socket
           |> assign(mode: nil, board_layout: nil, now: DateTime.utc_now())
+          |> assign(chat_form: chat_form(), sent_at: [])
           |> assign_game(game)
+          # Newest first: the chat box shows them bottom-up (flex-col-reverse), so it
+          # stays scrolled to the latest message without any JavaScript.
+          |> stream(:messages, Enum.reverse(Chat.history(id, player.id)))
 
         {:ok, socket}
 
@@ -116,6 +130,32 @@ defmodule HextankWeb.TableLive do
     {:noreply, socket |> assign(:mode, nil) |> assign_highlights()}
   end
 
+  def handle_event("send_message", %{"chat" => %{"text" => text} = params}, socket) do
+    %{game: game, current_player: player, sent_at: sent_at} = socket.assigns
+    now = DateTime.utc_now()
+    to = if params["to"] in [nil, ""], do: nil, else: params["to"]
+
+    result =
+      if Chat.too_fast?(sent_at, now),
+        do: {:error, :too_fast},
+        else: Chat.send_message(game, player, text, to, now)
+
+    case result do
+      # The message comes back through PubSub, like everyone else's.
+      {:ok, _message} ->
+        {:noreply,
+         socket
+         |> clear_flash()
+         |> assign(
+           chat_form: chat_form(params["to"] || ""),
+           sent_at: Enum.take([now | sent_at], 5)
+         )}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, Messages.error(reason))}
+    end
+  end
+
   def handle_event("cell", params, socket) do
     case parse_hex(params) do
       {:ok, hex} -> cell_clicked(socket, socket.assigns.mode, hex)
@@ -166,10 +206,24 @@ defmodule HextankWeb.TableLive do
     end
   end
 
+  ## Chat
+
+  defp chat_form(to \\ ""), do: to_form(%{"text" => "", "to" => to}, as: :chat)
+
+  # Players only: someone watching has nothing to mark as read.
+  defp mark_read(game, player) do
+    if Game.tank(game, player.id), do: Chat.mark_read(game.id, player.id)
+  end
+
   ## Messages from the table and the clock
 
   @impl true
   def handle_info({:game_updated, game}, socket), do: {:noreply, assign_game(socket, game)}
+
+  def handle_info({:chat_message, message}, socket) do
+    mark_read(socket.assigns.game, socket.assigns.current_player)
+    {:noreply, stream_insert(socket, :messages, message, at: 0)}
+  end
 
   def handle_info(:clock, socket) do
     schedule_clock(socket.assigns.game)
@@ -240,6 +294,13 @@ defmodule HextankWeb.TableLive do
               next_ap_in={next_ap_in(@game, @now)}
             />
             <.player_list game={@game} current_player={@current_player} />
+            <.chat_panel
+              streams={@streams}
+              form={@chat_form}
+              game={@game}
+              me={@me}
+              current_player={@current_player}
+            />
             <.event_log game={@game} now={@now} />
           </aside>
         </div>
@@ -497,6 +558,98 @@ defmodule HextankWeb.TableLive do
       </ul>
     </div>
     """
+  end
+
+  attr :streams, :map, required: true
+  attr :form, :map, required: true
+  attr :game, Game, required: true
+  attr :me, :any, required: true
+  attr :current_player, :any, required: true
+
+  defp chat_panel(assigns) do
+    ~H"""
+    <div id="chat" class="rounded-2xl border border-base-300 p-4">
+      <h2 class="mb-3 font-bold">{gettext("Chat")}</h2>
+      <ol
+        id="messages"
+        phx-update="stream"
+        class="flex max-h-80 flex-col-reverse gap-2 overflow-y-auto text-sm"
+      >
+        <li id="messages-empty" class="hidden text-base-content/50 only:block">
+          {gettext("No messages yet. Diplomacy starts here.")}
+        </li>
+        <li :for={{dom_id, message} <- @streams.messages} id={dom_id}>
+          <.chat_message message={message} game={@game} current_player={@current_player} />
+        </li>
+      </ol>
+
+      <.form
+        :if={@me}
+        for={@form}
+        id="chat-form"
+        phx-submit="send_message"
+        class="mt-3 space-y-2"
+      >
+        <select
+          id="chat-to"
+          name={@form[:to].name}
+          class="select select-bordered select-sm w-full"
+        >
+          <option value="">{gettext("Everyone at the table")}</option>
+          <option
+            :for={tank <- Game.tanks_by_seat(@game)}
+            :if={tank.player_id != @current_player.id}
+            value={tank.player_id}
+            selected={@form[:to].value == tank.player_id}
+          >
+            {gettext("Privately to %{name}", name: tank.name)}
+          </option>
+        </select>
+        <div class="flex gap-2">
+          <input
+            id="chat-text"
+            name={@form[:text].name}
+            value={@form[:text].value}
+            maxlength="500"
+            autocomplete="off"
+            placeholder={gettext("Write a message")}
+            class="input input-bordered input-sm w-full"
+          />
+          <button id="chat-send" class="btn btn-primary btn-sm">
+            <.icon name="hero-paper-airplane-micro" class="size-4" />
+          </button>
+        </div>
+      </.form>
+    </div>
+    """
+  end
+
+  attr :message, :map, required: true
+  attr :game, Game, required: true
+  attr :current_player, :any, required: true
+
+  defp chat_message(assigns) do
+    ~H"""
+    <div class={[@message.to && "rounded-lg bg-info/10 px-2 py-1"]}>
+      <span class="font-semibold">{@message.name}</span>
+      <span :if={@message.to} class="text-xs text-info">
+        <.icon name="hero-lock-closed-micro" class="size-3" />
+        <%= if @message.from == @current_player.id do %>
+          {gettext("to %{name}", name: recipient_name(@game, @message.to))}
+        <% else %>
+          {gettext("privately")}
+        <% end %>
+      </span>
+      <p class="break-words">{@message.text}</p>
+    </div>
+    """
+  end
+
+  defp recipient_name(game, player_id) do
+    case Game.tank(game, player_id) do
+      nil -> gettext("someone")
+      tank -> tank.name
+    end
   end
 
   attr :game, Game, required: true

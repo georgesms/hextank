@@ -13,6 +13,7 @@ defmodule HextankWeb.Plugs.CurrentPlayer do
   use HextankWeb, :verified_routes
 
   alias Hextank.Players
+  alias Hextank.Players.Bans
 
   def init(options), do: options
 
@@ -26,7 +27,7 @@ defmodule HextankWeb.Plugs.CurrentPlayer do
     assign(conn, :current_player, player)
   end
 
-  @doc "A plug for routes that need a player."
+  @doc "A plug for routes that need a player who isn't banned."
   def require_player(%{assigns: %{current_player: nil}} = conn, _options) do
     return_to = current_path(conn)
 
@@ -35,7 +36,13 @@ defmodule HextankWeb.Plugs.CurrentPlayer do
     |> halt()
   end
 
-  def require_player(conn, _options), do: conn
+  def require_player(conn, _options) do
+    if Bans.banned?(conn.assigns.current_player.id) do
+      conn |> redirect(to: ~p"/banned") |> halt()
+    else
+      conn
+    end
+  end
 
   defp current_path(%{query_string: ""} = conn), do: conn.request_path
   defp current_path(conn), do: conn.request_path <> "?" <> conn.query_string

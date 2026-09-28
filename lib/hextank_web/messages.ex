@@ -31,6 +31,23 @@ defmodule HextankWeb.Messages do
   def error(:no_vote_left), do: gettext("You've already voted this round.")
   def error(:frozen), do: gettext("Your tank is frozen.")
   def error(:not_found), do: gettext("This table doesn't exist.")
+
+  def error({:prohibited, :warning}),
+    do: gettext("That text has a prohibited word, so it wasn't sent. Warning 1 of 2.")
+
+  def error({:prohibited, :final_warning}),
+    do:
+      gettext(
+        "That text has a prohibited word, so it wasn't sent. Final warning: next time you'll be banned."
+      )
+
+  def error({:prohibited, :banned}), do: gettext("You've been banned for hate speech.")
+  def error(:banned), do: gettext("You've been banned.")
+  def error(:inappropriate), do: gettext("Please pick different words.")
+  def error(:empty_message), do: gettext("Write something first.")
+  def error(:message_too_long), do: gettext("A message has at most 500 characters.")
+  def error(:invalid_recipient), do: gettext("Pick another player of this table.")
+  def error(:too_fast), do: gettext("Slow down: at most 5 messages in 10 seconds.")
   def error(:invalid_settings), do: gettext("Those table settings aren't allowed.")
   def error(:board_too_small), do: gettext("The board is too small for this many players.")
   def error(:invalid_name), do: gettext("A table name has 3 to 40 characters.")

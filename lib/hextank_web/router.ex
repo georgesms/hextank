@@ -25,6 +25,7 @@ defmodule HextankWeb.Router do
     get "/welcome", PlayerController, :new
     post "/players", PlayerController, :create
     get "/rejoin/:token", PlayerController, :rejoin
+    get "/banned", PlayerController, :banned
   end
 
   # Pages that need a player: visitors without one go to /welcome first.

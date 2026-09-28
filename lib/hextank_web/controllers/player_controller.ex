@@ -35,6 +35,9 @@ defmodule HextankWeb.PlayerController do
     end
   end
 
+  @doc "Where banned players end up. A plain page: no websocket, nothing to do."
+  def banned(conn, _params), do: render(conn, :banned)
+
   @doc "A rejoin link: log in as the player it belongs to."
   def rejoin(conn, %{"token" => token}) do
     case RejoinLink.verify(token) do

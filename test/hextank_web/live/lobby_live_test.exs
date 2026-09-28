@@ -66,4 +66,18 @@ defmodule HextankWeb.LobbyLiveTest do
     assert has_element?(view, "#open-tables #table-card-#{open.id}")
     refute has_element?(view, "#table-card-#{hidden.id}")
   end
+
+  test "your tables show how many chat messages you haven't read", %{conn: conn, player: player} do
+    {:ok, bruno} = Hextank.Players.create("Bruno")
+
+    {:ok, game} =
+      Tables.create_table(player, %{name: "Chatty", visibility: :public, tick_interval: 86_400})
+
+    {:ok, game} = Tables.join(game.id, bruno.id, "Bruno")
+    {:ok, _} = Hextank.Chat.send_message(game, bruno, "psst")
+    {:ok, _} = Hextank.Chat.send_message(game, bruno, "psst again")
+
+    {:ok, view, _html} = live(conn, ~p"/")
+    assert has_element?(view, "#unread-#{game.id}", "2")
+  end
 end

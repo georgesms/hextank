@@ -131,4 +131,89 @@ defmodule HextankWeb.TableLiveTest do
       refute has_element?(view, "#vote-#{ctx.bruno.id}")
     end
   end
+
+  describe "chat" do
+    # Ana and Bruno at a table that hasn't started: chat works before the game too.
+    defp chat_table(ctx) do
+      {:ok, game} = Tables.create_table(ctx.ana, @attrs)
+      {:ok, _} = Tables.join(game.id, ctx.bruno.id, "Bruno")
+      game
+    end
+
+    defp send_chat(view, text, to \\ "") do
+      view |> form("#chat-form", chat: %{text: text, to: to}) |> render_submit()
+    end
+
+    test "a message reaches everyone at the table", ctx do
+      game = chat_table(ctx)
+      {:ok, ana_view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      {:ok, bruno_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
+
+      send_chat(ana_view, "Truce until Friday?")
+
+      assert has_element?(bruno_view, "#messages", "Truce until Friday?")
+      assert has_element?(ana_view, "#messages", "Truce until Friday?")
+    end
+
+    test "a private message never reaches a third player", ctx do
+      {carla_conn, carla} = log_in_new_player(build_conn(), "Carla")
+      game = chat_table(ctx)
+      {:ok, _} = Tables.join(game.id, carla.id, "Carla")
+
+      {:ok, ana_view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      {:ok, bruno_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
+      {:ok, carla_view, _html} = live(carla_conn, ~p"/tables/#{game.id}")
+
+      send_chat(ana_view, "Let's betray Carla", ctx.bruno.id)
+
+      assert has_element?(bruno_view, "#messages", "Let's betray Carla")
+      refute has_element?(carla_view, "#messages", "Let's betray Carla")
+
+      # Not after a reload either.
+      {:ok, carla_view, _html} = live(carla_conn, ~p"/tables/#{game.id}")
+      refute has_element?(carla_view, "#messages", "Let's betray Carla")
+    end
+
+    test "a prohibited word blocks the message and warns", ctx do
+      game = chat_table(ctx)
+      {:ok, ana_view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      {:ok, bruno_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
+
+      send_chat(ana_view, "you badword")
+
+      assert has_element?(ana_view, "#flash-error", "Warning 1 of 2")
+      refute has_element?(bruno_view, "#messages", "badword")
+    end
+
+    test "at most 5 messages in 10 seconds", ctx do
+      game = chat_table(ctx)
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      for n <- 1..5, do: send_chat(view, "message #{n}")
+      send_chat(view, "one too many")
+
+      assert has_element?(view, "#flash-error")
+      refute has_element?(view, "#messages", "one too many")
+    end
+  end
+
+  describe "bans" do
+    test "a ban closes every open page of the player at once", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1)
+      {:ok, table_view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      {:ok, lobby_view, _html} = live(ctx.ana_conn, ~p"/")
+
+      :ok = Hextank.Players.ban(ctx.ana)
+
+      assert_redirect(table_view, "/banned")
+      assert_redirect(lobby_view, "/banned")
+    end
+
+    test "a banned player can't open any page but /banned", ctx do
+      :ok = Hextank.Players.ban(ctx.ana)
+
+      assert redirected_to(get(ctx.ana_conn, ~p"/")) == "/banned"
+      assert html_response(get(ctx.ana_conn, ~p"/banned"), 200) =~ ~s(id="banned")
+    end
+  end
 end

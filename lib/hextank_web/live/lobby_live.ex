@@ -6,7 +6,7 @@ defmodule HextankWeb.LobbyLive do
 
   use HextankWeb, :live_view
 
-  alias Hextank.{Settings, Tables}
+  alias Hextank.{Chat, Settings, Tables}
   alias HextankWeb.Messages
 
   import HextankWeb.GameComponents, only: [status_badge: 1]
@@ -21,6 +21,8 @@ defmodule HextankWeb.LobbyLive do
       socket
       |> assign(:page_title, gettext("Lobby"))
       |> assign(:my_tables, my_tables)
+      # One small chat read per table you're in; public tables aren't read at all.
+      |> assign(:unread, Map.new(my_tables, &{&1.id, Chat.unread_count(&1.id, player.id)}))
       |> assign(:open_tables, Enum.reject(Tables.list_public(), &(&1.id in my_ids)))
       |> assign(:form, new_table_form())
 
@@ -92,7 +94,11 @@ defmodule HextankWeb.LobbyLive do
               {gettext("You're not at any table yet. Join one below or create your own.")}
             </p>
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <.table_card :for={summary <- @my_tables} summary={summary} />
+              <.table_card
+                :for={summary <- @my_tables}
+                summary={summary}
+                unread={@unread[summary.id]}
+              />
             </div>
           </section>
 
@@ -196,6 +202,7 @@ defmodule HextankWeb.LobbyLive do
   end
 
   attr :summary, :map, required: true
+  attr :unread, :integer, default: 0
 
   defp table_card(assigns) do
     ~H"""
@@ -216,6 +223,14 @@ defmodule HextankWeb.LobbyLive do
         <span class="flex items-center gap-1">
           <.icon name="hero-clock-micro" class="size-4" />
           {Messages.tick_interval(@summary.tick_interval)}
+        </span>
+        <span
+          :if={@unread > 0}
+          id={"unread-#{@summary.id}"}
+          class="flex items-center gap-1 font-semibold text-primary"
+        >
+          <.icon name="hero-chat-bubble-left-micro" class="size-4" />
+          {ngettext("1 new message", "%{count} new messages", @unread)}
         </span>
         <span :if={@summary.visibility == :private} class="flex items-center gap-1">
           <.icon name="hero-lock-closed-micro" class="size-4" />
