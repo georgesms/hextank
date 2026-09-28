@@ -188,7 +188,9 @@ the rules that follow from it.
   - Chat and event lists use `stream/3`.
   - Don't copy the whole game into assigns if the page only needs part of it.
 - **No Presence**, no polling from the browser, no JS framework. Add a JS hook only
-  when LiveView really can't do it.
+  when LiveView really can't do it. The one so far: the colocated `.Board` hook in
+  `TableLive` (double-clicks and the hover tooltip, which LiveView has no bindings
+  for).
 - **Production:** `mix release`, the flags in `rel/vm.args.eex`, no periodic telemetry,
   log level `:warning`.
 - When a change affects memory or CPU per table or per player, say so in your reply

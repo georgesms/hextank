@@ -35,14 +35,26 @@ the diplomacy, alliances and betrayals as much as the tactics.
 - Every **tick** (24 hours by default, configurable per table) every living tank gets
   **1 AP**.
 - AP can be saved for later. There is no cap.
-- Every action costs **1 AP**:
+- Every action costs **1 AP** (driving: 1 AP per cell):
 
 | Action          | Effect                                                                   |
 | --------------- | ------------------------------------------------------------------------ |
-| **Move**        | Move to one of the 6 neighbouring cells. It must be on the board, not an obstacle and not occupied. |
+| **Move**        | Drive to a free cell along the shortest path around rocks and tanks, **1 AP per cell**. |
 | **Shoot**       | Deal **1 damage** to any tank within your range. Always hits.            |
 | **Upgrade**     | Increase your range by +1, permanently.                                 |
 | **Give AP**     | Give 1 of your AP to any tank within your range.                         |
+
+### Controls
+
+| On the board | Click | Second click / double-click |
+| --- | --- | --- |
+| An empty cell | Highlights the shortest path and its cost | Drives there |
+| An enemy tank | Says whether it's within your range | Shoots it (if in range) |
+| Your own tank | Highlights your range | Range +1 |
+
+Hovering a tank shows its stats (HP, AP, range). A bar above the board explains the
+current selection and has the same actions as buttons (handy on touch screens), plus
+**Give 1 AP** for a tank within range. Escape cancels.
 
 ### Ghosts (eliminated players)
 
@@ -624,6 +636,8 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 
 ### Phase 8 – Nice to have
 - [x] Table settings: board radius, tick interval, obstacle density, start HP/range
+- [x] Board controls: click to preview, second click or double-click to act, multi-cell
+      moves along the shortest path, stats on hover
 - [ ] Table option "Google login required" (makes bans stick)
 - [ ] Spectator mode
 - [ ] Notifications (email or web push) – needs a mailer or a service worker
