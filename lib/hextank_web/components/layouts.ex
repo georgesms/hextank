@@ -12,63 +12,82 @@ defmodule HextankWeb.Layouts do
   embed_templates "layouts/*"
 
   @doc """
-  Renders your app layout.
+  The page frame: header, content and flash messages. Every page starts with it.
 
-  This function is typically invoked from every template,
-  and it often contains your application menu, sidebar,
-  or similar.
-
-  ## Examples
-
-      <Layouts.app flash={@flash}>
+      <Layouts.app flash={@flash} current_player={@current_player} locale={@locale}>
         <h1>Content</h1>
       </Layouts.app>
-
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
-
-  attr :current_scope, :map,
-    default: nil,
-    doc: "the current [scope](https://phoenix.hexdocs.pm/scopes.html)"
-
+  attr :current_player, :any, default: nil, doc: "the %Player{} using the page, if any"
+  attr :locale, :string, default: "en"
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://phoenix.hexdocs.pm/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
+    <header class="border-b border-base-300 bg-base-100/80 backdrop-blur">
+      <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+        <.link navigate={~p"/"} class="flex items-center gap-2 font-bold tracking-tight">
+          <.hex_logo class="size-7" />
+          <span class="text-lg">HexTank</span>
+        </.link>
+
+        <div class="ml-auto flex items-center gap-2 sm:gap-3">
+          <.link
+            :if={@current_player}
+            navigate={~p"/account"}
+            id="account-link"
+            class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition hover:bg-base-200"
+          >
+            <.icon name="hero-user-circle" class="size-5 opacity-70" />
+            <span class="hidden max-w-32 truncate sm:inline">{@current_player.nickname}</span>
+          </.link>
+
+          <nav class="flex rounded-full border border-base-300 p-0.5 text-xs font-semibold">
+            <a
+              :for={{locale, label} <- [{"en", "EN"}, {"pt_BR", "PT"}]}
+              href={"?locale=#{locale}"}
+              id={"locale-#{locale}"}
+              class={[
+                "rounded-full px-2.5 py-1 transition",
+                if(@locale == locale,
+                  do: "bg-base-content text-base-100",
+                  else: "opacity-60 hover:opacity-100"
+                )
+              ]}
+            >
+              {label}
             </a>
-          </li>
-        </ul>
+          </nav>
+
+          <div class="hidden sm:block"><.theme_toggle /></div>
+        </div>
       </div>
     </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
+    <main class="px-4 py-6 sm:px-6 sm:py-10">
+      <div class="mx-auto max-w-6xl">
         {render_slot(@inner_block)}
       </div>
     </main>
 
     <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc "The HexTank logo: a pointy-top hexagon with a tank turret."
+  attr :class, :string, default: nil
+
+  def hex_logo(assigns) do
+    ~H"""
+    <svg viewBox="-12 -12 24 24" class={@class} aria-hidden="true">
+      <polygon
+        points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5"
+        class="fill-primary"
+      />
+      <circle r="4" class="fill-primary-content" />
+      <rect x="2" y="-1.2" width="7" height="2.4" rx="1" class="fill-primary-content" />
+    </svg>
     """
   end
 

@@ -8,7 +8,9 @@ defmodule HextankWeb.Endpoint do
     store: :cookie,
     key: "_hextank_key",
     signing_salt: "rsFs59AT",
-    same_site: "Lax"
+    same_site: "Lax",
+    # Keep players logged in for a year, not just until the browser closes.
+    max_age: 365 * 24 * 60 * 60
   ]
 
   socket "/live", Phoenix.LiveView.Socket,

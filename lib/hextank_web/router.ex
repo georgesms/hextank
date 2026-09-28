@@ -1,6 +1,8 @@
 defmodule HextankWeb.Router do
   use HextankWeb, :router
 
+  import HextankWeb.Plugs.CurrentPlayer, only: [require_player: 2]
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,16 +10,32 @@ defmodule HextankWeb.Router do
     plug :put_root_layout, html: {HextankWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug HextankWeb.Plugs.Locale
+    plug HextankWeb.Plugs.CurrentPlayer
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
+  # Pages that work without a player.
   scope "/", HextankWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/welcome", PlayerController, :new
+    post "/players", PlayerController, :create
+    get "/rejoin/:token", PlayerController, :rejoin
+  end
+
+  # Pages that need a player: visitors without one go to /welcome first.
+  scope "/", HextankWeb do
+    pipe_through [:browser, :require_player]
+
+    live_session :player, on_mount: HextankWeb.PlayerHook do
+      live "/", LobbyLive
+      live "/tables/:id", TableLive
+      live "/account", AccountLive
+    end
   end
 
   # Other scopes may use custom stacks.
