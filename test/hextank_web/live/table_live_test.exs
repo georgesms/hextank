@@ -168,6 +168,22 @@ defmodule HextankWeb.TableLiveTest do
       assert Game.tank(game, ctx.bruno.id).hp == 2
     end
 
+    test "a shot is animated on every open board, but not what happened before", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
+      {:ok, ana_view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      {:ok, bruno_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
+      refute has_element?(ana_view, "#effects [data-effect]")
+
+      render_hook(ana_view, "tank_double", %{"player" => ctx.bruno.id})
+
+      assert has_element?(ana_view, "#effects [data-effect=shot]")
+      assert has_element?(bruno_view, "#effects [data-effect=shot]")
+
+      # Opening the board afterwards shows the result, not the animation.
+      {:ok, late_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
+      refute has_element?(late_view, "#effects [data-effect]")
+    end
+
     test "the panel can make a double-click on an enemy give AP instead", ctx do
       game = running_game(ctx.ana, ctx.bruno, 1, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")

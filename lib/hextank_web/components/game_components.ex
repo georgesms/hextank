@@ -2,13 +2,15 @@ defmodule HextankWeb.GameComponents do
   @moduledoc """
   Pieces for drawing a game: the SVG board, tanks, badges and colours.
 
-  The board is drawn in three layers:
+  The board is drawn in four layers:
 
     1. `board_cells/1`: every cell, drawn once. Its assigns never change after the
        game starts, so LiveView sends it to the browser only once.
     2. highlights: the cells you can act on right now.
     3. tanks: one `<g>` per tank, keyed by player, so an action only sends the tanks
        that changed. Moves slide thanks to a CSS transition.
+    4. effects: a short animation for each action (see `effects_for/3`), played once by
+       CSS when LiveView adds it to the page. No JavaScript.
 
   Every cell (and highlight) sends `phx-click="cell"` with its `q`, `r` and `s`;
   every tank sends `phx-click="tank"` with its player id. Tanks also carry
@@ -18,7 +20,7 @@ defmodule HextankWeb.GameComponents do
 
   use HextankWeb, :html
 
-  alias Hextank.{Board, Game, Hex}
+  alias Hextank.{Board, Game, Hex, Tank}
   alias HextankWeb.Messages
 
   # Size of a hex in SVG units: the distance from its centre to a corner.
@@ -164,6 +166,183 @@ defmodule HextankWeb.GameComponents do
   end
 
   defp initial(name), do: name |> String.first() |> String.upcase()
+
+  ## Action effects
+
+  @doc """
+  What to draw for `events`, the events that just happened: tire tracks for a move,
+  a tracer and a burst for a shot, a bolt flying to the tank that got AP, a ring for
+  a range upgrade. Each effect is a map with a unique `:id`, a `:kind` (the event's
+  type) and SVG coordinates.
+
+  Positions are read from `before`, the game just before the events, where a
+  destroyed tank is still on the board, and from `game`, the game after them.
+  Events without an effect (joins, the start, the win) are skipped.
+  """
+  def effects_for(events, %Game{} = before, %Game{} = game) do
+    Enum.flat_map(events, &effect_for(&1, before, game))
+  end
+
+  defp effect_for(%{type: :moved, actor: actor}, before, game) do
+    with {:ok, from} <- position(before, actor),
+         {:ok, to} <- position(game, actor),
+         # The same shortest path the tank just drove, worked out again.
+         {:ok, path} <- Game.path(before, actor, to) do
+      # Tracks on the cells the tank left, not on the one it stands on now.
+      trail = [from | Enum.drop(path, -1)]
+      [new_effect(:moved, trail: Enum.map(trail, &Hex.to_pixel(&1, @size)))]
+    else
+      _ -> []
+    end
+  end
+
+  defp effect_for(%{type: type, actor: actor, target: target}, before, _game)
+       when type in [:shot, :destroyed, :gave_ap] do
+    with {:ok, from} <- position(before, actor),
+         {:ok, to} <- position(before, target) do
+      [new_effect(type, from: Hex.to_pixel(from, @size), to: Hex.to_pixel(to, @size))]
+    else
+      _ -> []
+    end
+  end
+
+  # A ghost's vote comes from nowhere: the bolt drops onto the tank.
+  defp effect_for(%{type: :voted, target: target}, before, _game) do
+    case position(before, target) do
+      {:ok, to} -> [new_effect(:voted, to: Hex.to_pixel(to, @size))]
+      :error -> []
+    end
+  end
+
+  # A ring that grows to the new range: range steps of sqrt(3) * size each, the
+  # distance between the centres of two neighbouring cells.
+  defp effect_for(%{type: :upgraded, actor: actor}, before, game) do
+    with {:ok, at} <- position(before, actor),
+         %Tank{range: range} <- Game.tank(game, actor) do
+      radius = range * :math.sqrt(3) * @size
+      [new_effect(:upgraded, at: Hex.to_pixel(at, @size), radius: number(radius))]
+    else
+      _ -> []
+    end
+  end
+
+  defp effect_for(_event, _before, _game), do: []
+
+  defp position(game, player_id) do
+    case Game.tank(game, player_id) do
+      %Tank{position: %Hex{} = hex} -> {:ok, hex}
+      _ -> :error
+    end
+  end
+
+  # A fresh id each time: the browser sees a new element and plays its animation.
+  defp new_effect(kind, fields) do
+    Map.new([id: "effect-#{System.unique_integer([:positive])}", kind: kind] ++ fields)
+  end
+
+  @doc """
+  The effects layer. Keyed by id: an effect already on the page is left alone, so
+  it never plays twice. The animations are CSS, in `app.css` (the `fx-` classes).
+  """
+  attr :effects, :list, required: true
+
+  def effects(assigns) do
+    ~H"""
+    <g id="effects" class="pointer-events-none">
+      <g :for={effect <- @effects} :key={effect.id} id={effect.id} data-effect={effect.kind}>
+        <.effect effect={effect} />
+      </g>
+    </g>
+    """
+  end
+
+  attr :effect, :map, required: true
+
+  defp effect(%{effect: %{kind: :moved}} = assigns) do
+    ~H"""
+    <circle
+      :for={{{x, y}, index} <- Enum.with_index(@effect.trail)}
+      cx={number(x)}
+      cy={number(y)}
+      r="1.6"
+      class="fx-trail fill-base-content/50"
+      style={"animation-delay: #{index * 80}ms"}
+    />
+    """
+  end
+
+  defp effect(%{effect: %{kind: kind}} = assigns) when kind in [:shot, :destroyed] do
+    ~H"""
+    <line
+      x1={number(elem(@effect.from, 0))}
+      y1={number(elem(@effect.from, 1))}
+      x2={number(elem(@effect.to, 0))}
+      y2={number(elem(@effect.to, 1))}
+      pathLength="1"
+      stroke-width="1.2"
+      stroke-linecap="round"
+      class="fx-tracer stroke-error"
+    />
+    <circle
+      cx={number(elem(@effect.to, 0))}
+      cy={number(elem(@effect.to, 1))}
+      r={if @effect.kind == :destroyed, do: "12", else: "7"}
+      class={[
+        "fx-burst",
+        if(@effect.kind == :destroyed, do: "fill-warning/70", else: "fill-error/60")
+      ]}
+    />
+    """
+  end
+
+  defp effect(%{effect: %{kind: :gave_ap}} = assigns) do
+    {from_x, from_y} = assigns.effect.from
+    {to_x, to_y} = assigns.effect.to
+    assigns = assign(assigns, dx: number(to_x - from_x), dy: number(to_y - from_y))
+
+    ~H"""
+    <g transform={translate(@effect.from)}>
+      <text
+        class="fx-travel"
+        style={"--fx-dx: #{@dx}px; --fx-dy: #{@dy}px"}
+        font-size="7"
+        text-anchor="middle"
+        dominant-baseline="central"
+      >
+        ⚡
+      </text>
+    </g>
+    """
+  end
+
+  defp effect(%{effect: %{kind: :voted}} = assigns) do
+    ~H"""
+    <g transform={translate(@effect.to)}>
+      <text class="fx-drop" font-size="7" text-anchor="middle" dominant-baseline="central">
+        ⚡
+      </text>
+    </g>
+    """
+  end
+
+  defp effect(%{effect: %{kind: :upgraded}} = assigns) do
+    ~H"""
+    <g transform={translate(@effect.at)}>
+      <circle r={@effect.radius} stroke-width="1" class="fx-ring fill-none stroke-primary" />
+      <text
+        y="-10"
+        font-size="5"
+        text-anchor="middle"
+        dominant-baseline="central"
+        class="fx-float fill-base-content"
+      >
+        +1 🎯
+      </text>
+    </g>
+    """
+  end
+
+  defp translate({x, y}), do: "translate(#{number(x)} #{number(y)})"
 
   ## Small pieces
 

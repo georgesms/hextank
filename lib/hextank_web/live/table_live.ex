@@ -48,6 +48,8 @@ defmodule HextankWeb.TableLive do
         socket =
           socket
           |> assign(selection: nil, board_layout: nil, now: DateTime.utc_now())
+          # Effects are only for what happens while the page is open.
+          |> assign(effects: [], shown_until: newest_event_at(game))
           # What a double-click on another tank does: :shoot or :give_ap.
           |> assign(:double_click, :shoot)
           |> assign(chat_form: chat_form(), sent_at: [], sent_count: 0)
@@ -67,12 +69,40 @@ defmodule HextankWeb.TableLive do
 
   defp assign_game(socket, game) do
     socket
+    |> assign_effects(game)
     |> assign(:game, game)
     |> assign(:me, Game.tank(game, socket.assigns.current_player.id))
     |> assign(:page_title, game.name)
     |> assign_layout(game)
     |> assign_selection_details()
   end
+
+  # Board effects for the events we haven't animated yet (see
+  # GameComponents.effects_for/3), read before the new game replaces the old one.
+  # `shown_until` is the time of the newest event animated so far, so an update
+  # that arrives late, carrying an older game, never plays an effect twice. The last
+  # few effects stay in the list: already played, they are left alone on the page.
+  # New ones go at the end: moving an element in the page would restart its
+  # animation.
+  defp assign_effects(socket, game) do
+    %{shown_until: shown_until, effects: effects} = socket.assigns
+
+    case Enum.take_while(game.events, &DateTime.after?(&1.at, shown_until)) do
+      [] ->
+        socket
+
+      [newest | _] = events ->
+        new_effects = effects_for(events, socket.assigns.game, game)
+
+        assign(socket,
+          shown_until: newest.at,
+          effects: Enum.take(effects ++ new_effects, -8)
+        )
+    end
+  end
+
+  defp newest_event_at(%Game{events: [newest | _]}), do: newest.at
+  defp newest_event_at(_game), do: DateTime.from_unix!(0)
 
   # The board never changes once the game has started, so its layout is computed
   # only once.
@@ -384,6 +414,7 @@ defmodule HextankWeb.TableLive do
                   <.board_cells cells={@board_layout.cells} />
                   <.highlights :for={{kind, hexes} <- @highlights} kind={kind} hexes={hexes} />
                   <.tanks tanks={Game.living_tanks(@game)} me={@current_player.id} />
+                  <.effects effects={@effects} />
                 </svg>
                 <div
                   id="tank-tooltip"
