@@ -60,8 +60,16 @@ defmodule HextankWeb.TableLiveTest do
   defp board_layers(html) do
     html
     |> LazyHTML.from_fragment()
-    |> LazyHTML.query("#board > g")
+    |> LazyHTML.query("#board > #camera > #camera-follow > g")
     |> LazyHTML.attribute("id")
+  end
+
+  # Puts the second tank on an open cell `distance` steps from the first one.
+  defp apart(game, first_id, second_id, distance) do
+    from = Game.tank(game, first_id).position
+    open = Hextank.Board.open_cells(game.board) -- [from]
+    hex = Enum.find(open, &(Hextank.Hex.distance(from, &1) == distance))
+    %{game | tanks: Map.update!(game.tanks, second_id, &%{&1 | position: hex})}
   end
 
   defp wait_until_asleep(id) do
@@ -156,8 +164,8 @@ defmodule HextankWeb.TableLiveTest do
     end
 
     test "a click on an enemy says it's out of range", ctx do
-      # Tanks start at least 3 cells apart, and the range is 2.
-      game = running_game(ctx.ana, ctx.bruno, 1)
+      # Bruno 3 cells away: out of Ana's range of 2, but in her sight of 4.
+      game = running_game(ctx.ana, ctx.bruno, 1, &apart(&1, ctx.ana.id, ctx.bruno.id, 3))
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
 
       view |> element("#tank-#{ctx.bruno.id}") |> render_click()
@@ -200,11 +208,12 @@ defmodule HextankWeb.TableLiveTest do
       game = running_game(ctx.ana, ctx.bruno, 1)
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
       layers = fn -> board_layers(render(view)) end
+      expected = ["board-cells", "highlights", "tracks", "tanks", "effects"]
 
-      assert layers.() == ["board-cells", "highlights", "tracks", "tanks", "effects"]
+      assert layers.() == expected
 
-      view |> element("#tank-#{ctx.bruno.id}") |> render_click()
-      assert layers.() == ["board-cells", "highlights", "tracks", "tanks", "effects"]
+      view |> element("#tank-#{ctx.ana.id}") |> render_click()
+      assert layers.() == expected
     end
 
     test "the last shot shows the winner above the board, with a crown", ctx do
@@ -289,7 +298,7 @@ defmodule HextankWeb.TableLiveTest do
     end
 
     test "every tank carries its stats for the hover tooltip", ctx do
-      game = running_game(ctx.ana, ctx.bruno, 2)
+      game = running_game(ctx.ana, ctx.bruno, 2, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
 
       assert view |> element("#tank-#{ctx.bruno.id}") |> render() =~ "❤️❤️❤️ · ⚡⚡ · 🎯🎯"
@@ -335,6 +344,73 @@ defmodule HextankWeb.TableLiveTest do
       {:ok, game} = Tables.get(game.id)
       assert Game.tank(game, ctx.bruno.id).ap == 1
       refute has_element?(view, "#vote-#{ctx.bruno.id}")
+    end
+  end
+
+  describe "fog of war" do
+    # A radius-6 board: Ana at the centre sees 2 cells (range 1), Bruno is 4 cells
+    # away, a rock is next to Ana and another one far away.
+    defp foggy(game, ana_id, bruno_id, ana_fields \\ []) do
+      board = Hextank.Board.new(6, [Hextank.Hex.new(1, 0, -1), Hextank.Hex.new(0, -5, 5)])
+
+      tanks =
+        game.tanks
+        |> Map.update!(
+          ana_id,
+          &struct!(&1, [position: Hextank.Hex.new(0, 0, 0), range: 1] ++ ana_fields)
+        )
+        |> Map.update!(bruno_id, &%{&1 | position: Hextank.Hex.new(4, -4, 0)})
+
+      %{game | board: board, tanks: tanks}
+    end
+
+    test "a living tank only gets what it can see, zoomed in", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1, &foggy(&1, ctx.ana.id, ctx.bruno.id))
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      assert has_element?(view, "#tank-#{ctx.ana.id}")
+      refute has_element?(view, "#tank-#{ctx.bruno.id}")
+      assert has_element?(view, "#cell_1_0_-1.board-rock")
+      # The far rock is fog, like any hidden cell: nothing tells it's a rock.
+      assert has_element?(view, "#cell_0_-5_5.board-fog")
+      refute has_element?(view, "#cell_0_-5_5.board-rock")
+      # A view of 2 fills a board of 6: zoomed in about 2.4 times.
+      assert view |> element("#camera") |> render() =~ "scale(2.429)"
+    end
+
+    test "ghosts see everything, the whole board", ctx do
+      game =
+        running_game(
+          ctx.ana,
+          ctx.bruno,
+          1,
+          &foggy(&1, ctx.ana.id, ctx.bruno.id, hp: 0, position: nil)
+        )
+
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      assert has_element?(view, "#tank-#{ctx.bruno.id}")
+      assert has_element?(view, "#cell_0_-5_5.board-rock")
+      assert view |> element("#camera") |> render() =~ "scale(1.0)"
+    end
+
+    test "someone who isn't playing sees no tank until the game is over", ctx do
+      {carla_conn, _carla} = log_in_new_player(build_conn(), "Carla")
+      game = running_game(ctx.ana, ctx.bruno, 1, &foggy(&1, ctx.ana.id, ctx.bruno.id))
+      {:ok, view, _html} = live(carla_conn, ~p"/tables/#{game.id}")
+
+      refute has_element?(view, "#tanks g[data-player]")
+      refute has_element?(view, "#board-cells .board-rock")
+    end
+
+    test "the camera follows your tank as it drives", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 2, &foggy(&1, ctx.ana.id, ctx.bruno.id))
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+
+      view |> element("#cell_-1_0_1") |> render_click()
+      view |> element("#cell_-1_0_1") |> render_click()
+
+      assert view |> element("#camera-follow") |> render() =~ ~r/animation: effect-\d+-follow/
     end
   end
 

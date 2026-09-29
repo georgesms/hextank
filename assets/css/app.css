@@ -166,6 +166,14 @@
    from the open cells (the pattern is in GameComponents.board_defs/1). */
 .board-rock { fill: url(#rock-hatch); stroke: var(--board-rock-edge); stroke-width: 0.8; }
 
+/* The fog of war: cells the player can't see are dimmed, say nothing about what's
+   there, and can't be clicked (see GameComponents.board_cells/1). */
+.board-fog { fill: #03070a; stroke: #0b131a; stroke-width: 0.5; pointer-events: none; }
+
+/* The camera zooms and pans around (0, 0), the board's centre (see
+   GameComponents.camera_view/1). */
+.board-camera { transform-origin: 0 0; }
+
 /* A tank takes its colour from its own `color` (see tanks/1). Its hull and turret
    are drawn around (0, 0), the tank's centre, and turn around that point.
    (transform-box: fill-box would turn them around their own middle, but Firefox
@@ -311,8 +319,10 @@
   #tracks,
   .fx-confetti { display: none; }
 
-  /* Tanks jump to where they're going and point the new way at once. */
-  #tanks g { animation: none !important; }
+  /* Tanks jump to where they're going and point the new way at once, and so does
+     the camera. */
+  #tanks g,
+  .board-camera { animation: none !important; }
 
   .fx-pop,
   .fx-bounce,

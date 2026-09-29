@@ -68,7 +68,13 @@ defmodule HextankWeb.TableLive do
   ## Assigns
 
   defp assign_game(socket, game) do
+    player_id = socket.assigns.current_player.id
+
     socket
+    # What this player may see: the fog of war (see Game.visible_cells/2). Nothing
+    # hidden ever leaves the server: hidden cells, tanks and effects aren't rendered.
+    |> assign(:visible, Game.visible_cells(game, player_id))
+    |> assign(:camera, camera(game, player_id))
     |> assign_effects(game)
     |> assign(:game, game)
     |> assign(:me, Game.tank(game, socket.assigns.current_player.id))
@@ -92,13 +98,20 @@ defmodule HextankWeb.TableLive do
         socket
 
       [newest | _] = events ->
-        new_effects = effects_for(events, socket.assigns.game, game)
+        new_effects =
+          events
+          |> effects_for(socket.assigns.game, game)
+          |> Enum.filter(&visible_effect?(&1, socket.assigns.visible))
 
         assign(socket,
           shown_until: newest.at,
           effects: Enum.take(effects ++ new_effects, -8)
         )
     end
+  end
+
+  defp visible_tanks(game, visible) do
+    Enum.filter(Game.living_tanks(game), &Game.visible?(visible, &1.position))
   end
 
   defp newest_event_at(%Game{events: [newest | _]}), do: newest.at
@@ -122,10 +135,24 @@ defmodule HextankWeb.TableLive do
   end
 
   defp assign_selection_details(socket) do
-    %{game: game, me: me, selection: selection} = socket.assigns
-    details = selection_details(game, me, selection)
+    %{game: game, me: me, selection: selection, visible: visible} = socket.assigns
+    details = selection_details(game, me, hide_in_fog(selection, game, visible))
     assign(socket, details: details, highlights: highlights(game, me, details))
   end
+
+  # A tank in the fog can't be selected: its distance would give it away (the click
+  # comes from the browser, so it could name any player).
+  defp hide_in_fog({:tank, player_id} = selection, game, visible) do
+    case Game.tank(game, player_id) do
+      %Tank{position: %Hex{} = position} ->
+        if Game.visible?(visible, position), do: selection, else: nil
+
+      _ ->
+        selection
+    end
+  end
+
+  defp hide_in_fog(selection, _game, _visible), do: selection
 
   defp selection_details(game, %Tank{position: %Hex{}} = me, {:cell, hex}) do
     case Game.path(game, me.player_id, hex) do
@@ -425,21 +452,23 @@ defmodule HextankWeb.TableLive do
                   class="board-screen mx-auto max-h-[75vh] w-full touch-manipulation select-none"
                 >
                   <.board_defs />
-                  <.board_cells cells={@board_layout.cells} />
-                  <%!-- Always there, even with nothing highlighted: the layers after it
+                  <.camera_view camera={@camera} effects={@effects} me={@current_player.id}>
+                    <.board_cells cells={@board_layout.cells} visible={@visible} />
+                    <%!-- Always there, even with nothing highlighted: the layers after it
                        (tracks, tanks, effects) then never move, and moving them would
                        restart their animations. --%>
-                  <g id="highlights">
-                    <.highlights :for={{kind, hexes} <- @highlights} kind={kind} hexes={hexes} />
-                  </g>
-                  <.tracks effects={@effects} />
-                  <.tanks
-                    tanks={Game.living_tanks(@game)}
-                    me={@current_player.id}
-                    winner_id={@game.winner_id}
-                    effects={@effects}
-                  />
-                  <.effects effects={@effects} />
+                    <g id="highlights">
+                      <.highlights :for={{kind, hexes} <- @highlights} kind={kind} hexes={hexes} />
+                    </g>
+                    <.tracks effects={@effects} />
+                    <.tanks
+                      tanks={visible_tanks(@game, @visible)}
+                      me={@current_player.id}
+                      winner_id={@game.winner_id}
+                      effects={@effects}
+                    />
+                    <.effects effects={@effects} />
+                  </.camera_view>
                 </svg>
                 <div
                   id="tank-tooltip"

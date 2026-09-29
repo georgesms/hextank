@@ -47,11 +47,13 @@ defmodule HextankWeb.GameComponentsTest do
       assert to == Hex.to_pixel(Hex.new(1, 0, -1), 10)
     end
 
-    test "a destroyed tank bursts where it stood, and the win itself has no effect" do
+    test "a destroyed tank bursts where it stood; the win only moves the camera" do
       before = game()
       before = %{before | tanks: Map.update!(before.tanks, "bruno", &%{&1 | hp: 1})}
 
-      assert [%{kind: :destroyed, to: to}] = effects_of(before, {:shoot, "bruno"})
+      assert [%{kind: :won, cells: []}, %{kind: :destroyed, to: to}] =
+               effects_of(before, {:shoot, "bruno"})
+
       assert to == Hex.to_pixel(Hex.new(1, 0, -1), 10)
     end
 

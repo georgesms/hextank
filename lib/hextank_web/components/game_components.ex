@@ -33,7 +33,8 @@ defmodule HextankWeb.GameComponents do
 
   @doc """
   Everything the board layer needs: a map per cell with its DOM id, hex, SVG points
-  and whether it's an obstacle, plus the SVG `viewBox`.
+  and whether it's an obstacle, plus the SVG `viewBox`. It stays on the server:
+  `board_cells/1` only sends what the player can see.
   """
   def board_layout(%Board{} = board) do
     cells =
@@ -41,10 +42,8 @@ defmodule HextankWeb.GameComponents do
         %{id: cell_id(hex), hex: hex, points: points(hex), obstacle?: Board.obstacle?(board, hex)}
       end
 
-    # A pointy-top hexagonal board is sqrt(3) * size * (2r + 1) wide and
-    # size * (3r + 2) tall (redblobgames: "Size and Spacing").
-    half_width = :math.sqrt(3) * @size * (board.radius + 0.5) + 2
-    half_height = @size * (1.5 * board.radius + 1) + 2
+    half_width = half_width(board.radius)
+    half_height = half_height(board.radius)
 
     view_box =
       Enum.map_join([-half_width, -half_height, 2 * half_width, 2 * half_height], " ", &number/1)
@@ -68,24 +67,38 @@ defmodule HextankWeb.GameComponents do
 
   ## Board layers
 
-  @doc "The cells of the board. Rendered once: its assigns never change."
+  @doc """
+  The cells of the board. A cell the player can't see is drawn in the fog: never
+  saying whether it's a rock, and not clickable. Keyed by cell, so when the view
+  moves only the cells that changed are sent.
+  """
   attr :cells, :list, required: true
+  attr :visible, :any, required: true, doc: ":all or a MapSet of hexes"
 
   def board_cells(assigns) do
     ~H"""
     <g id="board-cells">
       <polygon
         :for={cell <- @cells}
+        :key={cell.id}
         id={cell.id}
         points={cell.points}
         phx-click="cell"
         phx-value-q={cell.hex.q}
         phx-value-r={cell.hex.r}
         phx-value-s={cell.hex.s}
-        class={if(cell.obstacle?, do: "board-rock", else: "board-cell")}
+        class={cell_class(cell, @visible)}
       />
     </g>
     """
+  end
+
+  defp cell_class(cell, visible) do
+    cond do
+      not Game.visible?(visible, cell.hex) -> "board-fog"
+      cell.obstacle? -> "board-rock"
+      true -> "board-cell"
+    end
   end
 
   @doc "Cells highlighted for the current selection: a path, your range, a target."
@@ -294,16 +307,23 @@ defmodule HextankWeb.GameComponents do
   What to draw for `events`, the events that just happened: a drive along the
   shortest path with tread marks for a move, the turret turning and then a tracer
   and a burst for a shot, a bolt flying to the tank that got AP, a ring for a range
-  upgrade. Each effect is a map with a unique `:id`, a `:kind` (the event's type)
-  and SVG coordinates.
+  upgrade. Each effect is a map with a unique `:id`, a `:kind` (the event's type),
+  the `:cells` it shows (so the fog can hide it, see `visible_effect?/2`) and SVG
+  coordinates.
 
-  A move or a shot also has `:css`, the keyframes it needs, and `:animations`, the
-  CSS animation of each part of the tank that acted (`:drive`, `:hull`, `:turret`),
-  which `tanks/1` puts on that tank.
+  An effect may also have:
+
+    * `:css`, the keyframes it needs;
+    * `:animations`, the CSS animation of each part of the tank that acted
+      (`:drive`, `:hull`, `:turret`), which `tanks/1` puts on that tank;
+    * `:camera`, how the camera of one player moves (`:follow` for panning, `:zoom`),
+      which `camera/1` uses when that player is watching: following their tank as it
+      drives, zooming out when their range grows, showing the whole board once they
+      are destroyed or have won.
 
   Positions are read from `before`, the game just before the events, where a
   destroyed tank is still on the board, and from `game`, the game after them.
-  Events without an effect (joins, the start, the win) are skipped.
+  Events without an effect (joins, the start) are skipped.
   """
   def effects_for(events, %Game{} = before, %Game{} = game) do
     Enum.flat_map(events, &effect_for(&1, before, game))
@@ -315,7 +335,8 @@ defmodule HextankWeb.GameComponents do
          # The same shortest path the tank just drove, worked out again.
          {:ok, path} <- Game.path(before, actor, to) do
       points = Enum.map([from | path], &Hex.to_pixel(&1, @size))
-      [drive_effect(tank, points)]
+      follows? = camera(before, actor).zoom > 1
+      [drive_effect(tank, points, [from, to], follows?)]
     else
       _ -> []
     end
@@ -334,18 +355,21 @@ defmodule HextankWeb.GameComponents do
           TankMotion.turret_angle(shooter)
         )
 
-      [
-        %{
-          id: id,
-          kind: type,
-          from: Hex.to_pixel(from, @size),
-          to: Hex.to_pixel(to, @size),
-          actor: actor,
-          css:
-            TankMotion.keyframes("#{id}-turret", aim.angles, aim.duration, &TankMotion.rotate/1),
-          animations: %{turret: "#{id}-turret #{aim.duration}ms ease-out both"}
-        }
-      ]
+      effect = %{
+        id: id,
+        kind: type,
+        cells: [from, to],
+        from: Hex.to_pixel(from, @size),
+        to: Hex.to_pixel(to, @size),
+        actor: actor,
+        css: TankMotion.keyframes("#{id}-turret", aim.angles, aim.duration, &TankMotion.rotate/1),
+        animations: %{turret: "#{id}-turret #{aim.duration}ms ease-out both"}
+      }
+
+      # The destroyed tank's player now sees the whole board.
+      if type == :destroyed,
+        do: [add_camera(effect, whole_board_camera(before, target))],
+        else: [effect]
     else
       _ -> []
     end
@@ -354,7 +378,13 @@ defmodule HextankWeb.GameComponents do
   defp effect_for(%{type: :gave_ap, actor: actor, target: target}, before, _game) do
     with {:ok, from} <- position(before, actor),
          {:ok, to} <- position(before, target) do
-      [new_effect(:gave_ap, from: Hex.to_pixel(from, @size), to: Hex.to_pixel(to, @size))]
+      [
+        new_effect(:gave_ap,
+          cells: [from, to],
+          from: Hex.to_pixel(from, @size),
+          to: Hex.to_pixel(to, @size)
+        )
+      ]
     else
       _ -> []
     end
@@ -363,21 +393,31 @@ defmodule HextankWeb.GameComponents do
   # A ghost's vote comes from nowhere: the bolt drops onto the tank.
   defp effect_for(%{type: :voted, target: target}, before, _game) do
     case position(before, target) do
-      {:ok, to} -> [new_effect(:voted, to: Hex.to_pixel(to, @size))]
+      {:ok, to} -> [new_effect(:voted, cells: [to], to: Hex.to_pixel(to, @size))]
       :error -> []
     end
   end
 
   # A ring that grows to the new range: range steps of sqrt(3) * size each, the
-  # distance between the centres of two neighbouring cells.
+  # distance between the centres of two neighbouring cells. The player's camera
+  # zooms out to the bigger view at the same time.
   defp effect_for(%{type: :upgraded, actor: actor}, before, game) do
     with {:ok, at} <- position(before, actor),
          %Tank{range: range} <- Game.tank(game, actor) do
       radius = range * :math.sqrt(3) * @size
-      [new_effect(:upgraded, at: Hex.to_pixel(at, @size), radius: number(radius))]
+
+      effect =
+        new_effect(:upgraded, cells: [at], at: Hex.to_pixel(at, @size), radius: number(radius))
+
+      [add_camera(effect, camera_change(actor, camera(before, actor), camera(game, actor)))]
     else
       _ -> []
     end
+  end
+
+  # The winner's camera shows the whole board. Nothing else to draw.
+  defp effect_for(%{type: :won, actor: actor}, before, _game) do
+    [add_camera(new_effect(:won, cells: []), whole_board_camera(before, actor))]
   end
 
   defp effect_for(_event, _before, _game), do: []
@@ -391,21 +431,40 @@ defmodule HextankWeb.GameComponents do
 
   # A drive through `points` (the pixel centres of the cells, start first): the
   # keyframes that move the tank and turn its hull (and its turret too, when it
-  # points along the hull), and two tread marks per leg.
-  defp drive_effect(tank, points) do
+  # points along the hull), two tread marks per leg and, when the player's camera
+  # follows the tank, the camera panning along.
+  defp drive_effect(tank, points, cells, follows?) do
     id = new_id()
     plan = TankMotion.drive(points, TankMotion.hull_angle(tank))
-    drive = "#{id}-drive #{plan.duration}ms linear both"
-    hull = "#{id}-hull #{plan.duration}ms linear both"
+    timing = "#{plan.duration}ms linear both"
+    follow_frames = Enum.map(plan.positions, fn {ms, point} -> {ms, opposite(point)} end)
 
     css =
-      TankMotion.keyframes("#{id}-drive", plan.positions, plan.duration, &TankMotion.translate/1) <>
-        " " <>
-        TankMotion.keyframes("#{id}-hull", plan.angles, plan.duration, &TankMotion.rotate/1)
+      Enum.join(
+        [
+          TankMotion.keyframes(
+            "#{id}-drive",
+            plan.positions,
+            plan.duration,
+            &TankMotion.translate/1
+          ),
+          TankMotion.keyframes("#{id}-hull", plan.angles, plan.duration, &TankMotion.rotate/1),
+          TankMotion.keyframes(
+            "#{id}-follow",
+            follow_frames,
+            plan.duration,
+            &TankMotion.translate/1
+          )
+        ],
+        " "
+      )
+
+    animations = %{drive: "#{id}-drive #{timing}", hull: "#{id}-hull #{timing}"}
 
     %{
       id: id,
       kind: :moved,
+      cells: cells,
       actor: tank.player_id,
       color: seat_color(tank.seat),
       tracks: Enum.flat_map(plan.legs, &tread_marks/1),
@@ -413,10 +472,8 @@ defmodule HextankWeb.GameComponents do
       fade_at: plan.duration + 600,
       css: css,
       animations:
-        if(tank.aim == nil,
-          do: %{drive: drive, hull: hull, turret: hull},
-          else: %{drive: drive, hull: hull}
-        )
+        if(tank.aim == nil, do: Map.put(animations, :turret, animations.hull), else: animations),
+      camera: if(follows?, do: %{player_id: tank.player_id, follow: "#{id}-follow #{timing}"})
     }
   end
 
@@ -443,6 +500,144 @@ defmodule HextankWeb.GameComponents do
   defp new_id, do: "effect-#{System.unique_integer([:positive])}"
 
   @doc """
+  Whether the player can see an effect: every cell it shows is visible to them (see
+  `Hextank.Game.visible_cells/2`). A tank driving out of the fog just appears.
+  """
+  def visible_effect?(effect, visible), do: Enum.all?(effect.cells, &Game.visible?(visible, &1))
+
+  ## Camera
+
+  @camera_ms 600
+
+  @doc """
+  What a player's board shows: a `:zoom` factor and the `:center` point.
+
+  A living tank's player sees the hexagon they can see (twice their range around
+  their tank), zoomed in to fill the board. Everyone else, and a player whose view
+  already covers the whole board, sees the whole board.
+  """
+  def camera(%Game{status: :running, board: %Board{} = board} = game, player_id) do
+    case Game.tank(game, player_id) do
+      %Tank{position: %Hex{} = position} = tank ->
+        case zoom(board.radius, Game.view_radius(tank)) do
+          zoom when zoom > 1 -> %{zoom: zoom, center: Hex.to_pixel(position, @size)}
+          _covers_the_board -> whole_board()
+        end
+
+      _ ->
+        whole_board()
+    end
+  end
+
+  def camera(_game, _player_id), do: whole_board()
+
+  defp whole_board, do: %{zoom: 1.0, center: {0.0, 0.0}}
+
+  @doc """
+  How much to zoom in so that a view of `view_radius` fills a board of
+  `board_radius`: the ratio of their widths (or heights, whichever is smaller),
+  never below 1.
+
+      iex> GameComponents.zoom(10, 10)
+      1.0
+
+      iex> GameComponents.zoom(4, 8)
+      1.0
+  """
+  def zoom(board_radius, view_radius) do
+    width_ratio = half_width(board_radius) / half_width(view_radius)
+    height_ratio = half_height(board_radius) / half_height(view_radius)
+    width_ratio |> min(height_ratio) |> max(1.0) |> Float.round(3)
+  end
+
+  # A pointy-top hexagon of radius r is sqrt(3) * size * (2r + 1) wide and
+  # size * (3r + 2) tall (redblobgames: "Size and Spacing"), plus a small margin.
+  defp half_width(radius), do: :math.sqrt(3) * @size * (radius + 0.5) + 2
+  defp half_height(radius), do: @size * (1.5 * radius + 1) + 2
+
+  # From the player's camera in `before` to the whole board.
+  defp whole_board_camera(before, player_id) do
+    camera_change(player_id, camera(before, player_id), whole_board())
+  end
+
+  # The keyframes taking a player's camera from one view to another. nil when it
+  # doesn't change.
+  defp camera_change(_player_id, same, same), do: nil
+
+  defp camera_change(player_id, from, to) do
+    %{
+      player_id: player_id,
+      frames: %{
+        zoom: [{0, from.zoom}, {@camera_ms, to.zoom}],
+        follow: [{0, opposite(from.center)}, {@camera_ms, opposite(to.center)}]
+      }
+    }
+  end
+
+  # Adds a camera change's keyframes to an effect, named after it.
+  defp add_camera(effect, nil), do: effect
+
+  defp add_camera(effect, %{player_id: player_id, frames: frames}) do
+    css =
+      TankMotion.keyframes("#{effect.id}-zoom", frames.zoom, @camera_ms, &scale/1) <>
+        " " <>
+        TankMotion.keyframes(
+          "#{effect.id}-follow",
+          frames.follow,
+          @camera_ms,
+          &TankMotion.translate/1
+        )
+
+    timing = "#{@camera_ms}ms ease-in-out both"
+
+    effect
+    |> Map.update(:css, css, &(&1 <> " " <> css))
+    |> Map.put(:camera, %{
+      player_id: player_id,
+      zoom: "#{effect.id}-zoom #{timing}",
+      follow: "#{effect.id}-follow #{timing}"
+    })
+  end
+
+  defp opposite({x, y}), do: {-x, -y}
+  defp scale(zoom), do: "scale(#{zoom})"
+
+  @doc """
+  The camera around the board layers: an outer group zooms (`scale`), an inner one
+  pans (`translate`), so a point `p` ends up at `zoom * (p - center)`. Each gets the
+  newest camera animation of the recent effects meant for this player.
+  """
+  attr :camera, :map, required: true
+  attr :effects, :list, required: true
+  attr :me, :string, default: nil
+  slot :inner_block, required: true
+
+  def camera_view(assigns) do
+    animations =
+      Enum.reduce(assigns.effects, %{}, fn
+        %{camera: %{player_id: player_id} = camera}, acc when player_id == assigns.me ->
+          Map.merge(acc, Map.take(camera, [:zoom, :follow]))
+
+        _effect, acc ->
+          acc
+      end)
+
+    assigns = assign(assigns, :animations, animations)
+
+    ~H"""
+    <g id="camera" class="board-camera" style={part_style(scale(@camera.zoom), @animations[:zoom])}>
+      <g
+        id="camera-follow"
+        class="board-camera"
+        style={part_style(TankMotion.translate(opposite(@camera.center)), @animations[:follow])}
+      >
+        {render_slot(@inner_block)}
+      </g>
+    </g>
+    """
+  end
+
+  @doc """
   The effects layer. Keyed by id: an effect already on the page is left alone, so
   it never plays twice. The animations are CSS: the `fx-` classes in `app.css`, and
   for moves and shots the keyframes of the effect itself, in a `<style>`.
@@ -464,8 +659,9 @@ defmodule HextankWeb.GameComponents do
 
   attr :effect, :map, required: true
 
-  # The tank itself moves (see tanks/1) and leaves marks (see tracks/1).
-  defp effect(%{effect: %{kind: :moved}} = assigns), do: ~H""
+  # The tank itself moves (see tanks/1) and leaves marks (see tracks/1); a win only
+  # moves the winner's camera (see camera_view/1).
+  defp effect(%{effect: %{kind: kind}} = assigns) when kind in [:moved, :won], do: ~H""
 
   defp effect(%{effect: %{kind: kind}} = assigns) when kind in [:shot, :destroyed] do
     ~H"""
