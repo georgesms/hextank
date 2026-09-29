@@ -5,7 +5,7 @@ defmodule Hextank.Tables.Lobby do
 
   The summaries are built from disk once at boot, then kept up to date by the table
   processes after every save. Once a day (and at boot) expired tables are deleted:
-  finished ones 30 days after the end, never-started ones 7 days after creation, and
+  finished ones 7 days after the end, never-started ones 7 days after creation, and
   abandoned running ones, where every living tank has more than 200 AP.
   """
 
@@ -14,7 +14,7 @@ defmodule Hextank.Tables.Lobby do
   alias Hextank.{Game, Storage}
 
   @day 86_400
-  @keep_finished_days 30
+  @keep_finished_days 7
   @keep_unstarted_days 7
   # Nobody spends AP any more at a table where every living tank has this many.
   @abandoned_ap 200
@@ -86,28 +86,41 @@ defmodule Hextank.Tables.Lobby do
   end
 
   @doc """
-  Whether a table should be deleted: finished more than #{@keep_finished_days} days
-  ago, created more than #{@keep_unstarted_days} days ago and never started, or
-  running with every living tank above #{@abandoned_ap} AP. A sleeping table's AP is
-  worked out from the clock: the lowest AP at the last save, plus the ticks missed
-  since.
+  When a finished or never-started table will be deleted:
+  #{@keep_finished_days} days after the end, or #{@keep_unstarted_days} days after
+  creation. `nil` for a running table, which is deleted only once it's abandoned (see
+  `expired?/2`). Takes a summary or a `%Game{}`.
+  """
+  @spec expires_at(map()) :: DateTime.t() | nil
+  def expires_at(%{status: :finished, finished_at: finished_at}) do
+    DateTime.add(finished_at, @keep_finished_days * @day, :second)
+  end
+
+  def expires_at(%{status: :lobby, created_at: created_at}) do
+    DateTime.add(created_at, @keep_unstarted_days * @day, :second)
+  end
+
+  def expires_at(_summary), do: nil
+
+  @doc """
+  Whether a table should be deleted: finished or never started and past
+  `expires_at/1`, or running with every living tank above #{@abandoned_ap} AP. A
+  sleeping table's AP is worked out from the clock: the lowest AP at the last save,
+  plus the ticks missed since.
   """
   @spec expired?(summary(), DateTime.t()) :: boolean()
-  def expired?(%{status: :finished, finished_at: finished_at}, now) do
-    DateTime.diff(now, finished_at, :second) > @keep_finished_days * @day
-  end
-
-  def expired?(%{status: :lobby, created_at: created_at}, now) do
-    DateTime.diff(now, created_at, :second) > @keep_unstarted_days * @day
-  end
-
   def expired?(%{status: :running, lowest_ap: lowest_ap} = summary, now)
       when is_integer(lowest_ap) do
     missed = max(Game.ticks_due(summary, now) - summary.ticks, 0)
     lowest_ap + missed > @abandoned_ap
   end
 
-  def expired?(_summary, _now), do: false
+  def expired?(summary, now) do
+    case expires_at(summary) do
+      nil -> false
+      expires_at -> DateTime.after?(now, expires_at)
+    end
+  end
 
   ## Server
 

@@ -94,7 +94,8 @@ cancels.
     Table ids are random and unguessable, so the link itself is the invitation.
 - A game needs **2 to 20 players**. The creator starts it; nobody can join after the
   start. Before the start, players can leave.
-- A finished table becomes **read-only** and is deleted **30 days** after it ends.
+- A game is **finished** when only one tank is left. The table becomes **read-only**
+  and is deleted **7 days** after the end.
 - A table that never starts expires after **7 days**.
 - A running table where **every living tank has more than 200 AP** counts as
   abandoned (nobody is spending AP any more) and is deleted. The check runs at boot
@@ -632,7 +633,7 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] Stops itself after a few idle minutes; started again on demand
 - [x] Registry + DynamicSupervisor
 - [x] `Lobby` GenServer with table summaries, built from disk at boot
-- [x] Expired tables deleted (finished: 30 days, never started: 7 days)
+- [x] Expired tables deleted (finished: 7 days, never started: 7 days)
 - [x] PubSub broadcast of every state change
 
 ### Phase 4 – Playable in the browser, with identity
