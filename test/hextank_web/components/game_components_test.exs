@@ -55,13 +55,38 @@ defmodule HextankWeb.GameComponentsTest do
       assert to == Hex.to_pixel(Hex.new(1, 0, -1), 10)
     end
 
-    test "a move leaves tracks on every cell but the one the tank arrives on" do
-      target = Hex.new(-2, 0, 2)
+    test "a move drives along the shortest path, around rocks, leaving tread marks" do
+      before = %{game() | board: Hextank.Board.new(4, [Hex.new(-1, 0, 1)])}
 
-      assert [%{kind: :moved, trail: trail}] = effects_of(game(), {:move, target})
-      assert length(trail) == 2
-      assert hd(trail) == Hex.to_pixel(Hex.new(0, 0, 0), 10)
-      refute Hex.to_pixel(target, 10) in trail
+      # The rock at (-1, 0, 1) is in the way: 3 legs instead of 2.
+      assert [%{kind: :moved} = effect] = effects_of(before, {:move, Hex.new(-2, 0, 2)})
+      assert length(effect.tracks) == 6
+
+      # Each pair of marks runs either side of a leg: their middle is the cell the
+      # leg starts from, never the rock.
+      starts =
+        effect.tracks
+        |> Enum.chunk_every(2)
+        |> Enum.map(fn [one, other] -> middle(one.from, other.from) end)
+
+      assert hd(starts) == rounded(Hex.to_pixel(Hex.new(0, 0, 0), 10))
+      refute rounded(Hex.to_pixel(Hex.new(-1, 0, 1), 10)) in starts
+
+      # The tank, its hull and (since it hasn't aimed at anyone) its turret move.
+      assert %{drive: drive, hull: hull, turret: hull} = effect.animations
+      assert drive =~ "#{effect.id}-drive "
+      assert effect.css =~ "@keyframes #{effect.id}-drive"
+      assert effect.css =~ "@keyframes #{effect.id}-hull"
+    end
+
+    test "a shot turns the turret first; after that, moving leaves the turret alone" do
+      {:ok, aimed} = Game.act(game(), "ana", {:shoot, "bruno"}, @now)
+      assert [%{kind: :shot} = shot] = effects_of(game(), {:shoot, "bruno"})
+      assert shot.animations.turret =~ "#{shot.id}-turret "
+      assert shot.css =~ "@keyframes #{shot.id}-turret"
+
+      assert [%{kind: :moved} = move] = effects_of(aimed, {:move, Hex.new(-2, 0, 2)})
+      refute Map.has_key?(move.animations, :turret)
     end
 
     test "giving AP and upgrading the range have their own effects" do
@@ -77,4 +102,7 @@ defmodule HextankWeb.GameComponentsTest do
       assert first.id != second.id
     end
   end
+
+  defp middle({x1, y1}, {x2, y2}), do: rounded({(x1 + x2) / 2, (y1 + y2) / 2})
+  defp rounded({x, y}), do: {Float.round(x, 2), Float.round(y, 2)}
 end

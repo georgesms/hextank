@@ -2,15 +2,17 @@ defmodule HextankWeb.GameComponents do
   @moduledoc """
   Pieces for drawing a game: the SVG board, tanks, badges and colours.
 
-  The board is drawn in four layers:
+  The board is a dark screen (the `board-` classes in `app.css`), drawn in five
+  layers:
 
     1. `board_cells/1`: every cell, drawn once. Its assigns never change after the
        game starts, so LiveView sends it to the browser only once.
     2. highlights: the cells you can act on right now, inside a `<g>` that is
        always there, so the layers after it never move.
-    3. tanks: one `<g>` per tank, keyed by player, so an action only sends the tanks
-       that changed. Moves slide thanks to a CSS transition.
-    4. effects: a short animation for each action (see `effects_for/3`), played once by
+    3. tracks: the tread marks of recent moves.
+    4. tanks: one `<g>` per tank, keyed by player, so an action only sends the tanks
+       that changed. A move drives along the shortest path, turning at each cell.
+    5. effects: a short animation for each action (see `effects_for/3`), played once by
        CSS when LiveView adds it to the page. No JavaScript.
 
   Every cell (and highlight) sends `phx-click="cell"` with its `q`, `r` and `s`;
@@ -22,7 +24,7 @@ defmodule HextankWeb.GameComponents do
   use HextankWeb, :html
 
   alias Hextank.{Board, Game, Hex, Tank}
-  alias HextankWeb.Messages
+  alias HextankWeb.{Messages, TankMotion}
 
   # Size of a hex in SVG units: the distance from its centre to a corner.
   @size 10
@@ -80,13 +82,7 @@ defmodule HextankWeb.GameComponents do
         phx-value-q={cell.hex.q}
         phx-value-r={cell.hex.r}
         phx-value-s={cell.hex.s}
-        class={[
-          "transition-colors",
-          if(cell.obstacle?,
-            do: "fill-base-content/35",
-            else: "cursor-pointer fill-base-300 hover:fill-base-content/20"
-          )
-        ]}
+        class={if(cell.obstacle?, do: "board-rock", else: "board-cell")}
       />
     </g>
     """
@@ -111,61 +107,126 @@ defmodule HextankWeb.GameComponents do
         phx-value-r={hex.r}
         phx-value-s={hex.s}
         class={[
-          @kind == :range && "pointer-events-none fill-primary/15",
-          @kind == :path && "cursor-pointer fill-success/45 hover:fill-success/70",
-          @kind == :path_too_far && "cursor-pointer fill-warning/40",
-          @kind == :target_in_range && "pointer-events-none fill-error/50",
-          @kind == :target_out_of_range && "pointer-events-none fill-base-content/25"
+          @kind == :range && "pointer-events-none fill-cyan-300/10",
+          @kind == :path && "cursor-pointer fill-emerald-400/35 hover:fill-emerald-400/55",
+          @kind == :path_too_far && "cursor-pointer fill-amber-400/35",
+          @kind == :target_in_range && "pointer-events-none fill-rose-500/45",
+          @kind == :target_out_of_range && "pointer-events-none fill-white/15"
         ]}
       />
     </g>
     """
   end
 
-  @doc "The living tanks. Keyed by player, so only the tanks that change are sent."
+  @doc """
+  The tread marks of recent moves: two lines per leg, drawn while the tank drives
+  along it, then fading. Under the tanks, from the same effects as `effects/1`.
+  """
+  attr :effects, :list, required: true
+
+  def tracks(assigns) do
+    ~H"""
+    <g id="tracks" class="pointer-events-none">
+      <g
+        :for={effect <- @effects}
+        :if={effect.kind == :moved}
+        :key={effect.id}
+        id={"tracks-#{effect.id}"}
+        style={"color: #{effect.color}"}
+      >
+        <line
+          :for={track <- effect.tracks}
+          x1={number(elem(track.from, 0))}
+          y1={number(elem(track.from, 1))}
+          x2={number(elem(track.to, 0))}
+          y2={number(elem(track.to, 1))}
+          pathLength="1"
+          class="fx-track"
+          style={"animation-duration: #{track.duration}ms, 1400ms; animation-delay: #{track.start}ms, #{effect.fade_at}ms"}
+        />
+      </g>
+    </g>
+    """
+  end
+
+  @doc """
+  The living tanks, drawn as the NATO symbol for armour: the hull (a rectangle)
+  turns the way the tank drives, the turret (an ellipse with its gun) the way it
+  aims. Keyed by player, so only the tanks that change are sent.
+
+  A tank that just moved or shot also gets the CSS animations of that effect (see
+  `effects_for/3`); once they are over it rests exactly where its base style puts it.
+  """
   attr :tanks, :list, required: true
   attr :me, :string, default: nil, doc: "the current player's id"
   attr :winner_id, :string, default: nil, doc: "once the game is over: gets a crown"
+  attr :effects, :list, default: [], doc: "recent effects, for the tanks' animations"
 
   def tanks(assigns) do
+    assigns = assign(assigns, :animations, tank_animations(assigns.effects))
+
     ~H"""
     <g id="tanks">
       <g
         :for={tank <- @tanks}
         :key={tank.player_id}
         id={"tank-#{tank.player_id}"}
-        style={tank_position(tank)}
+        style={
+          part_style(tank_translate(tank), @animations[tank.player_id][:drive]) <>
+            "; color: #{seat_color(tank.seat)}"
+        }
         phx-click="tank"
         phx-value-player={tank.player_id}
         data-player={tank.player_id}
         data-tip={Messages.tank_stats(tank)}
-        class="cursor-pointer transition-transform duration-500 ease-out"
+        class="cursor-pointer"
       >
         <circle
           :if={tank.player_id == @winner_id}
-          r="9.5"
+          r="10.5"
           stroke-width="1.5"
           class="fx-halo fill-none stroke-warning"
         />
         <circle
           :if={tank.player_id == @me}
-          r="8.2"
-          class="fill-none stroke-base-content"
-          stroke-width="1.2"
+          r="8.8"
+          stroke-width="0.6"
+          stroke-dasharray="2 1.4"
+          class="fill-none stroke-white/70"
         />
-        <circle r="6" fill={seat_color(tank.seat)} />
-        <text
-          text-anchor="middle"
-          dominant-baseline="central"
-          font-size="7"
-          font-weight="700"
-          fill="white"
-        >
-          {initial(tank.name)}
+        <g filter="url(#tank-glow)">
+          <g
+            class="tank-part"
+            style={
+              part_style(
+                TankMotion.rotate(TankMotion.hull_angle(tank)),
+                @animations[tank.player_id][:hull]
+              )
+            }
+          >
+            <rect x="-5.5" y="-3.6" width="11" height="7.2" rx="0.6" class="tank-fill" />
+            <line x1="-4.6" y1="-2.4" x2="4.6" y2="-2.4" class="tank-tread" />
+            <line x1="-4.6" y1="2.4" x2="4.6" y2="2.4" class="tank-tread" />
+          </g>
+          <g
+            class="tank-part"
+            style={
+              part_style(
+                TankMotion.rotate(TankMotion.turret_angle(tank)),
+                @animations[tank.player_id][:turret]
+              )
+            }
+          >
+            <rect x="1.8" y="-0.75" width="7.4" height="1.5" rx="0.4" fill="currentColor" />
+            <ellipse rx="2.9" ry="2.1" class="tank-fill" />
+          </g>
+        </g>
+        <text y="-9.5" font-size="3.6" text-anchor="middle" class="tank-callsign">
+          {callsign(tank.name)}
         </text>
         <text
           :if={tank.player_id == @winner_id}
-          y="-11"
+          y="-16"
           font-size="8"
           text-anchor="middle"
           dominant-baseline="central"
@@ -178,20 +239,57 @@ defmodule HextankWeb.GameComponents do
     """
   end
 
-  defp tank_position(tank) do
-    {x, y} = Hex.to_pixel(tank.position, @size)
-    "transform: translate(#{number(x)}px, #{number(y)}px)"
+  defp tank_translate(tank), do: TankMotion.translate(Hex.to_pixel(tank.position, @size))
+
+  # The base transform of a tank part, plus the animation that brings it there.
+  defp part_style(transform, nil), do: "transform: #{transform}"
+  defp part_style(transform, animation), do: "transform: #{transform}; animation: #{animation}"
+
+  # The newest animation of each part of each tank, from the recent effects (oldest
+  # first, so newer ones win). Only the newest can still be playing.
+  defp tank_animations(effects) do
+    Enum.reduce(effects, %{}, fn
+      %{actor: actor, animations: animations}, acc ->
+        Map.update(acc, actor, animations, &Map.merge(&1, animations))
+
+      _effect, acc ->
+        acc
+    end)
   end
 
-  defp initial(name), do: name |> String.first() |> String.upcase()
+  # A short label above the tank, like a radio call sign.
+  defp callsign(name), do: name |> String.slice(0, 8) |> String.upcase()
+
+  @doc """
+  Definitions the board uses: the neon glow around tanks. Rendered once, before the
+  layers.
+  """
+  def board_defs(assigns) do
+    ~H"""
+    <defs>
+      <filter id="tank-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="0.9" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    """
+  end
 
   ## Action effects
 
   @doc """
-  What to draw for `events`, the events that just happened: tire tracks for a move,
-  a tracer and a burst for a shot, a bolt flying to the tank that got AP, a ring for
-  a range upgrade. Each effect is a map with a unique `:id`, a `:kind` (the event's
-  type) and SVG coordinates.
+  What to draw for `events`, the events that just happened: a drive along the
+  shortest path with tread marks for a move, the turret turning and then a tracer
+  and a burst for a shot, a bolt flying to the tank that got AP, a ring for a range
+  upgrade. Each effect is a map with a unique `:id`, a `:kind` (the event's type)
+  and SVG coordinates.
+
+  A move or a shot also has `:css`, the keyframes it needs, and `:animations`, the
+  CSS animation of each part of the tank that acted (`:drive`, `:hull`, `:turret`),
+  which `tanks/1` puts on that tank.
 
   Positions are read from `before`, the game just before the events, where a
   destroyed tank is still on the board, and from `game`, the game after them.
@@ -202,23 +300,51 @@ defmodule HextankWeb.GameComponents do
   end
 
   defp effect_for(%{type: :moved, actor: actor}, before, game) do
-    with {:ok, from} <- position(before, actor),
+    with %Tank{position: %Hex{} = from} = tank <- Game.tank(before, actor),
          {:ok, to} <- position(game, actor),
          # The same shortest path the tank just drove, worked out again.
          {:ok, path} <- Game.path(before, actor, to) do
-      # Tracks on the cells the tank left, not on the one it stands on now.
-      trail = [from | Enum.drop(path, -1)]
-      [new_effect(:moved, trail: Enum.map(trail, &Hex.to_pixel(&1, @size)))]
+      points = Enum.map([from | path], &Hex.to_pixel(&1, @size))
+      [drive_effect(tank, points)]
     else
       _ -> []
     end
   end
 
-  defp effect_for(%{type: type, actor: actor, target: target}, before, _game)
-       when type in [:shot, :destroyed, :gave_ap] do
+  defp effect_for(%{type: type, actor: actor, target: target}, before, game)
+       when type in [:shot, :destroyed] do
+    with {:ok, from} <- position(before, actor),
+         {:ok, to} <- position(before, target),
+         %Tank{} = shooter <- Game.tank(game, actor) do
+      id = new_id()
+
+      aim =
+        TankMotion.aim(
+          TankMotion.turret_angle(Game.tank(before, actor)),
+          TankMotion.turret_angle(shooter)
+        )
+
+      [
+        %{
+          id: id,
+          kind: type,
+          from: Hex.to_pixel(from, @size),
+          to: Hex.to_pixel(to, @size),
+          actor: actor,
+          css:
+            TankMotion.keyframes("#{id}-turret", aim.angles, aim.duration, &TankMotion.rotate/1),
+          animations: %{turret: "#{id}-turret #{aim.duration}ms ease-out both"}
+        }
+      ]
+    else
+      _ -> []
+    end
+  end
+
+  defp effect_for(%{type: :gave_ap, actor: actor, target: target}, before, _game) do
     with {:ok, from} <- position(before, actor),
          {:ok, to} <- position(before, target) do
-      [new_effect(type, from: Hex.to_pixel(from, @size), to: Hex.to_pixel(to, @size))]
+      [new_effect(:gave_ap, from: Hex.to_pixel(from, @size), to: Hex.to_pixel(to, @size))]
     else
       _ -> []
     end
@@ -253,14 +379,63 @@ defmodule HextankWeb.GameComponents do
     end
   end
 
-  # A fresh id each time: the browser sees a new element and plays its animation.
-  defp new_effect(kind, fields) do
-    Map.new([id: "effect-#{System.unique_integer([:positive])}", kind: kind] ++ fields)
+  # A drive through `points` (the pixel centres of the cells, start first): the
+  # keyframes that move the tank and turn its hull (and its turret too, when it
+  # points along the hull), and two tread marks per leg.
+  defp drive_effect(tank, points) do
+    id = new_id()
+    plan = TankMotion.drive(points, TankMotion.hull_angle(tank))
+    drive = "#{id}-drive #{plan.duration}ms linear both"
+    hull = "#{id}-hull #{plan.duration}ms linear both"
+
+    css =
+      TankMotion.keyframes("#{id}-drive", plan.positions, plan.duration, &TankMotion.translate/1) <>
+        " " <>
+        TankMotion.keyframes("#{id}-hull", plan.angles, plan.duration, &TankMotion.rotate/1)
+
+    %{
+      id: id,
+      kind: :moved,
+      actor: tank.player_id,
+      color: seat_color(tank.seat),
+      tracks: Enum.flat_map(plan.legs, &tread_marks/1),
+      # The marks fade together, a moment after the tank arrives.
+      fade_at: plan.duration + 600,
+      css: css,
+      animations:
+        if(tank.aim == nil,
+          do: %{drive: drive, hull: hull, turret: hull},
+          else: %{drive: drive, hull: hull}
+        )
+    }
   end
+
+  # Two lines along a leg, one under each track: 2.4 units either side of the
+  # line between the two cell centres.
+  defp tread_marks(%{from: {x1, y1}, to: {x2, y2}} = leg) do
+    length = :math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    {side_x, side_y} = {-(y2 - y1) / length * 2.4, (x2 - x1) / length * 2.4}
+
+    for sign <- [1, -1] do
+      %{
+        from: {x1 + sign * side_x, y1 + sign * side_y},
+        to: {x2 + sign * side_x, y2 + sign * side_y},
+        start: leg.start,
+        duration: leg.duration
+      }
+    end
+  end
+
+  defp new_effect(kind, fields), do: Map.new([id: new_id(), kind: kind] ++ fields)
+
+  # A fresh id each time: the browser sees a new element and plays its animation.
+  # It also names the effect's keyframes, so it must be a valid CSS name.
+  defp new_id, do: "effect-#{System.unique_integer([:positive])}"
 
   @doc """
   The effects layer. Keyed by id: an effect already on the page is left alone, so
-  it never plays twice. The animations are CSS, in `app.css` (the `fx-` classes).
+  it never plays twice. The animations are CSS: the `fx-` classes in `app.css`, and
+  for moves and shots the keyframes of the effect itself, in a `<style>`.
   """
   attr :effects, :list, required: true
 
@@ -268,6 +443,9 @@ defmodule HextankWeb.GameComponents do
     ~H"""
     <g id="effects" class="pointer-events-none">
       <g :for={effect <- @effects} :key={effect.id} id={effect.id} data-effect={effect.kind}>
+        <style :if={effect[:css]}>
+          <%= effect.css %>
+        </style>
         <.effect effect={effect} />
       </g>
     </g>
@@ -276,18 +454,8 @@ defmodule HextankWeb.GameComponents do
 
   attr :effect, :map, required: true
 
-  defp effect(%{effect: %{kind: :moved}} = assigns) do
-    ~H"""
-    <circle
-      :for={{{x, y}, index} <- Enum.with_index(@effect.trail)}
-      cx={number(x)}
-      cy={number(y)}
-      r="1.6"
-      class="fx-trail fill-base-content/50"
-      style={"animation-delay: #{index * 80}ms"}
-    />
-    """
-  end
+  # The tank itself moves (see tanks/1) and leaves marks (see tracks/1).
+  defp effect(%{effect: %{kind: :moved}} = assigns), do: ~H""
 
   defp effect(%{effect: %{kind: kind}} = assigns) when kind in [:shot, :destroyed] do
     ~H"""
@@ -352,7 +520,7 @@ defmodule HextankWeb.GameComponents do
         font-size="5"
         text-anchor="middle"
         dominant-baseline="central"
-        class="fx-float fill-base-content"
+        class="fx-float fill-white"
       >
         +1 🎯
       </text>
@@ -364,8 +532,8 @@ defmodule HextankWeb.GameComponents do
 
   ## Small pieces
 
-  @doc "A distinct colour per seat (golden-angle hues)."
-  def seat_color(seat), do: "hsl(#{rem(seat * 137, 360)} 65% 45%)"
+  @doc "A distinct neon colour per seat (golden-angle hues), bright on the dark board."
+  def seat_color(seat), do: "hsl(#{rem(seat * 137, 360)} 100% 62%)"
 
   @doc "A coloured dot for a tank."
   attr :seat, :integer, required: true

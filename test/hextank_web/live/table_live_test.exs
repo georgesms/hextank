@@ -134,6 +134,10 @@ defmodule HextankWeb.TableLiveTest do
       {:ok, game} = Tables.get(game.id)
       assert %{position: ^target, ap: 1} = Game.tank(game, ctx.ana.id)
       refute has_element?(view, "#highlights-path")
+
+      # The tank drives there with the keyframes of the move's effect.
+      assert has_element?(view, "#effects [data-effect=moved] style", "@keyframes")
+      assert view |> element("#tank-#{ctx.ana.id}") |> render() =~ ~r/animation: effect-\d+-drive/
     end
 
     test "a path longer than your AP is shown but not driven", ctx do
@@ -197,10 +201,10 @@ defmodule HextankWeb.TableLiveTest do
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
       layers = fn -> board_layers(render(view)) end
 
-      assert layers.() == ["board-cells", "highlights", "tanks", "effects"]
+      assert layers.() == ["board-cells", "highlights", "tracks", "tanks", "effects"]
 
       view |> element("#tank-#{ctx.bruno.id}") |> render_click()
-      assert layers.() == ["board-cells", "highlights", "tanks", "effects"]
+      assert layers.() == ["board-cells", "highlights", "tracks", "tanks", "effects"]
     end
 
     test "the last shot shows the winner above the board, with a crown", ctx do

@@ -417,19 +417,22 @@ defmodule HextankWeb.TableLive do
                 <svg
                   id="board"
                   viewBox={@board_layout.view_box}
-                  class="mx-auto max-h-[75vh] w-full touch-manipulation select-none"
+                  class="board-screen mx-auto max-h-[75vh] w-full touch-manipulation select-none"
                 >
+                  <.board_defs />
                   <.board_cells cells={@board_layout.cells} />
                   <%!-- Always there, even with nothing highlighted: the layers after it
-                       (tanks, effects) then never move, and moving them would restart
-                       their animations. --%>
+                       (tracks, tanks, effects) then never move, and moving them would
+                       restart their animations. --%>
                   <g id="highlights">
                     <.highlights :for={{kind, hexes} <- @highlights} kind={kind} hexes={hexes} />
                   </g>
+                  <.tracks effects={@effects} />
                   <.tanks
                     tanks={Game.living_tanks(@game)}
                     me={@current_player.id}
                     winner_id={@game.winner_id}
+                    effects={@effects}
                   />
                   <.effects effects={@effects} />
                 </svg>

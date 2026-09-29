@@ -104,10 +104,55 @@
 
 /* This file is for your main application CSS */
 
+/* The board: a dark screen whatever the page's theme, with the players' tanks in
+   neon (see HextankWeb.GameComponents). Sizes are in SVG units: a cell is about 17
+   wide. */
+.board-screen {
+  --board-bg: #081017;
+  --board-cell: #0c1720;
+  --board-cell-hover: #123040;
+  --board-grid: #22313d;
+  --board-rock: #1f2d39;
+  background: var(--board-bg);
+  border-radius: 1rem;
+}
+.board-cell { fill: var(--board-cell); stroke: var(--board-grid); stroke-width: 0.6; cursor: pointer; transition: fill 0.15s; }
+.board-cell:hover { fill: var(--board-cell-hover); }
+.board-rock { fill: var(--board-rock); stroke: var(--board-grid); stroke-width: 0.6; }
+
+/* A tank takes its colour from its own `color` (see tanks/1). Its hull and turret
+   are drawn around (0, 0), the tank's centre, and turn around that point.
+   (transform-box: fill-box would turn them around their own middle, but Firefox
+   gets that wrong for groups.) */
+.tank-part { transform-origin: 0 0; }
+.tank-fill { fill: var(--board-bg); stroke: currentColor; stroke-width: 1; }
+.tank-tread { stroke: currentColor; stroke-width: 0.4; stroke-opacity: 0.6; }
+.tank-callsign { fill: currentColor; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; letter-spacing: 0.02em; }
+
+/* Tread marks: each line is drawn while the tank drives along it, then all of them
+   fade together (durations and delays set inline, see GameComponents.tracks/1). */
+.fx-track {
+  stroke: currentColor;
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-opacity: 0.75;
+  stroke-dasharray: 1;
+  animation-name: fx-track-draw, fx-track-fade;
+  animation-timing-function: linear, ease-in;
+  animation-fill-mode: both, forwards;
+}
+
+@keyframes fx-track-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes fx-track-fade {
+  to { opacity: 0; }
+}
+
 /* Board effects (see HextankWeb.GameComponents.effects/1). Each one plays once, when
-   LiveView adds it to the page, and then stays invisible until it's replaced. Sizes
-   are in SVG units: a cell is about 17 wide. */
-.fx-trail,
+   LiveView adds it to the page, and then stays invisible until it's replaced. */
 .fx-tracer,
 .fx-burst,
 .fx-ring,
@@ -121,20 +166,13 @@
   transform-origin: center;
 }
 
-.fx-trail { animation: fx-trail 0.9s ease-out both; }
-.fx-tracer { stroke-dasharray: 1; animation: fx-tracer 0.5s ease-out both; }
-.fx-burst { animation: fx-burst 0.6s ease-out 0.15s both; }
+/* A shot waits for the turret to turn (250 ms). */
+.fx-tracer { stroke-dasharray: 1; animation: fx-tracer 0.5s ease-out 0.25s both; }
+.fx-burst { animation: fx-burst 0.6s ease-out 0.4s both; }
 .fx-ring { animation: fx-ring 0.8s ease-out both; }
 .fx-travel { animation: fx-travel 0.8s ease-in-out both; }
 .fx-drop { animation: fx-drop 0.9s ease-out both; }
 .fx-float { animation: fx-float 1.2s ease-out both; }
-
-/* Tire tracks: each dot fades in and out, one after the other (delay set inline). */
-@keyframes fx-trail {
-  0% { opacity: 0; }
-  25% { opacity: 0.8; }
-  100% { opacity: 0; }
-}
 
 /* A line drawn from the shooter to the target (pathLength is 1), then fading. */
 @keyframes fx-tracer {
@@ -221,10 +259,14 @@
 }
 
 /* People who asked their system for less motion get none of it: no effects, no
-   confetti, and the result shows up already in place. */
+   tread marks, no confetti, and tanks and the result show up already in place. */
 @media (prefers-reduced-motion: reduce) {
   #effects,
+  #tracks,
   .fx-confetti { display: none; }
+
+  /* Tanks jump to where they're going and point the new way at once. */
+  #tanks g { animation: none !important; }
 
   .fx-pop,
   .fx-bounce,
