@@ -21,12 +21,12 @@ msgstr "%{count} de 20 jogadores. O jogo precisa de pelo menos 2."
 msgid "%{hp} HP"
 msgstr "%{hp} HP"
 
-#: lib/hextank_web/messages.ex:145
+#: lib/hextank_web/messages.ex:146
 #, elixir-autogen, elixir-format
 msgid "%{h} h %{m} min"
 msgstr "%{h} h %{m} min"
 
-#: lib/hextank_web/messages.ex:142
+#: lib/hextank_web/messages.ex:143
 #, elixir-autogen, elixir-format
 msgid "%{m} min"
 msgstr "%{m} min"
@@ -66,12 +66,12 @@ msgstr "%{name} venceu o jogo!"
 msgid "%{name} won!"
 msgstr "%{name} venceu!"
 
-#: lib/hextank_web/messages.ex:141
+#: lib/hextank_web/messages.ex:142
 #, elixir-autogen, elixir-format
 msgid "%{s} s"
 msgstr "%{s} s"
 
-#: lib/hextank_web/messages.ex:151
+#: lib/hextank_web/messages.ex:152
 #, elixir-autogen, elixir-format
 msgid "%{time} ago"
 msgstr "há %{time}"
@@ -81,12 +81,12 @@ msgstr "há %{time}"
 msgid "(you)"
 msgstr "(você)"
 
-#: lib/hextank_web/messages.ex:135
+#: lib/hextank_web/messages.ex:136
 #, elixir-autogen, elixir-format
 msgid "1 AP every %{time}"
 msgstr "1 PA a cada %{time}"
 
-#: lib/hextank_web/messages.ex:134
+#: lib/hextank_web/messages.ex:135
 #, elixir-autogen, elixir-format
 msgid "1 AP per day"
 msgstr "1 PA por dia"
@@ -176,7 +176,7 @@ msgid "Create table"
 msgstr "Criar mesa"
 
 #: lib/hextank_web/live/admin_live.ex:107
-#: lib/hextank_web/messages.ex:216
+#: lib/hextank_web/messages.ex:217
 #, elixir-autogen, elixir-format
 msgid "Finished"
 msgstr "Terminado"
@@ -322,7 +322,7 @@ msgid "Range +1"
 msgstr "Alcance +1"
 
 #: lib/hextank_web/live/admin_live.ex:106
-#: lib/hextank_web/messages.ex:215
+#: lib/hextank_web/messages.ex:216
 #, elixir-autogen, elixir-format
 msgid "Running"
 msgstr "Em andamento"
@@ -557,7 +557,7 @@ msgstr "fechar"
 msgid "ghost"
 msgstr "fantasma"
 
-#: lib/hextank_web/messages.ex:150
+#: lib/hextank_web/messages.ex:151
 #, elixir-autogen, elixir-format
 msgid "just now"
 msgstr "agora mesmo"
@@ -585,13 +585,13 @@ msgstr[1] "%{count} mensagens novas"
 msgid "A message has at most 500 characters."
 msgstr "Uma mensagem tem no máximo 500 caracteres."
 
-#: lib/hextank_web/messages.ex:179
+#: lib/hextank_web/messages.ex:180
 #, elixir-autogen, elixir-format
 msgid "Automatic (grows with players)"
 msgstr "Automático (cresce com os jogadores)"
 
 #: lib/hextank_web/live/lobby_live.ex:169
-#: lib/hextank_web/messages.ex:204
+#: lib/hextank_web/messages.ex:205
 #, elixir-autogen, elixir-format
 msgid "Board size"
 msgstr "Tamanho do tabuleiro"
@@ -608,12 +608,12 @@ msgstr "Conversa"
 msgid "Everyone at the table"
 msgstr "Todos na mesa"
 
-#: lib/hextank_web/messages.ex:191
+#: lib/hextank_web/messages.ex:192
 #, elixir-autogen, elixir-format
 msgid "Few (5%)"
 msgstr "Poucas (5%)"
 
-#: lib/hextank_web/messages.ex:193
+#: lib/hextank_web/messages.ex:194
 #, elixir-autogen, elixir-format
 msgid "Many (%{percent}%)"
 msgstr "Muitas (%{percent}%)"
@@ -628,12 +628,12 @@ msgstr "Mais opções"
 msgid "No messages yet. Diplomacy starts here."
 msgstr "Nenhuma mensagem ainda. A diplomacia começa aqui."
 
-#: lib/hextank_web/messages.ex:190
+#: lib/hextank_web/messages.ex:191
 #, elixir-autogen, elixir-format
 msgid "None"
 msgstr "Nenhuma"
 
-#: lib/hextank_web/messages.ex:192
+#: lib/hextank_web/messages.ex:193
 #, elixir-autogen, elixir-format
 msgid "Normal (10%)"
 msgstr "Normal (10%)"
@@ -653,13 +653,13 @@ msgstr "Escolha outras palavras, por favor."
 msgid "Privately to %{name}"
 msgstr "Em particular para %{name}"
 
-#: lib/hextank_web/messages.ex:182
+#: lib/hextank_web/messages.ex:183
 #, elixir-autogen, elixir-format
 msgid "Radius %{radius} (%{cells} cells)"
 msgstr "Raio %{radius} (%{cells} casas)"
 
 #: lib/hextank_web/live/lobby_live.ex:177
-#: lib/hextank_web/messages.ex:205
+#: lib/hextank_web/messages.ex:206
 #, elixir-autogen, elixir-format
 msgid "Rocks"
 msgstr "Pedras"
@@ -670,13 +670,13 @@ msgid "Slow down: at most 5 messages in 10 seconds."
 msgstr "Mais devagar: no máximo 5 mensagens em 10 segundos."
 
 #: lib/hextank_web/live/lobby_live.ex:186
-#: lib/hextank_web/messages.ex:206
+#: lib/hextank_web/messages.ex:207
 #, elixir-autogen, elixir-format
 msgid "Starting HP"
 msgstr "HP inicial"
 
 #: lib/hextank_web/live/lobby_live.ex:192
-#: lib/hextank_web/messages.ex:207
+#: lib/hextank_web/messages.ex:208
 #, elixir-autogen, elixir-format
 msgid "Starting range"
 msgstr "Alcance inicial"
@@ -1048,12 +1048,12 @@ msgid "You can find it again on your account page."
 msgstr "Você o encontra de novo na sua página de conta."
 
 #: lib/hextank_web/live/lobby_live.ex:199
-#: lib/hextank_web/messages.ex:208
+#: lib/hextank_web/messages.ex:209
 #, elixir-autogen, elixir-format
 msgid "Maximum range"
 msgstr "Alcance máximo"
 
-#: lib/hextank_web/messages.ex:197
+#: lib/hextank_web/messages.ex:198
 #, elixir-autogen, elixir-format
 msgid "No limit"
 msgstr "Sem limite"
@@ -1089,26 +1089,26 @@ msgid_plural "%{count} of 20 players"
 msgstr[0] "1 de 20 jogadores"
 msgstr[1] "%{count} de 20 jogadores"
 
-#: lib/hextank_web/messages.ex:174
+#: lib/hextank_web/messages.ex:175
 #, elixir-autogen, elixir-format
 msgid "Deleted in 1 day"
 msgid_plural "Deleted in %{count} days"
 msgstr[0] "Será apagada em 1 dia"
 msgstr[1] "Será apagada em %{count} dias"
 
-#: lib/hextank_web/messages.ex:214
+#: lib/hextank_web/messages.ex:215
 #, elixir-autogen, elixir-format
 msgid "Not started"
 msgstr "Não iniciado"
 
-#: lib/hextank_web/messages.ex:162
+#: lib/hextank_web/messages.ex:163
 #, elixir-autogen, elixir-format
 msgid "Started 1 day ago"
 msgid_plural "Started %{count} days ago"
 msgstr[0] "Começou há 1 dia"
 msgstr[1] "Começou há %{count} dias"
 
-#: lib/hextank_web/messages.ex:158
+#: lib/hextank_web/messages.ex:159
 #, elixir-autogen, elixir-format
 msgid "Started less than a day ago"
 msgstr "Começou há menos de um dia"
@@ -1214,3 +1214,8 @@ msgstr "Os botões do painel Seu tanque fazem o mesmo. Esc cancela."
 #, elixir-autogen, elixir-format
 msgid "The last tank standing wins. Make alliances in the chat, and break them."
 msgstr "Vence o último tanque de pé. Faça alianças no chat, e traia."
+
+#: lib/hextank_web/messages.ex:134
+#, elixir-autogen, elixir-format
+msgid "1 AP every 8 hours"
+msgstr "1 PA a cada 8 horas"

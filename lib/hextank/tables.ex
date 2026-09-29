@@ -13,7 +13,7 @@ defmodule Hextank.Tables do
   alias Hextank.Players.Bans
   alias Hextank.Tables.{Lobby, Table}
 
-  @tick_intervals [10, 60, 3_600, 86_400]
+  @tick_intervals [10, 60, 3_600, 28_800, 86_400]
 
   @doc "The tick intervals a new table can choose from, in seconds."
   @spec tick_intervals() :: [pos_integer()]

@@ -35,7 +35,7 @@ the diplomacy, alliances and betrayals as much as the tactics.
 ### Action Points (AP)
 
 - Every **tick** every living tank gets **1 AP**. The table's creator picks the tick:
-  10 seconds, 1 minute, 1 hour or 24 hours (the default).
+  10 seconds, 1 minute, 1 hour, 8 hours or 24 hours (the default).
 - AP can be saved for later. There is no cap.
 - Every action costs **1 AP** (driving: 1 AP per cell):
 

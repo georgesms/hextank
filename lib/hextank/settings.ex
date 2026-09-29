@@ -16,7 +16,7 @@ defmodule Hextank.Settings do
 
   @allowed %{
     # :auto grows the board with the number of players (see Board.radius_for/1).
-    board_radius: [:auto | Enum.to_list(3..12)],
+    board_radius: [:auto | Enum.to_list(3..12)] ++ [14, 16, 18],
     obstacle_percent: [0, 5, 10, 20],
     start_hp: Enum.to_list(1..5),
     start_range: Enum.to_list(1..4),

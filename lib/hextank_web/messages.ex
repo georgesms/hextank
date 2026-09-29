@@ -131,6 +131,7 @@ defmodule HextankWeb.Messages do
   def tick_interval(10), do: gettext("1 AP every 10 seconds")
   def tick_interval(60), do: gettext("1 AP per minute")
   def tick_interval(3_600), do: gettext("1 AP per hour")
+  def tick_interval(28_800), do: gettext("1 AP every 8 hours")
   def tick_interval(86_400), do: gettext("1 AP per day")
   def tick_interval(seconds), do: gettext("1 AP every %{time}", time: duration(seconds))
 
