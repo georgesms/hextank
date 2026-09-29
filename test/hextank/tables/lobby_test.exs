@@ -18,8 +18,25 @@ defmodule Hextank.Tables.LobbyTest do
       assert Lobby.expired?(%{status: :lobby, created_at: days_ago(7)}, @now)
     end
 
-    test "a running table never expires" do
-      refute Lobby.expired?(%{status: :running, created_at: days_ago(365)}, @now)
+    test "a running table is deleted once every living tank has more than 200 AP" do
+      # Started 100 minutes ago with 1 AP per minute, and asleep since the start: the
+      # 100 missed ticks count as AP too.
+      asleep = %{
+        status: :running,
+        created_at: days_ago(365),
+        started_at: DateTime.add(@now, -100 * 60, :second),
+        tick_interval: 60,
+        ticks: 0,
+        lowest_ap: 0
+      }
+
+      refute Lobby.expired?(%{asleep | lowest_ap: 100}, @now)
+      assert Lobby.expired?(%{asleep | lowest_ap: 101}, @now)
+
+      # Saved just now, with every tick already handed out.
+      awake = %{asleep | ticks: 100}
+      refute Lobby.expired?(%{awake | lowest_ap: 200}, @now)
+      assert Lobby.expired?(%{awake | lowest_ap: 201}, @now)
     end
   end
 end

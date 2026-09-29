@@ -96,6 +96,11 @@ cancels.
   start. Before the start, players can leave.
 - A finished table becomes **read-only** and is deleted **30 days** after it ends.
 - A table that never starts expires after **7 days**.
+- A running table where **every living tank has more than 200 AP** counts as
+  abandoned (nobody is spending AP any more) and is deleted. The check runs at boot
+  and once a day, works out the AP of sleeping tables from the clock without waking
+  them, and skips tables someone has open. With 1 AP every 10 seconds, 200 AP is
+  about 33 minutes; with 1 per day, over 6 months.
 
 ---
 

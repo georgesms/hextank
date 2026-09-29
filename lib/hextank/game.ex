@@ -236,13 +236,23 @@ defmodule Hextank.Game do
   """
   @spec catch_up(t(), DateTime.t()) :: t()
   def catch_up(%__MODULE__{status: :running} = game, now) do
-    due = div(DateTime.diff(now, game.started_at, :second), game.tick_interval)
-    missed = due - game.ticks
+    missed = ticks_due(game, now) - game.ticks
 
     if missed > 0, do: tick(game, missed), else: game
   end
 
   def catch_up(game, _now), do: game
+
+  @doc """
+  How many ticks should have been handed out by `now`, counted from the start. Takes
+  any map with `started_at` and `tick_interval`, so the lobby can use it on a table's
+  summary without loading the game.
+  """
+  @spec ticks_due(%{started_at: DateTime.t(), tick_interval: pos_integer()}, DateTime.t()) ::
+          integer()
+  def ticks_due(%{started_at: started_at, tick_interval: tick_interval}, now) do
+    div(DateTime.diff(now, started_at, :second), tick_interval)
+  end
 
   @doc """
   Hands out `count` ticks at once: every living tank gets `count` AP, every ghost
@@ -428,6 +438,15 @@ defmodule Hextank.Game do
   @doc "The player's tank, or `nil`."
   @spec tank(t(), player_id()) :: Tank.t() | nil
   def tank(game, player_id), do: Map.get(game.tanks, player_id)
+
+  @doc "The fewest AP any living tank has, or `nil` when none is alive."
+  @spec lowest_ap(t()) :: non_neg_integer() | nil
+  def lowest_ap(game) do
+    case living_tanks(game) do
+      [] -> nil
+      tanks -> tanks |> Enum.map(& &1.ap) |> Enum.min()
+    end
+  end
 
   @doc "Whether the tank's range is already the table's maximum, so it can't upgrade."
   @spec max_range_reached?(t(), Tank.t()) :: boolean()

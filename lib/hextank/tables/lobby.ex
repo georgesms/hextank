@@ -5,7 +5,8 @@ defmodule Hextank.Tables.Lobby do
 
   The summaries are built from disk once at boot, then kept up to date by the table
   processes after every save. Once a day (and at boot) expired tables are deleted:
-  finished ones 30 days after the end, never-started ones 7 days after creation.
+  finished ones 30 days after the end, never-started ones 7 days after creation, and
+  abandoned running ones, where every living tank has more than 200 AP.
   """
 
   use GenServer
@@ -15,6 +16,8 @@ defmodule Hextank.Tables.Lobby do
   @day 86_400
   @keep_finished_days 30
   @keep_unstarted_days 7
+  # Nobody spends AP any more at a table where every living tank has this many.
+  @abandoned_ap 200
 
   @type summary :: %{
           id: String.t(),
@@ -25,6 +28,9 @@ defmodule Hextank.Tables.Lobby do
           player_ids: [String.t()],
           tick_interval: pos_integer(),
           created_at: DateTime.t(),
+          started_at: DateTime.t() | nil,
+          ticks: non_neg_integer(),
+          lowest_ap: non_neg_integer() | nil,
           finished_at: DateTime.t() | nil,
           action_counts: %{optional(atom()) => non_neg_integer()}
         }
@@ -70,6 +76,10 @@ defmodule Hextank.Tables.Lobby do
       player_ids: Map.keys(game.tanks),
       tick_interval: game.tick_interval,
       created_at: game.created_at,
+      # Enough to work out the AP of a sleeping table without loading it.
+      started_at: game.started_at,
+      ticks: game.ticks,
+      lowest_ap: Game.lowest_ap(game),
       finished_at: game.finished_at,
       action_counts: game.action_counts
     }
@@ -77,7 +87,10 @@ defmodule Hextank.Tables.Lobby do
 
   @doc """
   Whether a table should be deleted: finished more than #{@keep_finished_days} days
-  ago, or created more than #{@keep_unstarted_days} days ago and never started.
+  ago, created more than #{@keep_unstarted_days} days ago and never started, or
+  running with every living tank above #{@abandoned_ap} AP. A sleeping table's AP is
+  worked out from the clock: the lowest AP at the last save, plus the ticks missed
+  since.
   """
   @spec expired?(summary(), DateTime.t()) :: boolean()
   def expired?(%{status: :finished, finished_at: finished_at}, now) do
@@ -86,6 +99,12 @@ defmodule Hextank.Tables.Lobby do
 
   def expired?(%{status: :lobby, created_at: created_at}, now) do
     DateTime.diff(now, created_at, :second) > @keep_unstarted_days * @day
+  end
+
+  def expired?(%{status: :running, lowest_ap: lowest_ap} = summary, now)
+      when is_integer(lowest_ap) do
+    missed = max(Game.ticks_due(summary, now) - summary.ticks, 0)
+    lowest_ap + missed > @abandoned_ap
   end
 
   def expired?(_summary, _now), do: false

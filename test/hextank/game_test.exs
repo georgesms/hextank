@@ -218,6 +218,25 @@ defmodule Hextank.GameTest do
     end
   end
 
+  describe "lowest_ap/1" do
+    test "is the fewest AP among the living tanks, ghosts left out" do
+      assert Game.lowest_ap(game_with_ghost(ap: 0)) == 0
+
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 7},
+          {"bruno", Hex.new(3, -3, 0), ap: 4},
+          {"ghost", nil, hp: 0}
+        ])
+
+      assert Game.lowest_ap(game) == 4
+    end
+
+    test "is nil in a game with no living tanks" do
+      assert Game.lowest_ap(lobby_game([])) == nil
+    end
+  end
+
   describe "catch_up/2" do
     test "does nothing before the first tick is due" do
       game = standard_game()
