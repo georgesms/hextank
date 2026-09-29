@@ -137,7 +137,12 @@ defmodule HextankWeb.Layouts do
         </li>
         <li>
           {gettext(
-            "At 0 ❤️ you become a ghost: once a round you give 1 ⚡ to any living tank, and nobody knows it was you."
+            "You only see up to twice your 🎯 range, and only drive where you can see. The rest of the board is fog."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "At 0 ❤️ you become a ghost and see the whole board: once a round you give 1 ⚡ to any living tank, and nobody knows it was you."
           )}
         </li>
         <li>{gettext("The last tank standing wins. Make alliances in the chat, and break them.")}</li>

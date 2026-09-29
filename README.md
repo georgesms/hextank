@@ -19,8 +19,9 @@ the diplomacy, alliances and betrayals as much as the tactics.
 - **Board:** a hexagon-shaped map of pointy-top hex cells, with a few **obstacles**
   (rocks) that no tank can enter.
 - **Board size:** grows with the number of players: at least 15 cells per player,
-  radius at least 4 (2 players: 61 cells; 20 players: 331 cells). About one cell in
-  ten is an obstacle.
+  radius at least 4 (2 players: 61 cells; 20 players: 331 cells). The creator can
+  also pick a radius from 3 to 12, 14, 16 or 18 (1027 cells). About one cell in ten
+  is an obstacle.
 - **Starting position:** each player's tank is placed on a random free cell, at least
   3 steps from every other tank when the board has room, so nobody starts within
   reach of anyone.
@@ -31,6 +32,20 @@ the diplomacy, alliances and betrayals as much as the tactics.
   table's **maximum range, 5** by default (the creator can pick 4, 5, 6, 8 or no
   limit). The original game had no maximum.
 - **Action Points:** each tank starts with **0 AP**.
+
+### Visibility (fog of war)
+
+- A living tank **sees twice its range**: every cell at most `2 × range` steps away.
+  Its player's board is zoomed in on that hexagon and follows the tank; everything
+  else is fog, and says nothing about rocks or tanks.
+- A tank **only drives where it can see**: the target and the whole path must be in
+  sight, so the cost of a path never gives away a hidden rock or tank.
+- **Ghosts see the whole board.** Before the start and once the game is over, so does
+  everyone.
+- Someone who **isn't playing sees nothing** until the game is over, so nobody can
+  spy on the board with a second player.
+- Nothing hidden ever leaves the server: cells, tanks and animations in the fog
+  aren't sent to the browser at all.
 
 ### Action Points (AP)
 
@@ -747,6 +762,8 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] Stats as emojis: ❤️ HP, ⚡ AP, 🎯 range
 - [x] Light animations for moves, shots, AP gifts, range upgrades and the game's
       result (CSS only)
+- [x] Fog of war: each tank sees twice its range, ghosts see everything; the camera
+      zooms in on what you see, follows your tank and zooms out when your range grows
 - [x] The "Sala de Guerra" look for every page: themes, stencil and monospace fonts,
       logo and favicon (see *Look*)
 - [x] Board as a dark "war room" screen: neon armour symbols whose hull turns the way
