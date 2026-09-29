@@ -6,7 +6,8 @@ defmodule HextankWeb.GameComponents do
 
     1. `board_cells/1`: every cell, drawn once. Its assigns never change after the
        game starts, so LiveView sends it to the browser only once.
-    2. highlights: the cells you can act on right now.
+    2. highlights: the cells you can act on right now, inside a `<g>` that is
+       always there, so the layers after it never move.
     3. tanks: one `<g>` per tank, keyed by player, so an action only sends the tanks
        that changed. Moves slide thanks to a CSS transition.
     4. effects: a short animation for each action (see `effects_for/3`), played once by

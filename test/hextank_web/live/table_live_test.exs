@@ -56,6 +56,14 @@ defmodule HextankWeb.TableLiveTest do
     %{game | tanks: tanks}
   end
 
+  # The ids of the board's top-level layers, in order.
+  defp board_layers(html) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("#board > g")
+    |> LazyHTML.attribute("id")
+  end
+
   defp wait_until_asleep(id) do
     case Registry.lookup(Hextank.Tables.Registry, id) do
       [{pid, _}] ->
@@ -182,6 +190,17 @@ defmodule HextankWeb.TableLiveTest do
       # Opening the board afterwards shows the result, not the animation.
       {:ok, late_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
       refute has_element?(late_view, "#effects [data-effect]")
+    end
+
+    test "a click keeps the board's layers in place, so old effects don't replay", ctx do
+      game = running_game(ctx.ana, ctx.bruno, 1)
+      {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      layers = fn -> board_layers(render(view)) end
+
+      assert layers.() == ["board-cells", "highlights", "tanks", "effects"]
+
+      view |> element("#tank-#{ctx.bruno.id}") |> render_click()
+      assert layers.() == ["board-cells", "highlights", "tanks", "effects"]
     end
 
     test "the last shot shows the winner above the board, with a crown", ctx do
