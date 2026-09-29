@@ -163,12 +163,14 @@ defmodule HextankWeb.Messages do
   end
 
   @doc """
-  How long until a table is deleted, in days, rounded up: "Deleted in 5 days". Never
-  less than 1 day, so it doesn't say "0 days" in its last hours.
+  How long until a table is deleted, in days, rounded to the nearest day: "Deleted in
+  5 days". Never less than 1 day, so it doesn't say "0 days" in its last hours.
+  Rounding (not rounding up) means a page whose clock is a few seconds old still says
+  "7 days" right after the end, not "8 days".
   """
   @spec deleted_in(integer()) :: String.t()
   def deleted_in(seconds) do
-    days = max(div(seconds + 86_399, 86_400), 1)
+    days = max(div(seconds + 43_200, 86_400), 1)
     ngettext("Deleted in 1 day", "Deleted in %{count} days", days)
   end
 
