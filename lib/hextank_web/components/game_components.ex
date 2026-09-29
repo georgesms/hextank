@@ -261,12 +261,22 @@ defmodule HextankWeb.GameComponents do
   defp callsign(name), do: name |> String.slice(0, 8) |> String.upcase()
 
   @doc """
-  Definitions the board uses: the neon glow around tanks. Rendered once, before the
-  layers.
+  Definitions the board uses: the neon glow around tanks and the hatching of rocks.
+  Rendered once, before the layers.
   """
   def board_defs(assigns) do
     ~H"""
     <defs>
+      <pattern
+        id="rock-hatch"
+        width="2.6"
+        height="2.6"
+        patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)"
+      >
+        <rect width="2.6" height="2.6" fill="#22323f" />
+        <line x1="0" y1="0" x2="0" y2="2.6" stroke="#6f8a9c" stroke-width="1" />
+      </pattern>
       <filter id="tank-glow" x="-50%" y="-50%" width="200%" height="200%">
         <feGaussianBlur stdDeviation="0.9" result="blur" />
         <feMerge>
