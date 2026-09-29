@@ -1,104 +1,162 @@
-# DISCLAIMER: THIS IS A LIST OF PROHIBITED WORDS, USED TO MODERATE WHAT PLAYERS
-# WRITE. THE AUTHORS DO NOT CONDONE HATE OR INAPPROPRIATE BEHAVIOR.
+# =============================================================================
+# ENGLISH
+# =============================================================================
 #
-# AVISO: ESTA É UMA LISTA DE PALAVRAS PROIBIDAS, USADA PARA MODERAR O QUE OS
-# JOGADORES ESCREVEM. OS AUTORES NÃO COMPACTUAM COM O ÓDIO NEM COM COMPORTAMENTOS
-# INADEQUADOS.
+# DISCLAIMER
 #
-# Prohibited words (see README, "Moderation").
+# This is a list of prohibited words, used to moderate what players write.
+# The authors do not condone hate or inappropriate behavior. The words below
+# are here only so the game can block them. They come from the public
+# corpora and lexicons credited under "Sources".
 #
-# One word per line, English and Portuguese, focused on HATE SPEECH (slurs), not
-# general swearing. Lines starting with "#" and empty lines are ignored.
+# What this list is
 #
-# Write words plainly: matching already ignores case and accents, undoes common
-# letter swaps (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a, $ -> s) and shortens repeated
-# letters, so there's no need to list variants. Each word also blocks its Portuguese
-# forms (other gender, -inho/-inha, -ão/-ona, plurals), except the ordinary words in
-# allowed_words.txt. Only whole words match.
+# Prohibited words (see README, "Moderation"): one word per line, focused on
+# HATE SPEECH (slurs), not general swearing. The words are grouped by language
+# (English, then Portuguese) and, inside each language, by source. Lines
+# starting with "#" and empty lines are ignored. Don't add a word that is
+# already blocked: check both languages, and remember that each word already
+# blocks its forms (see below).
 #
-# Changes need the human's approval, and take effect after a deploy (the list is
-# compiled into Hextank.Moderation).
+# How to write the words
 #
-# Palavras proibidas (veja o README, "Moderation").
+# Write words plainly. Matching already:
+# - ignores case and accents;
+# - undoes common letter swaps (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a, $ -> s);
+# - shortens repeated letters.
+# So there's no need to list variants. Each word also blocks its Portuguese
+# forms (other gender, -inho/-inha, -ão/-ona, plurals), except the ordinary
+# words in allowed_words.txt. Only whole words match.
 #
-# Uma palavra por linha, em inglês e português, com foco em DISCURSO DE ÓDIO
-# (insultos contra grupos), não em palavrões em geral. Linhas que começam com "#" e
-# linhas vazias são ignoradas.
+# Changes
 #
-# Escreva as palavras de forma simples: a comparação já ignora maiúsculas e acentos,
-# desfaz trocas comuns de letras (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a, $ -> s) e
-# encurta letras repetidas, então não é preciso listar variações. Cada palavra também
-# bloqueia suas formas em português (outro gênero, -inho/-inha, -ão/-ona, plurais),
-# menos as palavras comuns de allowed_words.txt. Só palavras inteiras são comparadas.
+# Changes need the human's approval, and take effect after a deploy (the list
+# is compiled into Hextank.Moderation).
 #
-# Mudanças precisam da aprovação do humano e valem depois de um deploy (a lista é
-# compilada dentro de Hextank.Moderation).
+# Sources
+#
+# 1. "Annotated corpora": built from human-annotated hate speech corpora, see
+#    "How the list was built" below.
+# 2. MOL, the Multilingual Offensive Lexicon (Vargas et al., MIT license,
+#    https://github.com/franciellevargas/MOL): context-independent terms
+#    aimed at a group.
+# 3. HurtLex 1.2 (Bassignana, Basile and Patti, CC BY-SA 4.0,
+#    https://github.com/valeriobasile/hurtlex): ethnic and homophobic slurs,
+#    picked by hand.
+#
+# How the list was built
+#
+# The Portuguese list is built from human-annotated corpora. Most of them come
+# from the Portuguese Hate Speech Superset, which appears to be the work of
+# Tonneau et al. (2024). It combines four corpora: Fortuna et al. (2019),
+# tweets annotated hierarchically by target; ToLD-Br (Leite et al., 2020),
+# tweets annotated for toxicity; HateBR (Vargas et al., 2022), Instagram
+# comments on politicians' accounts; and TuPy (Oliveira et al., 2023). We added
+# OLID-BR (Trajano et al., 2023) and the new texts from TuPyE (Oliveira et al.,
+# 2023), for a total of about 49k texts, of which about 10% are hate speech. We
+# also took candidate terms from the MOL lexicon (Vargas et al., 2021) and the
+# slurs in Multilingual HateCheck (Röttger et al., 2022). These external terms
+# were added to the list only when they proved precise on the labelled data.
+#
+# The English list uses the same method on the English Hate Speech Superset,
+# which combines 25 corpora with about 350k unique texts, of which 27% are hate
+# speech. They include Davidson et al. (2017), HateXplain (Mathew et al.,
+# 2021), the Gab Hate Corpus (Kennedy et al., 2022), Measuring Hate Speech
+# (Kennedy et al., 2020), Learning from the Worst (Vidgen et al., 2021), CAD
+# (Vidgen et al., 2021), EDOS (Kirk et al., 2023), MLMA (Ousidhoum et al.,
+# 2019), HASOC (Mandl et al., 2019), ETHOS (Mollas et al., 2022), Stormfront
+# (de Gibert et al., 2018) and CONAN (Chung et al., 2019). External candidates
+# came from the English part of MOL and the original HateCheck (Röttger et al.,
+# 2021). The share of hate differs a lot between the two languages, and the
+# annotation criteria differ between corpora (hate, offensiveness, toxicity).
+# For this reason, the precision threshold was 0.4 for Portuguese and 0.7 for
+# English.
+#
+# =============================================================================
+# PORTUGUÊS
+# =============================================================================
+#
+# AVISO
+#
+# Esta é uma lista de palavras proibidas, usada para moderar o que os
+# jogadores escrevem. Os autores não compactuam com o ódio nem com
+# comportamentos inadequados. As palavras abaixo estão aqui apenas para que o
+# jogo possa bloqueá-las. Elas vêm dos corpora e léxicos públicos creditados
+# em "Fontes".
+#
+# O que é esta lista
+#
+# Palavras proibidas (veja o README, "Moderation"): uma palavra por linha, com
+# foco em DISCURSO DE ÓDIO (insultos contra grupos), não em palavrões em geral.
+# As palavras estão agrupadas por língua (inglês, depois português) e, dentro
+# de cada língua, por fonte. Linhas que começam com "#" e linhas vazias são
+# ignoradas. Não acrescente uma palavra que já é bloqueada: confira as duas
+# línguas e lembre que cada palavra já bloqueia suas formas (veja abaixo).
+#
+# Como escrever as palavras
+#
+# Escreva as palavras de forma simples. A comparação já:
+# - ignora maiúsculas e acentos;
+# - desfaz trocas comuns de letras (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a,
+#   $ -> s);
+# - encurta letras repetidas.
+# Então não é preciso listar variações. Cada palavra também bloqueia suas
+# formas em português (outro gênero, -inho/-inha, -ão/-ona, plurais), menos as
+# palavras comuns de allowed_words.txt. Só palavras inteiras são comparadas.
+#
+# Mudanças
+#
+# Mudanças precisam da aprovação do humano e valem depois de um deploy (a
+# lista é compilada dentro de Hextank.Moderation).
+#
+# Fontes
+#
+# 1. "Corpora anotados": construída a partir de corpora de discurso de ódio
+#    anotados por humanos, veja "Como a lista foi construída" abaixo.
+# 2. MOL, o Multilingual Offensive Lexicon (Vargas et al., licença MIT,
+#    https://github.com/franciellevargas/MOL): termos ofensivos em qualquer
+#    contexto, contra um grupo.
+# 3. HurtLex 1.2 (Bassignana, Basile e Patti, CC BY-SA 4.0,
+#    https://github.com/valeriobasile/hurtlex): insultos étnicos e
+#    homofóbicos, escolhidos à mão.
+#
+# Como a lista foi construída
+#
+# A lista em português foi construída sobre corpora anotados por humanos. A
+# maioria veio do Portuguese Hate Speech Superset, que parece corresponder ao
+# trabalho de Tonneau et al. (2024), e reúne quatro corpora: o de Fortuna et
+# al. (2019), com tweets anotados de forma hierárquica por alvo; o ToLD-Br
+# (Leite et al., 2020), com tweets anotados por toxicidade; o HateBR (Vargas et
+# al., 2022), com comentários do Instagram em perfis de políticos; e o TuPy
+# (Oliveira et al., 2023). A esse conjunto somamos o OLID-BR (Trajano et al.,
+# 2023) e os textos inéditos do TuPyE (Oliveira et al., 2023), num total de
+# cerca de 49 mil textos, dos quais cerca de 10% são discurso de ódio. Também
+# usamos como candidatos os termos do léxico MOL (Vargas et al., 2021) e os
+# insultos (slurs) do Multilingual HateCheck (Röttger et al., 2022). Esses
+# termos externos só entraram na lista quando se mostraram precisos nos dados
+# rotulados.
+#
+# A lista em inglês segue o mesmo método, aplicado ao English Hate Speech
+# Superset, que reúne 25 corpora e cerca de 350 mil textos únicos, dos quais
+# 27% são discurso de ódio. Estão entre eles o de Davidson et al. (2017), o
+# HateXplain (Mathew et al., 2021), o Gab Hate Corpus (Kennedy et al., 2022), o
+# Measuring Hate Speech (Kennedy et al., 2020), o Learning from the Worst
+# (Vidgen et al., 2021), o CAD (Vidgen et al., 2021), o EDOS (Kirk et al.,
+# 2023), o MLMA (Ousidhoum et al., 2019), o HASOC (Mandl et al., 2019), o ETHOS
+# (Mollas et al., 2022), o Stormfront (de Gibert et al., 2018) e o CONAN (Chung
+# et al., 2019). Os candidatos externos vieram da parte em inglês do MOL e do
+# HateCheck original (Röttger et al., 2021). A proporção de ódio é bem
+# diferente entre as línguas, e os critérios de anotação variam entre os
+# corpora (ódio, ofensividade, toxicidade). Por isso o limiar de precisão foi
+# 0,4 em português e 0,7 em inglês.
+#
+# =============================================================================
 
-arrota
-arroto
-baitola
-baitolas
-bichona
-bixona
-boiola
-bolsomerda
-bruxa
-esquerdista
-esquerdistas
-esquerdopata
-esquerdopatas
-feminazi
-feminazis
-feminista
-feministas
-feministo
-feministos
-fufas
-gay
-gays
-gayzao
-islamica
-islamico
-islamicos
-latina
-latino
-latinos
-luladrao
-marica
-maricas
-muculmano
-muculmanos
-mulherzinha
-peluda
-peludas
-peludo
-pepa
-petralha
-rapariga
-reproduz
-safada
-sapatao
-traveco
-vadia
-viadinha
-viadinho
-viado
-viados
-feminazi
-viadinho
-traveco
-baitola
-esquerdopatas
-sharia
-safada
-marica
-sapatao
-luladrao
-burra
-esquerdalha
-vadia
-mulherzinha
-virgens
+# =============================================================================
+# ENGLISH
+# =============================================================================
+
+# --- Annotated corpora (see Sources) ---
 whitepower
 kike
 gypo
@@ -143,7 +201,6 @@ twat
 barren
 negroe
 pajeet
-pakis
 paki
 fag
 hag
@@ -151,8 +208,6 @@ whore
 wog
 sandnigger
 yid
-niglet
-fagot
 pondlife
 spastic
 gypsy
@@ -167,7 +222,6 @@ unleashing
 goatfucker
 mongrel
 towelhead
-mulatto
 mutt
 inbred
 cunty
@@ -202,7 +256,6 @@ supremist
 perverted
 fuckchina
 greedy
-feminazi
 kaffir
 bender
 mong
@@ -242,83 +295,23 @@ baboon
 roma
 pakistanis
 treasonous
-faggotry
-kike
-nigger
-chinks
-cunt
-kikes
-niggers
-faggot
-muzzie
-beaners
-barren
-twat
-tard
-shitskin
-trannies
 sand
 sewage
-lesbos
-muzzies
-tards
-retardation
-sheboon
-retards
-fags
-whores
-faggots
-mudshark
-wetback
-muzrat
-inbred
-retard
-sandnigger
-retarded
-subhuman
-cunts
-beaner
-mussie
-niglet
-chink
-
-whore
-cripple
-macaco
 bitch
 pussy
 shemale
 queer
-dyke
-fag
 
-# Added from MOL, the Multilingual Offensive Lexicon (Vargas et al., MIT license,
-# https://github.com/franciellevargas/MOL): context-independent terms aimed at a
-# group. / Tirado do MOL: termos ofensivos em qualquer contexto, contra um grupo.
-vagabunda
-vagaba
-quenga
-greluda
-jornazista
-bicha
-hipocristão
-enrustiano
-machona
-evanjegue
-safaneja
+# --- MOL (see Sources) ---
 hypochristian
 
-# Added from HurtLex 1.2 (Bassignana, Basile and Patti, CC BY-SA 4.0,
-# https://github.com/valeriobasile/hurtlex): ethnic and homophobic slurs, picked
-# by hand. / Tirado do HurtLex: insultos étnicos e homofóbicos, escolhidos à mão.
+# --- HurtLex 1.2 (see Sources) ---
 faggedy
 nigga
 niggar
-mongloids
 ghey
 queerio
 jigaboo
-mongoloids
 chernozhopyi
 mongolid
 fayg
@@ -331,13 +324,10 @@ niggiz
 nigra
 ni66a
 nikker
-niggas
 halfbreed
-krauts
 fagala
 mongloid
 halfcast
-halfbreeds
 niggaz
 niggah
 niggre
@@ -345,8 +335,62 @@ sinoid
 pikie
 darky
 kraut
+
+# =============================================================================
+# PORTUGUÊS
+# =============================================================================
+
+# --- Corpora anotados (veja Fontes) ---
+baitola
+bixona
+boiola
+bolsomerda
+bruxa
+esquerdista
+esquerdopata
+feminazi
+feminista
+fufas
+gay
+gayzao
+islamica
+latina
+luladrao
+marica
+muculmano
+mulherzinha
+peluda
+pepa
+petralha
+rapariga
+reproduz
+safada
+sapatao
+traveco
+vadia
+viadinha
+viado
+sharia
+burra
+esquerdalha
+virgens
+macaco
+
+# --- MOL (veja Fontes) ---
+vagabunda
+vagaba
+quenga
+greluda
+jornazista
+bicha
+hipocristão
+enrustiano
+machona
+evanjegue
+safaneja
+
+# --- HurtLex 1.2 (veja Fontes) ---
 retardado
 mongolóide
 paneleiro
-mongolóides
 mongólico
