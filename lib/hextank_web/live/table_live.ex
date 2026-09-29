@@ -400,12 +400,20 @@ defmodule HextankWeb.TableLive do
                 phx-hook=".Board"
                 class="rounded-3xl border border-base-300 bg-base-200/40 p-2 sm:p-4"
               >
-                <.selection_bar
-                  details={@details}
-                  me={@me}
-                  can_select={can_select?(assigns)}
-                  double_click={@double_click}
-                />
+                <%!-- A fixed wrapper: when the banner replaces the bar, the board next
+                     to it stays put. Moving it would restart every animation in it. --%>
+                <div id="board-top">
+                  <%= if @game.status == :finished do %>
+                    <.result_banner game={@game} current_player={@current_player} now={@now} />
+                  <% else %>
+                    <.selection_bar
+                      details={@details}
+                      me={@me}
+                      can_select={can_select?(assigns)}
+                      double_click={@double_click}
+                    />
+                  <% end %>
+                </div>
                 <svg
                   id="board"
                   viewBox={@board_layout.view_box}
@@ -413,7 +421,11 @@ defmodule HextankWeb.TableLive do
                 >
                   <.board_cells cells={@board_layout.cells} />
                   <.highlights :for={{kind, hexes} <- @highlights} kind={kind} hexes={hexes} />
-                  <.tanks tanks={Game.living_tanks(@game)} me={@current_player.id} />
+                  <.tanks
+                    tanks={Game.living_tanks(@game)}
+                    me={@current_player.id}
+                    winner_id={@game.winner_id}
+                  />
                   <.effects effects={@effects} />
                 </svg>
                 <div
@@ -454,7 +466,6 @@ defmodule HextankWeb.TableLive do
           </section>
 
           <aside class="space-y-4">
-            <.winner_banner :if={@game.status == :finished} game={@game} />
             <.my_panel
               :if={@game.status == :running}
               game={@game}
@@ -758,17 +769,45 @@ defmodule HextankWeb.TableLive do
     """
   end
 
+  # Above the board once the game is over, instead of the selection bar: who won,
+  # with a little celebration, and when the table will be deleted.
   attr :game, Game, required: true
+  attr :current_player, :any, required: true
+  attr :now, DateTime, required: true
 
-  defp winner_banner(assigns) do
+  defp result_banner(assigns) do
+    assigns = assign(assigns, winner: Game.tank(assigns.game, assigns.game.winner_id))
+
     ~H"""
-    <div id="winner-banner" class="rounded-2xl border border-success/40 bg-success/10 p-4 text-center">
-      <.icon name="hero-trophy" class="size-8 text-success" />
-      <p class="mt-1 text-lg font-bold">
-        {gettext("%{name} won!", name: Game.tank(@game, @game.winner_id).name)}
+    <div
+      id="winner-banner"
+      class="fx-pop relative mb-2 rounded-2xl border border-warning/40 bg-warning/10 px-4 py-3 text-center"
+    >
+      <span :for={style <- confetti()} class="fx-confetti" style={style} />
+      <.icon name="hero-trophy" class="fx-bounce inline-block size-8 text-warning" />
+      <p class="text-lg font-bold">
+        <%= if @winner.player_id == @current_player.id do %>
+          {gettext("You won!")}
+        <% else %>
+          {gettext("%{name} won!", name: @winner.name)}
+        <% end %>
+      </p>
+      <p class="text-xs text-base-content/60">
+        {Messages.deleted_in(DateTime.diff(Tables.expires_at(@game), @now, :second))}
       </p>
     </div>
     """
+  end
+
+  # Eight dots flying out of the trophy, one every 45 degrees, further sideways than
+  # up and down since the banner is wide. Their animation is in app.css.
+  defp confetti do
+    for index <- 0..7 do
+      angle = index * :math.pi() / 4
+      dx = round(56 * :math.cos(angle))
+      dy = round(28 * :math.sin(angle))
+      "--fx-dx: #{dx}px; --fx-dy: #{dy}px; background: #{seat_color(index + 1)}"
+    end
   end
 
   attr :game, Game, required: true

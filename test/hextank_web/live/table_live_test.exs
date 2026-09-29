@@ -184,6 +184,26 @@ defmodule HextankWeb.TableLiveTest do
       refute has_element?(late_view, "#effects [data-effect]")
     end
 
+    test "the last shot shows the winner above the board, with a crown", ctx do
+      game =
+        running_game(ctx.ana, ctx.bruno, 1, fn game ->
+          game = side_by_side(game, ctx.ana.id, ctx.bruno.id)
+          %{game | tanks: Map.update!(game.tanks, ctx.bruno.id, &%{&1 | hp: 1})}
+        end)
+
+      {:ok, ana_view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")
+      {:ok, bruno_view, _html} = live(ctx.bruno_conn, ~p"/tables/#{game.id}")
+      refute has_element?(ana_view, "#winner-banner")
+
+      render_hook(ana_view, "tank_double", %{"player" => ctx.bruno.id})
+
+      assert has_element?(ana_view, "#winner-banner", "You won!")
+      assert has_element?(ana_view, "#winner-banner", "Deleted in 7 days")
+      assert has_element?(bruno_view, "#winner-banner", "Ana won!")
+      assert has_element?(bruno_view, "#tank-#{ctx.ana.id} .fx-crown")
+      assert has_element?(bruno_view, "#effects [data-effect=destroyed]")
+    end
+
     test "the panel can make a double-click on an enemy give AP instead", ctx do
       game = running_game(ctx.ana, ctx.bruno, 1, &side_by_side(&1, ctx.ana.id, ctx.bruno.id))
       {:ok, view, _html} = live(ctx.ana_conn, ~p"/tables/#{game.id}")

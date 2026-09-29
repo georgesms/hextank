@@ -113,7 +113,9 @@
 .fx-ring,
 .fx-travel,
 .fx-drop,
-.fx-float {
+.fx-float,
+.fx-halo,
+.fx-crown {
   /* Scale around the effect's own centre. */
   transform-box: fill-box;
   transform-origin: center;
@@ -171,7 +173,61 @@
   100% { transform: translateY(-8px); opacity: 0; }
 }
 
-/* People who asked their system for less motion get none of it. */
+/* The game's result: the banner above the board pops in, its trophy bounces and
+   a few confetti dots fly out of it (TableLive.result_banner); on the board, the
+   winner's tank gets a crown and a pulsing gold ring (GameComponents.tanks). */
+.fx-pop { animation: fx-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.fx-bounce { animation: fx-bounce 0.6s ease-in-out 0.3s 3; }
+.fx-halo { animation: fx-halo 1.2s ease-out 0.3s 3; }
+.fx-crown { animation: fx-crown 0.6s ease-out 0.3s both; }
+
+.fx-confetti {
+  position: absolute;
+  left: 50%;
+  top: 1.75rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: fx-confetti 1s ease-out 0.2s both;
+}
+
+@keyframes fx-pop {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fx-bounce {
+  50% { transform: translateY(-6px); }
+}
+
+/* Grows and fades out, then comes back in place. */
+@keyframes fx-halo {
+  0% { transform: scale(1); opacity: 1; }
+  60% { transform: scale(1.6); opacity: 0; }
+  61% { transform: scale(1); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fx-crown {
+  from { transform: translateY(-6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* From the trophy outwards (--fx-dx and --fx-dy set inline). */
+@keyframes fx-confetti {
+  from { transform: translate(-50%, -50%); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--fx-dx)), calc(-50% + var(--fx-dy))); opacity: 0; }
+}
+
+/* People who asked their system for less motion get none of it: no effects, no
+   confetti, and the result shows up already in place. */
 @media (prefers-reduced-motion: reduce) {
-  #effects { display: none; }
+  #effects,
+  .fx-confetti { display: none; }
+
+  .fx-pop,
+  .fx-bounce,
+  .fx-halo,
+  .fx-crown { animation: none; }
 }

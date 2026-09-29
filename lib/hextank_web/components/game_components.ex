@@ -124,6 +124,7 @@ defmodule HextankWeb.GameComponents do
   @doc "The living tanks. Keyed by player, so only the tanks that change are sent."
   attr :tanks, :list, required: true
   attr :me, :string, default: nil, doc: "the current player's id"
+  attr :winner_id, :string, default: nil, doc: "once the game is over: gets a crown"
 
   def tanks(assigns) do
     ~H"""
@@ -140,6 +141,12 @@ defmodule HextankWeb.GameComponents do
         class="cursor-pointer transition-transform duration-500 ease-out"
       >
         <circle
+          :if={tank.player_id == @winner_id}
+          r="9.5"
+          stroke-width="1.5"
+          class="fx-halo fill-none stroke-warning"
+        />
+        <circle
           :if={tank.player_id == @me}
           r="8.2"
           class="fill-none stroke-base-content"
@@ -154,6 +161,16 @@ defmodule HextankWeb.GameComponents do
           fill="white"
         >
           {initial(tank.name)}
+        </text>
+        <text
+          :if={tank.player_id == @winner_id}
+          y="-11"
+          font-size="8"
+          text-anchor="middle"
+          dominant-baseline="central"
+          class="fx-crown"
+        >
+          👑
         </text>
       </g>
     </g>
