@@ -1,0 +1,13 @@
+## BEAM flags for the release (see README, *Frugality*). The machine has one
+## shared vCPU, so one scheduler is enough, and busy-waiting would only burn CPU
+## credits while nothing happens.
+
+## One scheduler, one dirty CPU scheduler, two dirty IO schedulers.
++S 1:1
++SDcpu 1:1
++SDio 2
+
+## No busy-waiting when a scheduler runs out of work.
++sbwt none
++sbwtdcpu none
++sbwtdio none

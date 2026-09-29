@@ -9,6 +9,8 @@ defmodule HextankWeb.Endpoint do
     key: "_hextank_key",
     signing_salt: "rsFs59AT",
     same_site: "Lax",
+    # Only over HTTPS in production (config/prod.exs), so it's never sent in clear.
+    secure: Application.compile_env(:hextank, :secure_cookies, false),
     # Keep players logged in for a year, not just until the browser closes.
     max_age: 365 * 24 * 60 * 60
   ]

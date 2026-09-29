@@ -8,13 +8,10 @@ defmodule HextankWeb.Telemetry do
 
   @impl true
   def init(_arg) do
-    children = [
-      # Telemetry poller will execute the given period measurements
-      # every 10_000ms. Learn more here: https://telemetry-metrics.hexdocs.pm
-      {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
-      # Add reporters as children of your supervision tree.
-      # {Telemetry.Metrics.ConsoleReporter, metrics: metrics()}
-    ]
+    # No periodic measurements: a timer every few seconds would keep the machine
+    # busy for nothing (see README, *Frugality*). The metrics below are only read
+    # by LiveDashboard in development.
+    children = []
 
     Supervisor.init(children, strategy: :one_for_one)
   end
@@ -57,14 +54,6 @@ defmodule HextankWeb.Telemetry do
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
       summary("vm.total_run_queue_lengths.io")
-    ]
-  end
-
-  defp periodic_measurements do
-    [
-      # A module, function and arguments to be invoked periodically.
-      # This function must call :telemetry.execute/3 and a metric must be added above.
-      # {HextankWeb, :count_users, []}
     ]
   end
 end

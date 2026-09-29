@@ -19,8 +19,15 @@ config :hextank, HextankWeb.Endpoint,
     ]
   ]
 
-# Do not print debug messages in production
-config :logger, level: :info
+# Only warnings and errors in production: less to write, and no request logs.
+config :logger, level: :warning
+
+# The telemetry_poller library measures the VM every few seconds by default. Nothing
+# reads those numbers in production, and the timer would keep the machine busy.
+config :telemetry_poller, :default, false
+
+# The session cookie only travels over HTTPS (see HextankWeb.Endpoint).
+config :hextank, :secure_cookies, true
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
