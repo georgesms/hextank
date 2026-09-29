@@ -63,6 +63,14 @@ selection, which is handy on touch screens. It also has a switch that picks what
 double-click on another tank does: shoot it (the default) or give it 1 AP. Escape
 cancels.
 
+Every action shows a short animation on everyone's board: tire tracks along a move, a
+tracer and a burst for a shot (bigger when a tank is destroyed), a ⚡ flying to the
+tank that got AP (dropping from above for a ghost's vote) and a ring growing to the
+new range. When the game ends, a banner above the board names the winner ("You won!"
+for them), and the winner's tank gets a crown. The animations are plain CSS, played
+once when LiveView adds them to the page, and are turned off for people whose system
+asks for reduced motion.
+
 ### Ghosts (eliminated players)
 
 - A tank at 0 HP is removed from the board and its player becomes a **ghost**.
@@ -222,6 +230,9 @@ files on disk instead of a database:
 ### Web (`lib/hextank_web/`)
 
 - **`LobbyLive`** – list public tables and your own tables, create one, join one.
+  Each card shows the table's status: not started (players joined so far), running
+  (tanks alive and destroyed, days since the start) or finished (the winner, days
+  until it's deleted).
 - **`TableLive`** – the board as inline SVG, the player's tank stats, the action
   buttons, a list of all players and ghosts, an event log, the chat.
 - **`AccountLive`** – nickname, your rejoin link (copy, reset), your player id, Google
@@ -695,6 +706,10 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] Every action as a button in the tank panel; choose whether a double-click on
       another tank shoots it or gives it AP
 - [x] Stats as emojis: ❤️ HP, ⚡ AP, 🎯 range
+- [x] Light animations for moves, shots, AP gifts, range upgrades and the game's
+      result (CSS only)
+- [x] Lobby cards show each table's status: players, tanks alive and destroyed, days
+      since the start, the winner, days until deletion
 - [x] Admin page: statistics computed on demand, bulk table deletion
 - [ ] Table option "Google login required" (makes bans stick)
 - [ ] Spectator mode
