@@ -21,6 +21,11 @@ defmodule HextankWeb.Layouts do
   attr :flash, :map, required: true, doc: "the map of flash messages"
   attr :current_player, :any, default: nil, doc: "the %Player{} using the page, if any"
   attr :locale, :string, default: "en"
+
+  attr :dormant_url, :string,
+    default: nil,
+    doc: "where app.js sends this tab once it's left alone (see DormantController)"
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -73,7 +78,7 @@ defmodule HextankWeb.Layouts do
       </div>
     </header>
 
-    <main class="px-4 py-6 sm:px-6 sm:py-10">
+    <main class="px-4 py-6 sm:px-6 sm:py-10" data-dormant-url={@dormant_url}>
       <div class="mx-auto max-w-6xl">
         {render_slot(@inner_block)}
       </div>

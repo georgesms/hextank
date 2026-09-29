@@ -50,6 +50,10 @@ defmodule Hextank.Tables.Lobby do
   @spec delete(String.t()) :: :ok
   def delete(id), do: GenServer.cast(__MODULE__, {:delete, id})
 
+  @doc "The summary of one table, or `nil` if there's no such table."
+  @spec get(String.t()) :: summary() | nil
+  def get(id), do: GenServer.call(__MODULE__, {:get, id})
+
   @doc "Every table, newest first. For the admin page."
   @spec list_all() :: [summary()]
   def list_all, do: GenServer.call(__MODULE__, {:list, fn _summary -> true end})
@@ -158,6 +162,8 @@ defmodule Hextank.Tables.Lobby do
   def handle_cast({:delete, id}, summaries), do: {:noreply, Map.delete(summaries, id)}
 
   @impl true
+  def handle_call({:get, id}, _from, summaries), do: {:reply, Map.get(summaries, id), summaries}
+
   def handle_call({:list, keep?}, _from, summaries) do
     list =
       summaries

@@ -552,8 +552,9 @@ page load, so the LiveView and its websocket close.
 - Nothing is missed: when the player comes back, the table page loads fresh and
   `catch_up/2` has already applied every missed tick.
 
-The lobby page gets the same treatment, with its own dormant page linking back to
-`/`.
+The lobby page gets the same treatment, with its own dormant page (`/dormant`)
+linking back to `/`. The account and admin pages use that one too. Each LiveView
+page names its dormant page in `data-dormant-url` on `<main>` (`Layouts.app/1`).
 
 ### Who does what
 
@@ -711,11 +712,12 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [ ] Tests with `Req.Test` stubs (never calling Google in tests)
 
 ### Phase 7 – Frugal deploy (see *Deployment*)
-- [ ] `mix phx.gen.release --docker`, with the `vm.args.eex` flags above
-- [ ] Trim `telemetry.ex`, production log level `:warning`
-- [ ] `DATA_DIR` read in `runtime.exs`; save format versioned in `Storage`
-- [ ] Dormant view: idle timers in `app.js`, `DormantController` with a layout
-      without `app.js`, for tables and the lobby (the admin page needs the timers too)
+- [x] `mix phx.gen.release --docker`, with the `vm.args.eex` flags above
+- [x] Trim `telemetry.ex`, production log level `:warning`; secure session cookie
+- [x] `DATA_DIR` read in `runtime.exs`; save format versioned in `Storage`
+- [x] Dormant view: idle timers in `app.js`, `DormantController` with a layout
+      without `app.js`, for tables and the lobby (account and admin pages use the
+      lobby's)
 - [ ] Load test locally: 1000 tables, a few hundred LiveViews; measure with
       LiveDashboard and write the real numbers here
 - [ ] Human: install `flyctl`, sign up, add a card, choose name and region

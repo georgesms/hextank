@@ -49,7 +49,12 @@ defmodule HextankWeb.AccountLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_player={@current_player} locale={@locale}>
+    <Layouts.app
+      flash={@flash}
+      current_player={@current_player}
+      locale={@locale}
+      dormant_url={~p"/dormant"}
+    >
       <div class="mx-auto max-w-xl space-y-6">
         <h1 class="text-2xl font-bold tracking-tight">{gettext("Account")}</h1>
 

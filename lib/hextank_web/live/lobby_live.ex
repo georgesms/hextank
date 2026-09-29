@@ -93,7 +93,12 @@ defmodule HextankWeb.LobbyLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_player={@current_player} locale={@locale}>
+    <Layouts.app
+      flash={@flash}
+      current_player={@current_player}
+      locale={@locale}
+      dormant_url={~p"/dormant"}
+    >
       <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div class="space-y-10">
           <section id="my-tables">

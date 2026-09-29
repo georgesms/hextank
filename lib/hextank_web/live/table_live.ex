@@ -379,7 +379,12 @@ defmodule HextankWeb.TableLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_player={@current_player} locale={@locale}>
+    <Layouts.app
+      flash={@flash}
+      current_player={@current_player}
+      locale={@locale}
+      dormant_url={~p"/tables/#{@game.id}/dormant"}
+    >
       <div id="table-page" phx-window-keydown="cancel" phx-key="Escape">
         <div class="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
           <.link navigate={~p"/"} class="btn btn-ghost btn-sm -ml-2 gap-1">

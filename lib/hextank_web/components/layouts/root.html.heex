@@ -14,7 +14,15 @@
       crossorigin
     />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
-    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
+    <%!-- Dormant pages leave out app.js: no LiveView, no websocket (see
+         DormantController). The small theme script below still runs. --%>
+    <script
+      :if={!assigns[:dormant]}
+      defer
+      phx-track-static
+      type="text/javascript"
+      src={~p"/assets/js/app.js"}
+    >
     </script>
     <script>
       (() => {

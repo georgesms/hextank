@@ -86,7 +86,12 @@ defmodule HextankWeb.AdminLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_player={@current_player} locale={@locale}>
+    <Layouts.app
+      flash={@flash}
+      current_player={@current_player}
+      locale={@locale}
+      dormant_url={~p"/dormant"}
+    >
       <div class="space-y-8">
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl font-bold tracking-tight">{gettext("Admin")}</h1>

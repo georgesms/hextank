@@ -47,6 +47,33 @@ window.addEventListener("phx:copy", (event) => {
   navigator.clipboard?.writeText(event.target.value)
 })
 
+// Dormant view (see README, *Dormant view*): a tab left alone goes to a plain page,
+// which closes its websocket. With no open connection, Fly can stop the machine.
+// Each LiveView page says where to go in `data-dormant-url` (see Layouts.app/1).
+const HIDDEN_LIMIT_MS = 5 * 60 * 1000 // tab hidden (another tab, minimised)
+const IDLE_LIMIT_MS = 30 * 60 * 1000 // tab visible, but no click, key or scroll
+
+const goDormant = () => {
+  const page = document.querySelector("[data-dormant-url]")
+  if (page) window.location.assign(page.dataset.dormantUrl)
+}
+
+let hiddenTimer = null
+document.addEventListener("visibilitychange", () => {
+  clearTimeout(hiddenTimer)
+  if (document.hidden) hiddenTimer = setTimeout(goDormant, HIDDEN_LIMIT_MS)
+})
+
+let idleTimer = setTimeout(goDormant, IDLE_LIMIT_MS)
+const stillHere = () => {
+  clearTimeout(idleTimer)
+  idleTimer = setTimeout(goDormant, IDLE_LIMIT_MS)
+}
+// Capture, so scrolling inside a box (the chat) counts too.
+for (const type of ["click", "keydown", "scroll", "touchstart"]) {
+  window.addEventListener(type, stillHere, {capture: true, passive: true})
+}
+
 liveSocket.connect()
 
 // expose liveSocket on window for web console debug logs and latency simulation:

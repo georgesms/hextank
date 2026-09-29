@@ -32,6 +32,10 @@ defmodule HextankWeb.Router do
   scope "/", HextankWeb do
     pipe_through [:browser, :require_player]
 
+    # Where idle tabs go: plain pages, no websocket (see DormantController).
+    get "/dormant", DormantController, :lobby
+    get "/tables/:id/dormant", DormantController, :table
+
     live_session :player, on_mount: HextankWeb.PlayerHook do
       live "/", LobbyLive
       live "/tables/:id", TableLive

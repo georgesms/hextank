@@ -1,0 +1,20 @@
+<Layouts.app flash={@flash} current_player={@current_player} locale={@locale}>
+  <div id="dormant" class="mx-auto max-w-md py-16 text-center">
+    <.icon name="hero-moon" class="size-12 text-primary" />
+    <h1 class="mt-4 text-2xl">{@summary.name}</h1>
+    <div class="mt-2 flex justify-center"><.status_badge status={@summary.status} /></div>
+    <p class="mt-4 text-base-content/70">
+      <%= case @summary.status do %>
+        <% :running -> %>
+          {gettext("You've been away. The table keeps going: your tank still earns AP.")}
+        <% :lobby -> %>
+          {gettext("You've been away. The game hasn't started yet.")}
+        <% :finished -> %>
+          {gettext("You've been away. This game is over.")}
+      <% end %>
+    </p>
+    <.link id="dormant-back" href={~p"/tables/#{@summary.id}"} class="btn btn-primary btn-lg mt-8">
+      {gettext("Back to the table")}
+    </.link>
+  </div>
+</Layouts.app>

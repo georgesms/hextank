@@ -116,6 +116,12 @@ defmodule Hextank.Tables do
   @doc "Every table the player is in, newest first."
   defdelegate list_for_player(player_id), to: Lobby
 
+  @doc """
+  A table's summary from the lobby, or `nil`. Never wakes the table up: for the
+  dormant page.
+  """
+  defdelegate summary(id), to: Lobby, as: :get
+
   @doc "When a finished or never-started table will be deleted (`nil` if running)."
   defdelegate expires_at(summary_or_game), to: Lobby
 
