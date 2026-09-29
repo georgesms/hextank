@@ -25,6 +25,7 @@ defmodule HextankWeb.LobbyLive do
       |> assign(:unread, Map.new(my_tables, &{&1.id, Chat.unread_count(&1.id, player.id)}))
       |> assign(:open_tables, Enum.reject(Tables.list_public(), &(&1.id in my_ids)))
       |> assign(:form, new_table_form())
+      |> assign(:rejoin_url, HextankWeb.RejoinLink.link_url(player))
 
     {:ok, socket}
   end
@@ -191,12 +192,19 @@ defmodule HextankWeb.LobbyLive do
             <p class="mt-1 text-base-content/70">
               {gettext("Your account page has a personal link that logs you back in anywhere.")}
             </p>
-            <.link navigate={~p"/account"} class="link link-info mt-2 inline-block font-medium">
+            <button
+              id="show-rejoin-link"
+              type="button"
+              phx-click={Layouts.show_rejoin_modal("rejoin-modal")}
+              class="link link-info mt-2 inline-block font-medium"
+            >
               {gettext("Get my rejoin link")}
-            </.link>
+            </button>
           </div>
         </aside>
       </div>
+
+      <Layouts.rejoin_modal id="rejoin-modal" url={@rejoin_url} />
     </Layouts.app>
     """
   end

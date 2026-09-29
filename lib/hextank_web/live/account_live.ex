@@ -60,20 +60,8 @@ defmodule HextankWeb.AccountLive do
               "Bookmark this link or keep it somewhere safe: it logs you back in as yourself on any device. It works like a password, so don't share it."
             )}
           </p>
-          <div class="mt-3 flex gap-2">
-            <input
-              id="rejoin-link"
-              readonly
-              value={@rejoin_url}
-              class="input input-bordered w-full font-mono text-xs"
-            />
-            <button
-              id="copy-rejoin-link"
-              class="btn"
-              phx-click={JS.dispatch("phx:copy", to: "#rejoin-link")}
-            >
-              <.icon name="hero-clipboard-document" class="size-5" />
-            </button>
+          <div class="mt-3">
+            <Layouts.rejoin_link_field id="rejoin-link" url={@rejoin_url} />
           </div>
           <button
             id="reset-link"

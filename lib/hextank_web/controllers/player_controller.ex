@@ -24,6 +24,8 @@ defmodule HextankWeb.PlayerController do
         conn
         |> log_in(player)
         |> put_flash(:info, gettext("Welcome, %{name}!", name: player.nickname))
+        # Opens the modal with the rejoin link on the next page (see Layouts.app/1).
+        |> put_flash(:rejoin_link, "new")
         |> redirect(to: return_to)
 
       {:error, reason} ->

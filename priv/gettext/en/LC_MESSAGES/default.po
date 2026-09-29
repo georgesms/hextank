@@ -149,13 +149,13 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:137
+#: lib/hextank_web/live/lobby_live.ex:138
 #, elixir-autogen, elixir-format
 msgid "Anyone (listed in the lobby)"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:129
-#: lib/hextank_web/components/layouts.ex:144
+#: lib/hextank_web/components/layouts.ex:228
+#: lib/hextank_web/components/layouts.ex:243
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr ""
@@ -170,7 +170,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:185
+#: lib/hextank_web/live/lobby_live.ex:186
 #, elixir-autogen, elixir-format
 msgid "Create table"
 msgstr ""
@@ -181,17 +181,17 @@ msgstr ""
 msgid "Finished"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:127
+#: lib/hextank_web/live/lobby_live.ex:128
 #, elixir-autogen, elixir-format
 msgid "Friday night tanks"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:144
+#: lib/hextank_web/live/lobby_live.ex:145
 #, elixir-autogen, elixir-format
 msgid "Game speed"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:195
+#: lib/hextank_web/live/lobby_live.ex:201
 #, elixir-autogen, elixir-format
 msgid "Get my rejoin link"
 msgstr ""
@@ -228,7 +228,7 @@ msgid "Lobby"
 msgstr ""
 
 #: lib/hextank_web/live/admin_live.ex:189
-#: lib/hextank_web/live/lobby_live.ex:126
+#: lib/hextank_web/live/lobby_live.ex:127
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr ""
@@ -238,7 +238,7 @@ msgstr ""
 msgid "New link created. The old one no longer works."
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:123
+#: lib/hextank_web/live/lobby_live.ex:124
 #, elixir-autogen, elixir-format
 msgid "New table"
 msgstr ""
@@ -248,7 +248,7 @@ msgstr ""
 msgid "Next AP"
 msgstr ""
 
-#: lib/hextank_web/live/account_live.ex:94
+#: lib/hextank_web/live/account_live.ex:82
 #, elixir-autogen, elixir-format
 msgid "Nickname"
 msgstr ""
@@ -258,12 +258,7 @@ msgstr ""
 msgid "Nickname changed."
 msgstr ""
 
-#: lib/hextank_web/controllers/player_html/new.html.heex:35
-#, elixir-autogen, elixir-format
-msgid "No account needed. Your account page will give you a personal link to come back from any device."
-msgstr ""
-
-#: lib/hextank_web/live/lobby_live.ex:108
+#: lib/hextank_web/live/lobby_live.ex:109
 #, elixir-autogen, elixir-format
 msgid "No public tables right now. Create one and invite your friends!"
 msgstr ""
@@ -273,7 +268,7 @@ msgstr ""
 msgid "Only ghosts can vote."
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:138
+#: lib/hextank_web/live/lobby_live.ex:139
 #, elixir-autogen, elixir-format
 msgid "Only people with the link"
 msgstr ""
@@ -283,7 +278,7 @@ msgstr ""
 msgid "Only the table's creator can start the game."
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:106
+#: lib/hextank_web/live/lobby_live.ex:107
 #, elixir-autogen, elixir-format
 msgid "Open tables"
 msgstr ""
@@ -305,13 +300,13 @@ msgstr ""
 msgid "Players"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:190
+#: lib/hextank_web/live/lobby_live.ex:191
 #, elixir-autogen, elixir-format
 msgid "Playing on another device?"
 msgstr ""
 
 #: lib/hextank_web/live/admin_live.ex:214
-#: lib/hextank_web/live/lobby_live.ex:237
+#: lib/hextank_web/live/lobby_live.ex:245
 #, elixir-autogen, elixir-format
 msgid "Private"
 msgstr ""
@@ -332,7 +327,7 @@ msgstr ""
 msgid "Running"
 msgstr ""
 
-#: lib/hextank_web/live/account_live.ex:99
+#: lib/hextank_web/live/account_live.ex:87
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -342,7 +337,7 @@ msgstr ""
 msgid "Shoot"
 msgstr ""
 
-#: lib/hextank_web/live/account_live.ex:84
+#: lib/hextank_web/live/account_live.ex:72
 #, elixir-autogen, elixir-format
 msgid "Someone else has my link: make a new one"
 msgstr ""
@@ -352,7 +347,7 @@ msgstr ""
 msgid "Something happened"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:136
+#: lib/hextank_web/components/layouts.ex:235
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr ""
@@ -372,7 +367,7 @@ msgstr ""
 msgid "Tank Tactics on a hexagonal board. Earn action points over time, make alliances, betray them. Last tank standing wins."
 msgstr ""
 
-#: lib/hextank_web/live/account_live.ex:97
+#: lib/hextank_web/live/account_live.ex:85
 #, elixir-autogen, elixir-format
 msgid "Tanks already on a board keep the name they joined with."
 msgstr ""
@@ -387,7 +382,7 @@ msgstr ""
 msgid "That's off the board."
 msgstr ""
 
-#: lib/hextank_web/live/account_live.ex:81
+#: lib/hextank_web/live/account_live.ex:69
 #, elixir-autogen, elixir-format
 msgid "The current link will stop working. Continue?"
 msgstr ""
@@ -417,7 +412,7 @@ msgstr ""
 msgid "There's a tank there."
 msgstr ""
 
-#: lib/hextank_web/controllers/player_controller.ex:52
+#: lib/hextank_web/controllers/player_controller.ex:54
 #, elixir-autogen, elixir-format
 msgid "This rejoin link doesn't work anymore."
 msgstr ""
@@ -438,12 +433,12 @@ msgstr ""
 msgid "Waiting for players"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:121
+#: lib/hextank_web/components/layouts.ex:220
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr ""
 
-#: lib/hextank_web/controllers/player_controller.ex:47
+#: lib/hextank_web/controllers/player_controller.ex:49
 #, elixir-autogen, elixir-format
 msgid "Welcome back, %{name}!"
 msgstr ""
@@ -463,7 +458,7 @@ msgstr ""
 msgid "What happened"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:135
+#: lib/hextank_web/live/lobby_live.ex:136
 #, elixir-autogen, elixir-format
 msgid "Who can join"
 msgstr ""
@@ -498,7 +493,7 @@ msgstr ""
 msgid "You're in! The table's creator will start the game."
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:94
+#: lib/hextank_web/live/lobby_live.ex:95
 #, elixir-autogen, elixir-format
 msgid "You're not at any table yet. Join one below or create your own."
 msgstr ""
@@ -518,7 +513,7 @@ msgstr ""
 msgid "You've already voted this round."
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:192
+#: lib/hextank_web/live/lobby_live.ex:193
 #, elixir-autogen, elixir-format
 msgid "Your account page has a personal link that logs you back in anywhere."
 msgstr ""
@@ -533,7 +528,7 @@ msgstr ""
 msgid "Your rejoin link"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:92
+#: lib/hextank_web/live/lobby_live.ex:93
 #, elixir-autogen, elixir-format
 msgid "Your tables"
 msgstr ""
@@ -579,7 +574,7 @@ msgstr ""
 msgid "%{ap} AP"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:233
+#: lib/hextank_web/live/lobby_live.ex:241
 #, elixir-autogen, elixir-format
 msgid "1 new message"
 msgid_plural "%{count} new messages"
@@ -596,7 +591,7 @@ msgstr ""
 msgid "Automatic (grows with players)"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:155
+#: lib/hextank_web/live/lobby_live.ex:156
 #: lib/hextank_web/messages.ex:174
 #, elixir-autogen, elixir-format
 msgid "Board size"
@@ -624,7 +619,7 @@ msgstr ""
 msgid "Many (%{percent}%)"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:149
+#: lib/hextank_web/live/lobby_live.ex:150
 #, elixir-autogen, elixir-format
 msgid "More settings"
 msgstr ""
@@ -664,7 +659,7 @@ msgstr ""
 msgid "Radius %{radius} (%{cells} cells)"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:163
+#: lib/hextank_web/live/lobby_live.ex:164
 #: lib/hextank_web/messages.ex:175
 #, elixir-autogen, elixir-format
 msgid "Rocks"
@@ -675,13 +670,13 @@ msgstr ""
 msgid "Slow down: at most 5 messages in 10 seconds."
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:172
+#: lib/hextank_web/live/lobby_live.ex:173
 #: lib/hextank_web/messages.ex:176
 #, elixir-autogen, elixir-format
 msgid "Starting HP"
 msgstr ""
 
-#: lib/hextank_web/live/lobby_live.ex:178
+#: lib/hextank_web/live/lobby_live.ex:179
 #: lib/hextank_web/messages.ex:177
 #, elixir-autogen, elixir-format
 msgid "Starting range"
@@ -963,7 +958,7 @@ msgstr ""
 msgid "This table was deleted."
 msgstr ""
 
-#: lib/hextank_web/live/account_live.ex:103
+#: lib/hextank_web/live/account_live.ex:91
 #, elixir-autogen, elixir-format
 msgid "Your player id: %{id}. It isn't secret; the site's admins use it."
 msgstr ""
@@ -1016,4 +1011,39 @@ msgstr ""
 #: lib/hextank_web/messages.ex:130
 #, elixir-autogen, elixir-format
 msgid "1 AP every 10 seconds"
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:178
+#, elixir-autogen, elixir-format
+msgid "Copied!"
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:175
+#, elixir-autogen, elixir-format
+msgid "Copy"
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:128
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Done"
+msgstr ""
+
+#: lib/hextank_web/controllers/player_html/new.html.heex:35
+#, elixir-autogen, elixir-format, fuzzy
+msgid "No account needed. Next you'll get a personal link to come back from any device."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:115
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Save your rejoin link"
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:118
+#, elixir-autogen, elixir-format
+msgid "This link is your key: it logs you back in as yourself on any device, even if this browser forgets you. Keep it somewhere safe, like your notes or a message to yourself. It works like a password, so don't share it."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:124
+#, elixir-autogen, elixir-format
+msgid "You can find it again on your account page."
 msgstr ""

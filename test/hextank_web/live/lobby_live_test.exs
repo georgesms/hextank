@@ -10,6 +10,28 @@ defmodule HextankWeb.LobbyLiveTest do
     %{conn: conn, player: player}
   end
 
+  describe "the rejoin link modal" do
+    test "opens by itself right after signing up, and closes for good" do
+      conn = post(build_conn(), ~p"/players", %{"player" => %{"nickname" => "Bruno"}})
+      {:ok, view, _html} = live(recycle(conn), redirected_to(conn))
+
+      assert has_element?(view, "#welcome-rejoin-modal.modal-open")
+      assert view |> element("#welcome-rejoin-modal-link") |> render() =~ "/rejoin/"
+
+      view |> element("#welcome-rejoin-modal-done") |> render_click()
+      refute has_element?(view, "#welcome-rejoin-modal")
+    end
+
+    test "stays closed on later visits, until the lobby's button opens it", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      refute has_element?(view, "#welcome-rejoin-modal")
+      refute has_element?(view, "#rejoin-modal.modal-open")
+      assert has_element?(view, "#show-rejoin-link")
+      assert view |> element("#rejoin-modal-link") |> render() =~ "/rejoin/"
+    end
+  end
+
   test "creating a table opens its page", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/")
 

@@ -40,8 +40,11 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 // connect if there are any LiveViews on the page
 // Copy the value of an input to the clipboard:
 //   phx-click={JS.dispatch("phx:copy", to: "#some-input")}
+// The text is also selected, so it can be copied by hand where the clipboard isn't
+// allowed (it needs HTTPS).
 window.addEventListener("phx:copy", (event) => {
-  navigator.clipboard.writeText(event.target.value)
+  event.target.select()
+  navigator.clipboard?.writeText(event.target.value)
 })
 
 liveSocket.connect()

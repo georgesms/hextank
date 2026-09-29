@@ -80,6 +80,105 @@ defmodule HextankWeb.Layouts do
     </main>
 
     <.flash_group flash={@flash} />
+
+    <.rejoin_modal
+      :if={@current_player && Phoenix.Flash.get(@flash, :rejoin_link)}
+      id="welcome-rejoin-modal"
+      url={HextankWeb.RejoinLink.link_url(@current_player)}
+      open
+    />
+    """
+  end
+
+  @doc """
+  A modal asking players to save their rejoin link, so they don't lose their player.
+  It opens by itself after signing up (the `:rejoin_link` flash, see `app/1`), or
+  with `show_rejoin_modal/1`.
+  """
+  attr :id, :string, required: true
+  attr :url, :string, required: true, doc: "the player's own rejoin link"
+  attr :open, :boolean, default: false
+
+  def rejoin_modal(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class={["modal", @open && "modal-open"]}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={"#{@id}-title"}
+      phx-window-keydown={hide_rejoin_modal(@id)}
+      phx-key="escape"
+    >
+      <div class="modal-box space-y-3">
+        <h2 id={"#{@id}-title"} class="text-lg font-bold">
+          {gettext("Save your rejoin link")}
+        </h2>
+        <p class="text-sm text-base-content/70">
+          {gettext(
+            "This link is your key: it logs you back in as yourself on any device, even if this browser forgets you. Keep it somewhere safe, like your notes or a message to yourself. It works like a password, so don't share it."
+          )}
+        </p>
+        <.rejoin_link_field id={"#{@id}-link"} url={@url} />
+        <p class="text-xs text-base-content/60">
+          {gettext("You can find it again on your account page.")}
+        </p>
+        <div class="modal-action">
+          <button id={"#{@id}-done"} type="button" class="btn" phx-click={hide_rejoin_modal(@id)}>
+            {gettext("Done")}
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop" phx-click={hide_rejoin_modal(@id)}></div>
+    </div>
+    """
+  end
+
+  @doc "Opens a `rejoin_modal/1`."
+  def show_rejoin_modal(id) do
+    JS.add_class("modal-open", to: "##{id}") |> JS.focus_first(to: "##{id}")
+  end
+
+  # Also drops the flash that opened it after signing up.
+  defp hide_rejoin_modal(id) do
+    JS.remove_class("modal-open", to: "##{id}")
+    |> JS.push("lv:clear-flash", value: %{key: "rejoin_link"})
+  end
+
+  @doc """
+  A player's rejoin link in a read-only field, with a button that copies it. Render it
+  only on that player's own pages: the link works like a password.
+  """
+  attr :id, :string, required: true
+  attr :url, :string, required: true
+
+  def rejoin_link_field(assigns) do
+    ~H"""
+    <div class="flex gap-2">
+      <input
+        id={@id}
+        readonly
+        value={@url}
+        class="input input-bordered w-full font-mono text-xs"
+      />
+      <button
+        id={"copy-#{@id}"}
+        type="button"
+        class="btn btn-primary"
+        phx-click={
+          JS.dispatch("phx:copy", to: "##{@id}")
+          |> JS.hide(to: "#copy-#{@id} .copy-label")
+          |> JS.show(to: "#copy-#{@id} .copied-label", display: "inline-flex")
+        }
+      >
+        <span class="copy-label inline-flex items-center gap-1">
+          <.icon name="hero-clipboard-document" class="size-5" /> {gettext("Copy")}
+        </span>
+        <span class="copied-label hidden items-center gap-1">
+          <.icon name="hero-check" class="size-5" /> {gettext("Copied!")}
+        </span>
+      </button>
+    </div>
     """
   end
 
