@@ -49,6 +49,20 @@ defmodule HextankWeb.PlayerControllerTest do
     end
   end
 
+  describe "the session cookie" do
+    test "lasts a year from the last page load, not from the login", %{conn: conn} do
+      year = 365 * 24 * 60 * 60
+
+      conn = post(conn, ~p"/players", %{"player" => %{"nickname" => "Bruno"}})
+      assert conn.resp_cookies["_hextank_key"].max_age == year
+
+      # Every later page sends the cookie again, so the year starts over.
+      conn = get(recycle(conn), ~p"/")
+      assert conn.resp_cookies["_hextank_key"].max_age == year
+      assert get_session(conn, "player_id")
+    end
+  end
+
   describe "rejoin links" do
     test "log you in as the link's player", %{conn: conn} do
       {:ok, player} = Players.create("Carla")

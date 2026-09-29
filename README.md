@@ -232,7 +232,8 @@ files on disk instead of a database:
 ### Identity: no accounts, optional Google
 
 - **First visit:** you pick a nickname and get a random player id, stored in the
-  session cookie (kept for 1 year, not just until the browser closes).
+  session cookie (kept for 1 year after your last visit, not just until the browser
+  closes).
 - **Rejoin link:** the account page shows a personal link (`/rejoin/<token>`) with
   "bookmark this, it's your key", and the lobby reminds you it exists. Opening it on
   any device logs you back in as the same player, in every table.

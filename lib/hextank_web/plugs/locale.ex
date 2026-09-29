@@ -25,6 +25,8 @@ defmodule HextankWeb.Plugs.Locale do
 
     Gettext.put_locale(HextankWeb.Gettext, locale)
 
+    # Writing the session on every request also sends the session cookie again, with
+    # a fresh year of `max_age`: a player who keeps playing is never logged out.
     conn
     |> put_session("locale", locale)
     |> assign(:locale, locale)
