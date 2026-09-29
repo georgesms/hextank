@@ -564,7 +564,7 @@ defmodule HextankWeb.GameComponents do
   def status_badge(assigns) do
     ~H"""
     <span class={[
-      "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold",
+      "shrink-0 rounded px-2 py-0.5 font-mono text-xs uppercase tracking-wider",
       @status == :lobby && "bg-warning/15 text-warning",
       @status == :running && "bg-success/15 text-success",
       @status == :finished && "bg-base-content/10 text-base-content/60"

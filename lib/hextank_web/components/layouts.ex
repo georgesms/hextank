@@ -27,9 +27,9 @@ defmodule HextankWeb.Layouts do
     ~H"""
     <header class="border-b border-base-300 bg-base-100/80 backdrop-blur">
       <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
-        <.link navigate={~p"/"} class="flex items-center gap-2 font-bold tracking-tight">
-          <.hex_logo class="size-7" />
-          <span class="text-lg">HexTank</span>
+        <.link navigate={~p"/"} class="flex items-center gap-2">
+          <.hex_logo class="size-8" />
+          <span class="font-display text-xl tracking-wider">HEXTANK</span>
         </.link>
 
         <div class="ml-auto flex items-center gap-2 sm:gap-3">
@@ -182,18 +182,29 @@ defmodule HextankWeb.Layouts do
     """
   end
 
-  @doc "The HexTank logo: a pointy-top hexagon with a tank turret."
+  @doc """
+  The HexTank logo: a pointy-top hexagon as a gun sight, with the NATO symbol for
+  armour inside. `priv/static/favicon.svg` is the same drawing in fixed colours.
+  """
   attr :class, :string, default: nil
 
   def hex_logo(assigns) do
     ~H"""
-    <svg viewBox="-12 -12 24 24" class={@class} aria-hidden="true">
+    <svg viewBox="0 0 120 120" class={@class} aria-hidden="true">
       <polygon
-        points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5"
-        class="fill-primary"
+        points="60,14 99.8,37 99.8,83 60,106 20.2,83 20.2,37"
+        class="fill-none stroke-base-content"
+        stroke-width="7"
       />
-      <circle r="4" class="fill-primary-content" />
-      <rect x="2" y="-1.2" width="7" height="2.4" rx="1" class="fill-primary-content" />
+      <g class="stroke-base-content" stroke-width="7">
+        <line x1="60" y1="14" x2="60" y2="2" />
+        <line x1="99.8" y1="83" x2="110.2" y2="89" />
+        <line x1="20.2" y1="83" x2="9.8" y2="89" />
+      </g>
+      <g class="fill-none stroke-primary" stroke-width="8">
+        <rect x="35" y="46" width="50" height="29" />
+        <ellipse cx="60" cy="60.5" rx="14" ry="6.5" />
+      </g>
     </svg>
     """
   end

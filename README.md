@@ -254,6 +254,23 @@ files on disk instead of a database:
 
 ---
 
+## Look
+
+The look is called **Sala de Guerra** (war room): the map table of a cold-war
+command centre. Military in the shapes, neon in the light.
+
+- **Board:** a dark screen in both themes, hexes drawn as a thin grid, rocks hatched
+  like impassable ground. Each tank is the NATO symbol for armour in its player's
+  neon colour, with a short call sign above it.
+- **Themes:** dark is the war room (blue-black panels, chalk text, cyan); light is a
+  printed briefing map (bluish paper, ink, the same hues darker). Both have a faint
+  plotting-table grid behind the page.
+- **Type:** Saira Stencil One for titles, Share Tech Mono for labels and badges, the
+  system font for running text. Both fonts are served by the app
+  (`priv/static/fonts`, latin letters only, about 34 KB, SIL Open Font License).
+- **Logo:** a hexagon drawn as a gun sight, with the armour symbol inside
+  (`Layouts.hex_logo/1`, and `priv/static/favicon.svg`).
+
 ## Players, identity and moderation
 
 ### Identity: no accounts, optional Google
@@ -716,6 +733,8 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] Stats as emojis: ❤️ HP, ⚡ AP, 🎯 range
 - [x] Light animations for moves, shots, AP gifts, range upgrades and the game's
       result (CSS only)
+- [x] The "Sala de Guerra" look for every page: themes, stencil and monospace fonts,
+      logo and favicon (see *Look*)
 - [x] Board as a dark "war room" screen: neon armour symbols whose hull turns the way
       they drive and turret the way they aim; moves follow the shortest path with
       tread marks
