@@ -127,6 +127,7 @@ defmodule HextankWeb.Messages do
 
   @doc "How often AP arrives, e.g. \"1 AP per day\"."
   @spec tick_interval(pos_integer()) :: String.t()
+  def tick_interval(10), do: gettext("1 AP every 10 seconds")
   def tick_interval(60), do: gettext("1 AP per minute")
   def tick_interval(3_600), do: gettext("1 AP per hour")
   def tick_interval(86_400), do: gettext("1 AP per day")

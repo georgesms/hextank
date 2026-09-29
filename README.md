@@ -32,8 +32,8 @@ the diplomacy, alliances and betrayals as much as the tactics.
 
 ### Action Points (AP)
 
-- Every **tick** (24 hours by default, configurable per table) every living tank gets
-  **1 AP**.
+- Every **tick** every living tank gets **1 AP**. The table's creator picks the tick:
+  10 seconds, 1 minute, 1 hour or 24 hours (the default).
 - AP can be saved for later. There is no cap.
 - Every action costs **1 AP** (driving: 1 AP per cell):
 
@@ -348,7 +348,7 @@ Tables don't need a process between visits. The AP ticks are computed from the c
 1. Someone opens a table → `Hextank.Tables` starts its GenServer under the
    DynamicSupervisor, which loads `game.bin` and calls `Game.catch_up(game, now)`.
 2. While players are on the page, the GenServer's timer runs `Game.tick/1` on time
-   (needed for 1-minute games, where players watch AP arrive).
+   (needed for fast games, 10 seconds or 1 minute, where players watch AP arrive).
 3. After a few minutes with no activity, the GenServer saves and **stops itself**
    (GenServer timeout). The table now costs zero memory and zero CPU.
 
@@ -614,7 +614,7 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 ### Phase 3 – Tables as processes, saved on disk
 - [x] `Storage`: save / load `game.bin` (temp file + rename)
 - [x] `Table` GenServer: loads and catches up on start, saves after every change
-- [x] Tick timer while alive, with a configurable interval (1 minute or 24h)
+- [x] Tick timer while alive, with a configurable interval (10 seconds to 24h)
 - [x] Stops itself after a few idle minutes; started again on demand
 - [x] Registry + DynamicSupervisor
 - [x] `Lobby` GenServer with table summaries, built from disk at boot

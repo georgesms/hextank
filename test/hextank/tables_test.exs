@@ -47,6 +47,14 @@ defmodule Hextank.TablesTest do
       assert private.id in ana_ids
     end
 
+    test "accepts every offered speed, down to 1 AP every 10 seconds" do
+      for interval <- Tables.tick_intervals() do
+        assert create_table(%{tick_interval: interval}).tick_interval == interval
+      end
+
+      assert 10 in Tables.tick_intervals()
+    end
+
     test "keeps the chosen settings" do
       game = create_table(%{settings: %{start_hp: 5}})
 

@@ -21,12 +21,12 @@ msgstr ""
 msgid "%{hp} HP"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:143
+#: lib/hextank_web/messages.ex:144
 #, elixir-autogen, elixir-format
 msgid "%{h} h %{m} min"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:140
+#: lib/hextank_web/messages.ex:141
 #, elixir-autogen, elixir-format
 msgid "%{m} min"
 msgstr ""
@@ -66,12 +66,12 @@ msgstr ""
 msgid "%{name} won!"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:139
+#: lib/hextank_web/messages.ex:140
 #, elixir-autogen, elixir-format
 msgid "%{s} s"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:149
+#: lib/hextank_web/messages.ex:150
 #, elixir-autogen, elixir-format
 msgid "%{time} ago"
 msgstr ""
@@ -81,22 +81,22 @@ msgstr ""
 msgid "(you)"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:133
+#: lib/hextank_web/messages.ex:134
 #, elixir-autogen, elixir-format
 msgid "1 AP every %{time}"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:132
+#: lib/hextank_web/messages.ex:133
 #, elixir-autogen, elixir-format
 msgid "1 AP per day"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:131
+#: lib/hextank_web/messages.ex:132
 #, elixir-autogen, elixir-format
 msgid "1 AP per hour"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:130
+#: lib/hextank_web/messages.ex:131
 #, elixir-autogen, elixir-format
 msgid "1 AP per minute"
 msgstr ""
@@ -176,7 +176,7 @@ msgid "Create table"
 msgstr ""
 
 #: lib/hextank_web/live/admin_live.ex:102
-#: lib/hextank_web/messages.ex:184
+#: lib/hextank_web/messages.ex:185
 #, elixir-autogen, elixir-format
 msgid "Finished"
 msgstr ""
@@ -327,7 +327,7 @@ msgid "Range +1"
 msgstr ""
 
 #: lib/hextank_web/live/admin_live.ex:101
-#: lib/hextank_web/messages.ex:183
+#: lib/hextank_web/messages.ex:184
 #, elixir-autogen, elixir-format
 msgid "Running"
 msgstr ""
@@ -433,7 +433,7 @@ msgid "This table is full."
 msgstr ""
 
 #: lib/hextank_web/live/table_live.ex:536
-#: lib/hextank_web/messages.ex:182
+#: lib/hextank_web/messages.ex:183
 #, elixir-autogen, elixir-format
 msgid "Waiting for players"
 msgstr ""
@@ -563,7 +563,7 @@ msgstr ""
 msgid "ghost"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:148
+#: lib/hextank_web/messages.ex:149
 #, elixir-autogen, elixir-format
 msgid "just now"
 msgstr ""
@@ -591,13 +591,13 @@ msgstr[1] ""
 msgid "A message has at most 500 characters."
 msgstr ""
 
-#: lib/hextank_web/messages.ex:153
+#: lib/hextank_web/messages.ex:154
 #, elixir-autogen, elixir-format
 msgid "Automatic (grows with players)"
 msgstr ""
 
 #: lib/hextank_web/live/lobby_live.ex:155
-#: lib/hextank_web/messages.ex:173
+#: lib/hextank_web/messages.ex:174
 #, elixir-autogen, elixir-format
 msgid "Board size"
 msgstr ""
@@ -614,12 +614,12 @@ msgstr ""
 msgid "Everyone at the table"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:165
+#: lib/hextank_web/messages.ex:166
 #, elixir-autogen, elixir-format
 msgid "Few (5%)"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:167
+#: lib/hextank_web/messages.ex:168
 #, elixir-autogen, elixir-format
 msgid "Many (%{percent}%)"
 msgstr ""
@@ -634,12 +634,12 @@ msgstr ""
 msgid "No messages yet. Diplomacy starts here."
 msgstr ""
 
-#: lib/hextank_web/messages.ex:164
+#: lib/hextank_web/messages.ex:165
 #, elixir-autogen, elixir-format
 msgid "None"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:166
+#: lib/hextank_web/messages.ex:167
 #, elixir-autogen, elixir-format
 msgid "Normal (10%)"
 msgstr ""
@@ -659,13 +659,13 @@ msgstr ""
 msgid "Privately to %{name}"
 msgstr ""
 
-#: lib/hextank_web/messages.ex:156
+#: lib/hextank_web/messages.ex:157
 #, elixir-autogen, elixir-format
 msgid "Radius %{radius} (%{cells} cells)"
 msgstr ""
 
 #: lib/hextank_web/live/lobby_live.ex:163
-#: lib/hextank_web/messages.ex:174
+#: lib/hextank_web/messages.ex:175
 #, elixir-autogen, elixir-format
 msgid "Rocks"
 msgstr ""
@@ -676,13 +676,13 @@ msgid "Slow down: at most 5 messages in 10 seconds."
 msgstr ""
 
 #: lib/hextank_web/live/lobby_live.ex:172
-#: lib/hextank_web/messages.ex:175
+#: lib/hextank_web/messages.ex:176
 #, elixir-autogen, elixir-format
 msgid "Starting HP"
 msgstr ""
 
 #: lib/hextank_web/live/lobby_live.ex:178
-#: lib/hextank_web/messages.ex:176
+#: lib/hextank_web/messages.ex:177
 #, elixir-autogen, elixir-format
 msgid "Starting range"
 msgstr ""
@@ -1011,4 +1011,9 @@ msgstr ""
 #: lib/hextank_web/live/admin_live.ex:103
 #, elixir-autogen, elixir-format
 msgid "Public tables"
+msgstr ""
+
+#: lib/hextank_web/messages.ex:130
+#, elixir-autogen, elixir-format
+msgid "1 AP every 10 seconds"
 msgstr ""

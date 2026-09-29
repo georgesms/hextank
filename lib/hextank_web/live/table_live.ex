@@ -330,7 +330,7 @@ defmodule HextankWeb.TableLive do
     {:noreply, assign(socket, :now, DateTime.utc_now())}
   end
 
-  # The countdown to the next AP: every second in minute games, else every 15 s.
+  # The countdown to the next AP: every second in fast games, else every 15 s.
   defp schedule_clock(game) do
     Process.send_after(self(), :clock, if(game.tick_interval <= 60, do: 1_000, else: 15_000))
   end
