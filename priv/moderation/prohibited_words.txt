@@ -1,3 +1,10 @@
+# DISCLAIMER: THIS IS A LIST OF PROHIBITED WORDS, USED TO MODERATE WHAT PLAYERS
+# WRITE. THE AUTHORS DO NOT CONDONE HATE OR INAPPROPRIATE BEHAVIOR.
+#
+# AVISO: ESTA É UMA LISTA DE PALAVRAS PROIBIDAS, USADA PARA MODERAR O QUE OS
+# JOGADORES ESCREVEM. OS AUTORES NÃO COMPACTUAM COM O ÓDIO NEM COM COMPORTAMENTOS
+# INADEQUADOS.
+#
 # Prohibited words (see README, "Moderation").
 #
 # One word per line, English and Portuguese, focused on HATE SPEECH (slurs), not
@@ -5,10 +12,27 @@
 #
 # Write words plainly: matching already ignores case and accents, undoes common
 # letter swaps (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a, $ -> s) and shortens repeated
-# letters, so there's no need to list variants. Only whole words match.
+# letters, so there's no need to list variants. Each word also blocks its Portuguese
+# forms (other gender, -inho/-inha, -ão/-ona, plurals), except the ordinary words in
+# allowed_words.txt. Only whole words match.
 #
 # Changes need the human's approval, and take effect after a deploy (the list is
 # compiled into Hextank.Moderation).
+#
+# Palavras proibidas (veja o README, "Moderation").
+#
+# Uma palavra por linha, em inglês e português, com foco em DISCURSO DE ÓDIO
+# (insultos contra grupos), não em palavrões em geral. Linhas que começam com "#" e
+# linhas vazias são ignoradas.
+#
+# Escreva as palavras de forma simples: a comparação já ignora maiúsculas e acentos,
+# desfaz trocas comuns de letras (4 -> a, 3 -> e, 0 -> o, 1 -> i, @ -> a, $ -> s) e
+# encurta letras repetidas, então não é preciso listar variações. Cada palavra também
+# bloqueia suas formas em português (outro gênero, -inho/-inha, -ão/-ona, plurais),
+# menos as palavras comuns de allowed_words.txt. Só palavras inteiras são comparadas.
+#
+# Mudanças precisam da aprovação do humano e valem depois de um deploy (a lista é
+# compilada dentro de Hextank.Moderation).
 
 arrota
 arroto
