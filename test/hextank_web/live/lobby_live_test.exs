@@ -33,6 +33,14 @@ defmodule HextankWeb.LobbyLiveTest do
     end
   end
 
+  test "the info button in the header opens the rules", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    assert has_element?(view, "#rules-button[popovertarget=rules]")
+    assert has_element?(view, "#rules[popover]", "How to play")
+    assert has_element?(view, "#rules", "The last tank standing wins")
+  end
+
   test "creating a table opens its page", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/")
 

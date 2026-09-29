@@ -154,8 +154,8 @@ msgstr ""
 msgid "Anyone (listed in the lobby)"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:244
-#: lib/hextank_web/components/layouts.ex:259
+#: lib/hextank_web/components/layouts.ex:317
+#: lib/hextank_web/components/layouts.ex:332
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr ""
@@ -347,7 +347,7 @@ msgstr ""
 msgid "Something happened"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:251
+#: lib/hextank_web/components/layouts.ex:324
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr ""
@@ -432,7 +432,7 @@ msgstr ""
 msgid "Waiting for players"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:236
+#: lib/hextank_web/components/layouts.ex:309
 #, elixir-autogen, elixir-format
 msgid "We can't find the internet"
 msgstr ""
@@ -851,7 +851,7 @@ msgstr ""
 msgid "AP given"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:47
+#: lib/hextank_web/components/layouts.ex:57
 #: lib/hextank_web/live/admin_live.ex:23
 #: lib/hextank_web/live/admin_live.ex:97
 #, elixir-autogen, elixir-format
@@ -1012,17 +1012,17 @@ msgstr ""
 msgid "1 AP every 10 seconds"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:183
+#: lib/hextank_web/components/layouts.ex:256
 #, elixir-autogen, elixir-format
 msgid "Copied!"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:180
+#: lib/hextank_web/components/layouts.ex:253
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:133
+#: lib/hextank_web/components/layouts.ex:206
 #, elixir-autogen, elixir-format
 msgid "Done"
 msgstr ""
@@ -1032,17 +1032,17 @@ msgstr ""
 msgid "No account needed. Next you'll get a personal link to come back from any device."
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:120
+#: lib/hextank_web/components/layouts.ex:193
 #, elixir-autogen, elixir-format
 msgid "Save your rejoin link"
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:123
+#: lib/hextank_web/components/layouts.ex:196
 #, elixir-autogen, elixir-format
 msgid "This link is your key: it logs you back in as yourself on any device, even if this browser forgets you. Keep it somewhere safe, like your notes or a message to yourself. It works like a password, so don't share it."
 msgstr ""
 
-#: lib/hextank_web/components/layouts.ex:129
+#: lib/hextank_web/components/layouts.ex:202
 #, elixir-autogen, elixir-format
 msgid "You can find it again on your account page."
 msgstr ""
@@ -1151,4 +1151,66 @@ msgstr ""
 #: lib/hextank_web/controllers/dormant_html/table.html.heex:13
 #, elixir-autogen, elixir-format
 msgid "You've been away. This game is over."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:139
+#, elixir-autogen, elixir-format
+msgid "At 0 ❤️ you become a ghost: once a round you give 1 ⚡ to any living tank, and nobody knows it was you."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:147
+#, elixir-autogen, elixir-format
+msgid "Click a cell to see the path and its cost; click again to drive there."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:149
+#, elixir-autogen, elixir-format
+msgid "Click a tank to see if it's in range; double-click to shoot it (or give it AP, as chosen in your panel)."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:153
+#, elixir-autogen, elixir-format
+msgid "Click your own tank to see your range; double-click it for range +1."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:134
+#, elixir-autogen, elixir-format
+msgid "Each action costs 1 ⚡: drive 1 cell, shoot a tank in range (1 damage), give it 1 ⚡, or add 1 🎯 to your range (up to the table's limit)."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:131
+#, elixir-autogen, elixir-format
+msgid "Every living tank gets 1 ⚡ AP each round (the table sets how long a round is)."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:164
+#, elixir-autogen, elixir-format
+msgid "Got it"
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:45
+#: lib/hextank_web/components/layouts.ex:46
+#: lib/hextank_web/components/layouts.ex:125
+#, elixir-autogen, elixir-format
+msgid "How to play"
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:145
+#, elixir-autogen, elixir-format
+msgid "On the board"
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:128
+#, elixir-autogen, elixir-format
+msgid "Tanks start with ❤️ 3 HP, 🎯 range 2 and ⚡ 0 AP, unless the table says otherwise."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:154
+#, elixir-autogen, elixir-format
+msgid "The buttons in the Your tank panel do the same. Esc cancels."
+msgstr ""
+
+#: lib/hextank_web/components/layouts.ex:143
+#, elixir-autogen, elixir-format
+msgid "The last tank standing wins. Make alliances in the chat, and break them."
 msgstr ""

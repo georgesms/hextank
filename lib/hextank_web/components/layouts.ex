@@ -38,6 +38,16 @@ defmodule HextankWeb.Layouts do
         </.link>
 
         <div class="ml-auto flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            id="rules-button"
+            popovertarget="rules"
+            title={gettext("How to play")}
+            aria-label={gettext("How to play")}
+            class="flex rounded-full p-1.5 transition hover:bg-base-200"
+          >
+            <.icon name="hero-information-circle" class="size-6 opacity-80" />
+          </button>
           <.link
             :if={Hextank.Admin.admin?(@current_player)}
             navigate={~p"/admin"}
@@ -86,12 +96,75 @@ defmodule HextankWeb.Layouts do
 
     <.flash_group flash={@flash} />
 
+    <.rules />
+
     <.rejoin_modal
       :if={@current_player && Phoenix.Flash.get(@flash, :rejoin_link)}
       id="welcome-rejoin-modal"
       url={HextankWeb.RejoinLink.link_url(@current_player)}
       open
     />
+    """
+  end
+
+  @doc """
+  The rules in a few lines, opened by the info button in the header. A native HTML
+  popover: the browser opens and closes it (Esc or a click outside closes it too),
+  so it needs no JavaScript of ours and works on the dormant pages. LiveView leaves
+  it alone (`phx-update="ignore"`), so a game update never closes it.
+  """
+  def rules(assigns) do
+    ~H"""
+    <div
+      id="rules"
+      popover
+      phx-update="ignore"
+      aria-labelledby="rules-title"
+      class="m-auto max-h-[85vh] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto rounded-box border border-base-300 bg-base-100 p-6 text-base-content shadow-xl backdrop:bg-black/50"
+    >
+      <h2 id="rules-title" class="text-xl">{gettext("How to play")}</h2>
+      <ul class="mt-3 list-disc space-y-1.5 pl-5 text-sm">
+        <li>
+          {gettext("Tanks start with ❤️ 3 HP, 🎯 range 2 and ⚡ 0 AP, unless the table says otherwise.")}
+        </li>
+        <li>
+          {gettext("Every living tank gets 1 ⚡ AP each round (the table sets how long a round is).")}
+        </li>
+        <li>
+          {gettext(
+            "Each action costs 1 ⚡: drive 1 cell, shoot a tank in range (1 damage), give it 1 ⚡, or add 1 🎯 to your range (up to the table's limit)."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "At 0 ❤️ you become a ghost: once a round you give 1 ⚡ to any living tank, and nobody knows it was you."
+          )}
+        </li>
+        <li>{gettext("The last tank standing wins. Make alliances in the chat, and break them.")}</li>
+      </ul>
+      <h3 class="mt-5 font-semibold">{gettext("On the board")}</h3>
+      <ul class="mt-2 list-disc space-y-1.5 pl-5 text-sm">
+        <li>{gettext("Click a cell to see the path and its cost; click again to drive there.")}</li>
+        <li>
+          {gettext(
+            "Click a tank to see if it's in range; double-click to shoot it (or give it AP, as chosen in your panel)."
+          )}
+        </li>
+        <li>{gettext("Click your own tank to see your range; double-click it for range +1.")}</li>
+        <li>{gettext("The buttons in the Your tank panel do the same. Esc cancels.")}</li>
+      </ul>
+      <div class="mt-6 flex justify-end">
+        <button
+          type="button"
+          id="rules-close"
+          popovertarget="rules"
+          popovertargetaction="hide"
+          class="btn btn-primary btn-sm"
+        >
+          {gettext("Got it")}
+        </button>
+      </div>
+    </div>
     """
   end
 
