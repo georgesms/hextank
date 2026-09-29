@@ -1,0 +1,38 @@
+# Fly.io configuration (see README, *Deployment*). Exactly one machine: the game
+# files live on one volume, which belongs to one machine. Always deploy with
+# `fly deploy --ha=false`.
+
+app = "hextank"
+primary_region = "gru"
+# A little swap as a safety net for the 256 MB machine.
+swap_size_mb = 256
+
+[build]
+
+[env]
+  PHX_HOST = "hextank.fly.dev"
+  DATA_DIR = "/data"
+  PORT = "8080"
+
+[mounts]
+  source = "hextank_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Stop the machine when nobody is connected, start it on the next request.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  # Every open page keeps a websocket, so count connections, not requests. Fly's
+  # default (25 requests) would cap the game at about 25 players online.
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 800
+    hard_limit = 1000
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

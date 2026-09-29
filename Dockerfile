@@ -97,11 +97,9 @@ ENV MIX_ENV="prod"
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/hextank ./
 
-USER nobody
-
-# If using an environment that doesn't automatically reap zombie processes, it is
-# advised to add an init process such as tini via `apt-get install`
-# above and adding an entrypoint. See https://github.com/krallin/tini for details
-# ENTRYPOINT ["/tini", "--"]
+# The entrypoint starts as root, gives the data volume to `nobody` and runs the app
+# as `nobody` (see rel/docker-entrypoint.sh). No `USER nobody` here for that reason.
+COPY --chmod=755 rel/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
 
 CMD ["/app/bin/server"]

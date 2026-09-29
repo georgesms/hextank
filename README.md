@@ -509,12 +509,24 @@ swap_size_mb = 256
   auto_start_machines = true
   min_machines_running = 0
 
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 800
+    hard_limit = 1000
+
 [[vm]]
   size = "shared-cpu-1x"
   memory = "256mb"
 ```
 
+Every open page keeps a websocket, so the proxy counts **connections**: Fly's default
+(25 concurrent requests) would cap the game at about 25 players online.
+
 ### Things the app must do for this to work
+
+- **Own its data volume without running as root.** Fly mounts the volume owned by
+  root. The image's entrypoint (`rel/docker-entrypoint.sh`) hands `/data` to the
+  `nobody` user, then starts the app as `nobody`.
 
 - **Read `DATA_DIR`** in `config/runtime.exs` for `:data_dir`.
 - **Stopping is always safe**, because every change is saved right away. When Fly stops
@@ -532,7 +544,7 @@ swap_size_mb = 256
 An inactive table tab leaves the live table for a plain, static page, and comes back
 with one click.
 
-**When a tab goes dormant** (timers in `app.js`, one small hook on the table page):
+**When a tab goes dormant** (timers in `app.js`):
 
 | Condition | Limit |
 | --- | --- |
