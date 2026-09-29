@@ -1,7 +1,7 @@
 defmodule Hextank.StorageTest do
   use ExUnit.Case, async: true
 
-  alias Hextank.{Game, Storage}
+  alias Hextank.{Game, Hex, Storage}
 
   doctest Hextank.Storage
 
@@ -67,6 +67,21 @@ defmodule Hextank.StorageTest do
     File.write!(path, :erlang.term_to_binary({3, old_game}))
 
     assert {:ok, %{settings: %{max_range: 5}} = loaded} = Storage.load_game(game.id)
+    assert loaded == game
+  end
+
+  test "tanks saved before hulls and turrets could turn point the default way" do
+    tank = %Hextank.Tank{player_id: "ana", name: "Ana", seat: 1, position: Hex.new(0, 0, 0)}
+    game = %{game() | tanks: %{"ana" => tank}}
+
+    # What version 4 wrote: tanks without :heading and :aim.
+    old_game = %{game | tanks: %{"ana" => Map.drop(tank, [:heading, :aim])}}
+    path = Path.join([Application.fetch_env!(:hextank, :data_dir), "tables", game.id, "game.bin"])
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, :erlang.term_to_binary({4, old_game}))
+
+    assert {:ok, loaded} = Storage.load_game(game.id)
+    assert %Hextank.Tank{heading: 0, aim: nil} = loaded.tanks["ana"]
     assert loaded == game
   end
 

@@ -299,6 +299,19 @@ defmodule Hextank.GameTest do
       assert Game.tank(game, "ana").ap == 0
     end
 
+    test "points the hull the way of the last step, and leaves the turret alone" do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 3, aim: Hex.new(2, -1, -1)},
+          {"bruno", Hex.new(3, -3, 0), []}
+        ])
+
+      # Straight along direction 3, (q: -1, r: 0, s: +1), twice.
+      {:ok, game} = Game.act(game, "ana", {:move, Hex.new(-2, 0, 2)}, @now)
+
+      assert %Tank{heading: 3, aim: %Hex{q: 2, r: -1, s: -1}} = Game.tank(game, "ana")
+    end
+
     test "needs 1 AP per cell of the path" do
       game = running_game([{"ana", Hex.new(0, 0, 0), ap: 1}, {"bruno", Hex.new(3, -3, 0), []}])
 
@@ -343,6 +356,13 @@ defmodule Hextank.GameTest do
       assert Game.tank(game, "bruno").hp == 2
       assert Game.tank(game, "ana").ap == 2
       assert [%{type: :shot, actor: "ana", target: "bruno"} | _] = game.events
+    end
+
+    test "turns the turret to the target" do
+      {:ok, game} = Game.act(standard_game(), "ana", {:shoot, "bruno"}, @now)
+
+      # Bruno is at (2, -1, -1), Ana at the centre.
+      assert Game.tank(game, "ana").aim == Hex.new(2, -1, -1)
     end
 
     test "destroys a tank with 1 HP: it becomes a ghost and leaves the board" do

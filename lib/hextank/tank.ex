@@ -19,7 +19,13 @@ defmodule Hextank.Tank do
     # Ghosts only: whether this tick's vote is still available.
     has_vote: false,
     # A banned player's tank stays on the board but never acts again (Phase 5).
-    frozen: false
+    frozen: false,
+    # Which way the hull points: the index (0..5) of the direction of the last cell
+    # it drove to (see Hextank.Hex.directions/0).
+    heading: 0,
+    # Which way the turret points: the last target's position minus the tank's, at
+    # the time of the shot (a hex used as an offset). nil: along the hull.
+    aim: nil
   ]
 
   @type t :: %__MODULE__{
@@ -31,7 +37,9 @@ defmodule Hextank.Tank do
           ap: non_neg_integer(),
           range: pos_integer(),
           has_vote: boolean(),
-          frozen: boolean()
+          frozen: boolean(),
+          heading: 0..5,
+          aim: Hex.t() | nil
         }
 
   @doc "Whether the tank is still on the board."

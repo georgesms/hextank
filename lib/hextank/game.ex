@@ -309,7 +309,15 @@ defmodule Hextank.Game do
          {:ok, path} <- path(game, tank.player_id, target),
          :ok <- check_ap(tank, length(path)) do
       steps = length(path)
-      game = update_tank(game, tank.player_id, &%{&1 | ap: &1.ap - steps, position: target})
+      heading = last_step_direction([tank.position | path])
+
+      game =
+        update_tank(
+          game,
+          tank.player_id,
+          &%{&1 | ap: &1.ap - steps, position: target, heading: heading}
+        )
+
       {:ok, game, %{type: :moved, actor: tank.player_id, steps: steps}}
     end
   end
@@ -319,9 +327,12 @@ defmodule Hextank.Game do
          :ok <- check_ap(tank),
          {:ok, target} <- fetch_target(game, tank, target_id),
          :ok <- check_in_range(tank, target) do
+      # The turret turns to the target.
+      aim = Hex.subtract(target.position, tank.position)
+
       game =
         game
-        |> update_tank(tank.player_id, &%{&1 | ap: &1.ap - 1})
+        |> update_tank(tank.player_id, &%{&1 | ap: &1.ap - 1, aim: aim})
         |> update_tank(target.player_id, &damage/1)
 
       type = if target.hp == 1, do: :destroyed, else: :shot
@@ -366,6 +377,13 @@ defmodule Hextank.Game do
   end
 
   defp perform(_game, _tank, _action), do: {:error, :unknown_action}
+
+  # The direction of the last step of a path (start included): the way the hull
+  # points when the tank arrives.
+  defp last_step_direction(cells) do
+    [before_last, last] = Enum.take(cells, -2)
+    Hex.direction_index(Hex.subtract(last, before_last))
+  end
 
   defp damage(tank) do
     case tank.hp - 1 do

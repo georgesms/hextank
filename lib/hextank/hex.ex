@@ -91,6 +91,19 @@ defmodule Hextank.Hex do
   def direction(index) when index in 0..5, do: Enum.at(directions(), index)
 
   @doc """
+  The index (0..5) of a direction, or `nil` if the hex isn't one of the six
+  directions. The opposite of `direction/1`.
+
+      iex> Hex.direction_index(Hex.new(-1, 1, 0))
+      4
+
+      iex> Hex.direction_index(Hex.new(2, -2, 0))
+      nil
+  """
+  @spec direction_index(t()) :: 0..5 | nil
+  def direction_index(hex), do: Enum.find_index(directions(), &(&1 == hex))
+
+  @doc """
   The neighbouring hex in the direction with the given index, from 0 to 5.
 
       iex> Hex.neighbor(Hex.new(0, 0, 0), 1)
