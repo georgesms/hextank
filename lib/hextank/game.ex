@@ -271,7 +271,7 @@ defmodule Hextank.Game do
 
     * `{:move, hex}` – drive to a free cell along the shortest path, 1 AP per cell
     * `{:shoot, target_id}` – 1 damage to a tank within range
-    * `:upgrade_range` – range + 1
+    * `:upgrade_range` – range + 1, up to the table's maximum range
     * `{:give_ap, target_id}` – give 1 AP to a tank within range
     * `{:vote, target_id}` – ghosts only: give 1 AP to any living tank
   """
@@ -321,7 +321,8 @@ defmodule Hextank.Game do
 
   defp perform(game, tank, :upgrade_range) do
     with :ok <- check_alive(tank),
-         :ok <- check_ap(tank) do
+         :ok <- check_ap(tank),
+         :ok <- check_below_max_range(game, tank) do
       game = update_tank(game, tank.player_id, &%{&1 | ap: &1.ap - 1, range: &1.range + 1})
       {:ok, game, %{type: :upgraded, actor: tank.player_id}}
     end
@@ -400,6 +401,10 @@ defmodule Hextank.Game do
   defp check_ghost(tank), do: if(Tank.ghost?(tank), do: :ok, else: {:error, :not_a_ghost})
   defp check_vote(tank), do: if(tank.has_vote, do: :ok, else: {:error, :no_vote_left})
 
+  defp check_below_max_range(game, tank) do
+    if max_range_reached?(game, tank), do: {:error, :max_range_reached}, else: :ok
+  end
+
   defp check_ap(tank, cost \\ 1),
     do: if(tank.ap >= cost, do: :ok, else: {:error, :not_enough_ap})
 
@@ -423,6 +428,12 @@ defmodule Hextank.Game do
   @doc "The player's tank, or `nil`."
   @spec tank(t(), player_id()) :: Tank.t() | nil
   def tank(game, player_id), do: Map.get(game.tanks, player_id)
+
+  @doc "Whether the tank's range is already the table's maximum, so it can't upgrade."
+  @spec max_range_reached?(t(), Tank.t()) :: boolean()
+  def max_range_reached?(game, tank) do
+    not Settings.within_max_range?(tank.range + 1, game.settings.max_range)
+  end
 
   @doc "All tanks, living and ghosts, in join order."
   @spec tanks_by_seat(t()) :: [Tank.t()]

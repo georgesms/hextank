@@ -38,7 +38,8 @@ defmodule HextankWeb.LobbyLive do
       "board_radius" => "auto",
       "obstacle_percent" => "10",
       "start_hp" => "3",
-      "start_range" => "2"
+      "start_range" => "2",
+      "max_range" => "5"
     }
 
     to_form(Map.merge(defaults, params), as: :table)
@@ -56,7 +57,8 @@ defmodule HextankWeb.LobbyLive do
         board_radius: parse_radius(params["board_radius"]),
         obstacle_percent: parse_integer(params["obstacle_percent"]),
         start_hp: parse_integer(params["start_hp"]),
-        start_range: parse_integer(params["start_range"])
+        start_range: parse_integer(params["start_range"]),
+        max_range: parse_max_range(params["max_range"])
       }
     }
 
@@ -74,6 +76,9 @@ defmodule HextankWeb.LobbyLive do
 
   defp parse_radius("auto"), do: :auto
   defp parse_radius(value), do: parse_integer(value)
+
+  defp parse_max_range("none"), do: :none
+  defp parse_max_range(value), do: parse_integer(value)
 
   # Unparseable values become nil, which Tables.create_table/4 rejects.
   defp parse_integer(value) do
@@ -180,6 +185,12 @@ defmodule HextankWeb.LobbyLive do
                     options={Settings.allowed(:start_range)}
                   />
                 </div>
+                <.input
+                  field={@form[:max_range]}
+                  type="select"
+                  label={gettext("Maximum range")}
+                  options={for r <- Settings.allowed(:max_range), do: {Messages.max_range(r), r}}
+                />
               </div>
             </details>
             <button id="create-table" class="btn btn-primary mt-2 w-full">

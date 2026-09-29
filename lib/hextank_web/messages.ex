@@ -19,6 +19,7 @@ defmodule HextankWeb.Messages do
   def error(:not_enough_players), do: gettext("A game needs at least 2 players.")
   def error(:game_not_running), do: gettext("The game isn't running.")
   def error(:not_enough_ap), do: gettext("You need 1 action point for that.")
+  def error(:max_range_reached), do: gettext("Your range is already this table's maximum.")
   def error(:not_adjacent), do: gettext("You can only move to a neighbouring cell.")
   def error(:off_board), do: gettext("That's off the board.")
   def error(:obstacle), do: gettext("There's a rock there.")
@@ -167,6 +168,11 @@ defmodule HextankWeb.Messages do
   def obstacles(10), do: gettext("Normal (10%)")
   def obstacles(percent), do: gettext("Many (%{percent}%)", percent: percent)
 
+  @doc "The label of a maximum range setting."
+  @spec max_range(pos_integer() | :none) :: String.t()
+  def max_range(:none), do: gettext("No limit")
+  def max_range(range), do: to_string(range)
+
   @doc "A table's settings as {label, value} pairs, for showing them."
   @spec settings_summary(Hextank.Settings.t()) :: [{String.t(), String.t()}]
   def settings_summary(settings) do
@@ -174,7 +180,8 @@ defmodule HextankWeb.Messages do
       {gettext("Board size"), board_radius(settings.board_radius)},
       {gettext("Rocks"), obstacles(settings.obstacle_percent)},
       {gettext("Starting HP"), to_string(settings.start_hp)},
-      {gettext("Starting range"), to_string(settings.start_range)}
+      {gettext("Starting range"), to_string(settings.start_range)},
+      {gettext("Maximum range"), max_range(settings.max_range)}
     ]
   end
 

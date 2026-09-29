@@ -391,6 +391,35 @@ defmodule Hextank.GameTest do
     test "needs 1 AP" do
       assert Game.act(standard_game(), "bruno", :upgrade_range, @now) == {:error, :not_enough_ap}
     end
+
+    test "stops at the table's maximum range, 5 by default" do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 3, range: 4},
+          {"bruno", Hex.new(3, -3, 0), []}
+        ])
+
+      {:ok, game} = Game.act(game, "ana", :upgrade_range, @now)
+      assert Game.tank(game, "ana").range == 5
+      assert Game.max_range_reached?(game, Game.tank(game, "ana"))
+
+      assert Game.act(game, "ana", :upgrade_range, @now) == {:error, :max_range_reached}
+      assert Game.tank(game, "ana").ap == 2
+    end
+
+    test "has no limit when the table's maximum is :none" do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 3, range: 20},
+          {"bruno", Hex.new(3, -3, 0), []}
+        ])
+
+      game = put_in(game.settings.max_range, :none)
+
+      refute Game.max_range_reached?(game, Game.tank(game, "ana"))
+      assert {:ok, game} = Game.act(game, "ana", :upgrade_range, @now)
+      assert Game.tank(game, "ana").range == 21
+    end
   end
 
   describe "act/4 with {:give_ap, target_id}" do
@@ -461,6 +490,7 @@ defmodule Hextank.GameTest do
 
     test "keeps only the last 50 events" do
       game = running_game([{"ana", Hex.new(0, 0, 0), ap: 60}, {"bruno", Hex.new(3, -3, 0), []}])
+      game = put_in(game.settings.max_range, :none)
 
       game =
         Enum.reduce(1..60, game, fn _, game ->

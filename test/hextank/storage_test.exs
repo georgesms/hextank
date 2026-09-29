@@ -57,6 +57,19 @@ defmodule Hextank.StorageTest do
     assert loaded == game
   end
 
+  test "a game saved before the maximum range existed loads with a maximum of 5" do
+    game = game()
+
+    # What version 3 wrote: settings without :max_range.
+    old_game = update_in(game.settings, &Map.delete(&1, :max_range))
+    path = Path.join([Application.fetch_env!(:hextank, :data_dir), "tables", game.id, "game.bin"])
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, :erlang.term_to_binary({3, old_game}))
+
+    assert {:ok, %{settings: %{max_range: 5}} = loaded} = Storage.load_game(game.id)
+    assert loaded == game
+  end
+
   test "an unknown table is not found" do
     assert Storage.load_game(Storage.new_id()) == {:error, :not_found}
   end

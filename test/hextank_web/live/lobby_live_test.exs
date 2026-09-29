@@ -51,7 +51,13 @@ defmodule HextankWeb.LobbyLiveTest do
     {:ok, table_view, _html} =
       view
       |> form("#new-table-form",
-        table: %{name: "Custom", board_radius: "7", obstacle_percent: "0", start_hp: "5"}
+        table: %{
+          name: "Custom",
+          board_radius: "7",
+          obstacle_percent: "0",
+          start_hp: "5",
+          max_range: "none"
+        }
       )
       |> render_submit()
       |> follow_redirect(conn)
@@ -59,7 +65,9 @@ defmodule HextankWeb.LobbyLiveTest do
     [summary] = Tables.list_for_player(player.id)
     {:ok, game} = Tables.get(summary.id)
 
-    assert %{board_radius: 7, obstacle_percent: 0, start_hp: 5, start_range: 2} = game.settings
+    assert %{board_radius: 7, obstacle_percent: 0, start_hp: 5, start_range: 2, max_range: :none} =
+             game.settings
+
     assert has_element?(table_view, "#table-settings")
   end
 

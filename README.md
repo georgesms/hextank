@@ -27,7 +27,9 @@ the diplomacy, alliances and betrayals as much as the tactics.
 - **Health:** each tank starts with **3 HP**. At 0 HP the tank is destroyed.
 - **Range:** each tank starts with range **2**. Range is the
   [hex distance](https://www.redblobgames.com/grids/hexagons/#distances) between two
-  cells, so "within range 2" means "at most 2 steps away".
+  cells, so "within range 2" means "at most 2 steps away". Upgrades stop at the
+  table's **maximum range, 5** by default (the creator can pick 4, 5, 6, 8 or no
+  limit). The original game had no maximum.
 - **Action Points:** each tank starts with **0 AP**.
 
 ### Action Points (AP)
@@ -41,7 +43,7 @@ the diplomacy, alliances and betrayals as much as the tactics.
 | --------------- | ------------------------------------------------------------------------ |
 | **Move**        | Drive to a free cell along the shortest path around rocks and tanks, **1 AP per cell**. |
 | **Shoot**       | Deal **1 damage** to any tank within your range. Always hits.            |
-| **Upgrade**     | Increase your range by +1, permanently.                                 |
+| **Upgrade**     | Increase your range by +1, permanently, up to the maximum range.        |
 | **Give AP**     | Give 1 of your AP to any tank within your range.                         |
 
 ### Controls
@@ -78,7 +80,7 @@ cancels.
 
 - You can't shoot yourself or give AP to yourself.
 - AP can only be given to living tanks. Ghosts vote only for living tanks.
-- Range has no maximum.
+- Range stops at the table's maximum range (5 unless the creator chose otherwise).
 - Actions are resolved in the order they reach the table. Two players can never act
   "at the same time".
 - Ticks are counted from the moment the game starts (a game started at 14:32 gets its

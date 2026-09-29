@@ -18,7 +18,7 @@ defmodule Hextank.Storage do
 
   alias Hextank.{Game, Player, Settings}
 
-  @format_version 3
+  @format_version 4
 
   # Ids end up in file paths, so they must never contain "/" or "..".
   @id_format ~r/\A[A-Za-z0-9_-]{8,32}\z/
@@ -184,10 +184,19 @@ defmodule Hextank.Storage do
 
   # One clause per save format. When the format changes, bump @format_version and
   # add a clause here that upgrades the old shape.
+  defp decode({4, term}), do: term
+
+  # Version 3 games were saved before the maximum range existed: they get the default
+  # of 5, as the human decided. Tanks already above it keep their range but can't
+  # upgrade any more.
+  defp decode({3, %Game{} = game}),
+    do: update_in(game.settings, &Map.put_new(&1, :max_range, 5))
+
   defp decode({3, term}), do: term
 
   # Version 2 games were saved before action counts existed: they start from zero.
-  defp decode({2, %Game{} = game}), do: Map.put_new(game, :action_counts, %{})
+  # Then on as version 3.
+  defp decode({2, %Game{} = game}), do: decode({3, Map.put_new(game, :action_counts, %{})})
   defp decode({2, term}), do: term
 
   # Version 1 games were saved before table settings existed: they get the defaults,

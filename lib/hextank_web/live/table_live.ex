@@ -163,10 +163,12 @@ defmodule HextankWeb.TableLive do
 
   # The panel's buttons that fit the selection right now. Only a hint for the
   # player: `Game` checks every action again anyway.
-  defp enabled_actions(%{me: me, details: details} = assigns) do
-    if can_select?(assigns) and me.ap >= 1,
-      do: [:upgrade | selection_actions(details)],
-      else: []
+  defp enabled_actions(%{game: game, me: me, details: details} = assigns) do
+    cond do
+      not can_select?(assigns) or me.ap < 1 -> []
+      Game.max_range_reached?(game, me) -> selection_actions(details)
+      true -> [:upgrade | selection_actions(details)]
+    end
   end
 
   defp selection_actions(%{kind: :path, affordable?: true}), do: [:move]
