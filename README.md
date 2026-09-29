@@ -256,9 +256,8 @@ files on disk instead of a database:
 
 - **The list:** `priv/moderation/prohibited_words.txt`, one word per line, English and
   Portuguese, focused on **hate speech** (slurs, not general swearing). Written or
-  seeded by the human, who approves every change. **It ships empty**: the public list
-  we planned to seed from is gone, and the remaining one is general swearing, which
-  this game doesn't block. It's compiled into `Hextank.Moderation`
+  seeded by the human, who approves every change. It's compiled into
+  `Hextank.Moderation`
   (`@external_resource`), so checking costs no disk reads. Changing the list needs a
   deploy.
 - **Normalizing before matching** (the same steps on the text and on the list):
@@ -646,7 +645,7 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] Unread counts, one last-read file per player
 - [x] Length limits and chat rate limit
 - [x] `Moderation.check/2` with normalization
-- [ ] Human: fill in and approve `prohibited_words.txt` (ships empty)
+- [x] Human: fill in and approve `prohibited_words.txt`
 - [x] Moderation on chat, private messages, nicknames and table names
 - [x] Strikes (warning, final warning, ban), `Bans` Agent, banned players' pages closed
       at once, frozen tanks
