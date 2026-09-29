@@ -1,0 +1,40 @@
+# Allowed words (see README, "Moderation").
+#
+# Each word in prohibited_words.txt also blocks its Portuguese forms: the other
+# gender (-o/-a), smaller (-inho/-inha), bigger (-ão/-ona) and the plurals. Some of
+# those forms are ordinary words ("bruxo" from "bruxa", "burro" from "burra"). The
+# words below are never blocked, even when a form would block them. Write plurals
+# too: they're not added on their own. Lines starting with "#" are ignored.
+#
+# Palavras permitidas (veja o README, "Moderation").
+#
+# Cada palavra de prohibited_words.txt também bloqueia suas formas em português: o
+# outro gênero (-o/-a), o diminutivo (-inho/-inha), o aumentativo (-ão/-ona) e os
+# plurais. Algumas dessas formas são palavras comuns ("bruxo" de "bruxa", "burro" de
+# "burra"). As palavras abaixo nunca são bloqueadas, mesmo quando uma forma as
+# bloquearia. Escreva os plurais também: eles não entram sozinhos. Linhas que começam
+# com "#" são ignoradas.
+
+arrotinha
+arrotinhas
+bichão
+bichões
+bimba
+bimbas
+bimbinha
+bimbinhas
+bruxinha
+bruxinhas
+bruxo
+bruxos
+burrinha
+burrinhas
+burrinho
+burrinhos
+burro
+burros
+homão
+pepo
+pepos
+vadio
+vadios

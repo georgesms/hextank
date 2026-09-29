@@ -261,6 +261,12 @@ files on disk instead of a database:
   `Hextank.Moderation`
   (`@external_resource`), so checking costs no disk reads. Changing the list needs a
   deploy.
+- **Portuguese forms:** each listed word also blocks its other gender (`-o`/`-a`),
+  smaller and bigger forms (`-inho`/`-inha`, `-ão`/`-ona`) and every plural (`-s`,
+  `-es`, `-ões`, `-ães`), so the list needs only one form per word. The forms are
+  worked out while compiling (about 800 words, ~45 KB). Some forms are ordinary words
+  (`bruxo` from `bruxa`): `priv/moderation/allowed_words.txt` lists them, and they are
+  never blocked.
 - **Normalizing before matching** (the same steps on the text and on the list):
   lowercase, remove accents (`ã` → `a`), undo common letter swaps (`4` → `a`, `3` → `e`,
   `0` → `o`, `1` → `i`, `@` → `a`, `$` → `s`), shorten repeated letters (`aaaa` → `a`).

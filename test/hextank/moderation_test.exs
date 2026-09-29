@@ -25,6 +25,20 @@ defmodule Hextank.ModerationTest do
     test "lets ordinary text through" do
       assert Moderation.check("I'll shoot you at noon, ally.", @words) == :ok
     end
+
+    test "with a word's forms, catches its other gender, size and plural" do
+      words = MapSet.new(Text.word_forms("gato"))
+
+      for text <- ["GATA", "gatinhos", "que gatão", "gatonas", "gatões"] do
+        assert {:error, {:prohibited, _word}} = Moderation.check(text, words), text
+      end
+
+      assert Moderation.check("gatilho e gateway", words) == :ok
+    end
+  end
+
+  test "the real list lets the allowed words through" do
+    assert Moderation.check("bruxo burro vadio burrinhos") == :ok
   end
 
   test "the list file compiles into a set of normalized words" do

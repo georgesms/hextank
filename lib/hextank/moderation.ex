@@ -5,26 +5,34 @@ defmodule Hextank.Moderation do
   `Hextank.Player.add_strike/3` and done by `Hextank.Players.screen/4`.
 
   The word list is read from `priv/moderation/prohibited_words.txt` **while
-  compiling**, normalized once and kept in the module, so checking never touches the
-  disk. Changing the list needs a recompile (a deploy in production).
+  compiling**: each word is normalized and joined by its Portuguese forms (gender,
+  size and plural, see `Hextank.Moderation.Text.word_forms/1`), minus the innocent
+  words in `priv/moderation/allowed_words.txt`. The result is kept in the module, so
+  checking never touches the disk. Changing either file needs a recompile (a deploy
+  in production).
   """
 
   alias Hextank.Moderation.Text
 
   @words_file Path.expand("../../priv/moderation/prohibited_words.txt", __DIR__)
+  @allowed_file Path.expand("../../priv/moderation/allowed_words.txt", __DIR__)
 
-  # Recompile this module whenever the file changes.
+  # Recompile this module whenever one of the files changes.
   @external_resource @words_file
+  @external_resource @allowed_file
+
+  # Ordinary words that a form would block by accident ("bruxo" from "bruxa").
+  # They win over the list.
+  @allowed @allowed_file |> File.read!() |> Text.list_words() |> MapSet.new()
 
   @words @words_file
          |> File.read!()
-         |> String.split("\n")
-         |> Enum.map(&String.trim/1)
-         |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "#")))
-         |> Enum.map(&Text.normalize/1)
+         |> Text.list_words()
+         |> Enum.flat_map(&Text.word_forms/1)
          |> MapSet.new()
+         |> MapSet.difference(@allowed)
 
-  @doc "The normalized prohibited words from the list file."
+  @doc "The normalized prohibited words: the listed ones and their forms."
   @spec words() :: MapSet.t(String.t())
   def words, do: @words
 

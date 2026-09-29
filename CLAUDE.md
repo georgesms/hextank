@@ -89,7 +89,7 @@ lib/hextank/settings.ex       table settings: defaults, allowed values (pure)
 lib/hextank/random.ex         seeded shuffle (pure)
 lib/hextank/player.ex         player struct and strike rules (pure)
 lib/hextank/moderation.ex     prohibited-word check (pure)
-lib/hextank/moderation/text.ex   normalizing text before matching (pure)
+lib/hextank/moderation/text.ex   normalizing text, Portuguese word forms (pure)
 lib/hextank/storage.ex        all file reads and writes
 lib/hextank/chat.ex           append, read and broadcast chat messages
 lib/hextank/players.ex        create/load players, screen texts, ban and unban
@@ -101,6 +101,7 @@ lib/hextank/admin.ex          admins, statistics (on demand), bulk deletion
 lib/hextank_web/live/         LiveViews (lobby, table, account, admin)
 lib/hextank_web/controllers/  welcome, rejoin links, banned page (later: dormant, Google)
 priv/moderation/prohibited_words.txt   the word list (approved by the human)
+priv/moderation/allowed_words.txt      ordinary words a word form must not block
 priv/gettext/pt_BR/           Portuguese translations
 rel/vm.args.eex               BEAM flags for one shared vCPU
 test/hextank/                 tests mirror lib/
