@@ -3,7 +3,8 @@ defmodule HextankWeb.LobbyLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Hextank.Tables
+  alias Hextank.{Game, Storage, Tables}
+  alias Hextank.Tables.Lobby
 
   setup %{conn: conn} do
     {conn, player} = log_in_new_player(conn)
@@ -109,5 +110,69 @@ defmodule HextankWeb.LobbyLiveTest do
 
     {:ok, view, _html} = live(conn, ~p"/")
     assert has_element?(view, "#unread-#{game.id}", "2")
+  end
+
+  describe "table cards" do
+    # Ana's table with Bruno and Carla, started `days` days ago. `change` adjusts the
+    # game before it's saved. No table process runs, so the test saves it directly.
+    defp started_table(player, days, change) do
+      now = DateTime.utc_now()
+
+      {:ok, game} =
+        Tables.create_table(player, %{name: "Cards", visibility: :public, tick_interval: 86_400})
+
+      {:ok, game} = Game.add_player(game, "bruno", "Bruno", now)
+      {:ok, game} = Game.add_player(game, "carla", "Carla", now)
+      {:ok, game} = Game.start(game, player.id, DateTime.add(now, -days * 86_400, :second), 1)
+      game = change.(game)
+      :ok = Storage.save_game(game)
+      Lobby.put(game)
+      game
+    end
+
+    defp destroy(game, player_id) do
+      tanks = Map.update!(game.tanks, player_id, &%{&1 | hp: 0, position: nil})
+      %{game | tanks: tanks}
+    end
+
+    test "a table that hasn't started shows how many players joined", %{conn: conn} do
+      {:ok, other} = Hextank.Players.create("Zé")
+
+      {:ok, game} =
+        Tables.create_table(other, %{name: "Soon", visibility: :public, tick_interval: 60})
+
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      assert has_element?(view, "#table-card-#{game.id}", "Not started")
+      assert has_element?(view, "#table-status-#{game.id}", "1 of 20 players")
+    end
+
+    test "a running table shows who's alive and how long ago it started",
+         %{conn: conn, player: player} do
+      game = started_table(player, 3, &destroy(&1, "carla"))
+
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      assert has_element?(view, "#table-card-#{game.id}", "Running")
+      assert has_element?(view, "#table-status-#{game.id}", "2 alive")
+      assert has_element?(view, "#table-status-#{game.id}", "1 destroyed")
+      assert has_element?(view, "#table-status-#{game.id}", "Started 3 days ago")
+    end
+
+    test "a finished table shows the winner and when it will be deleted",
+         %{conn: conn, player: player} do
+      game =
+        started_table(player, 10, fn game ->
+          game = game |> destroy("bruno") |> destroy("carla")
+          ended_at = DateTime.add(DateTime.utc_now(), -2 * 86_400, :second)
+          %{game | status: :finished, winner_id: player.id, finished_at: ended_at}
+        end)
+
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      assert has_element?(view, "#table-card-#{game.id}", "Finished")
+      assert has_element?(view, "#table-status-#{game.id}", "Ana won")
+      assert has_element?(view, "#table-status-#{game.id}", "Deleted in 5 days")
+    end
   end
 end

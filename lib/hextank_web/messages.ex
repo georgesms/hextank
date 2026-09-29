@@ -150,6 +150,28 @@ defmodule HextankWeb.Messages do
   def ago(seconds) when seconds < 60, do: gettext("just now")
   def ago(seconds), do: gettext("%{time} ago", time: duration(seconds))
 
+  @doc """
+  How long ago a game started, in whole days: "Started 3 days ago", or "Started less
+  than a day ago".
+  """
+  @spec started_ago(integer()) :: String.t()
+  def started_ago(seconds) when seconds < 86_400, do: gettext("Started less than a day ago")
+
+  def started_ago(seconds) do
+    days = div(seconds, 86_400)
+    ngettext("Started 1 day ago", "Started %{count} days ago", days)
+  end
+
+  @doc """
+  How long until a table is deleted, in days, rounded up: "Deleted in 5 days". Never
+  less than 1 day, so it doesn't say "0 days" in its last hours.
+  """
+  @spec deleted_in(integer()) :: String.t()
+  def deleted_in(seconds) do
+    days = max(div(seconds + 86_399, 86_400), 1)
+    ngettext("Deleted in 1 day", "Deleted in %{count} days", days)
+  end
+
   @doc "The label of a board size setting."
   @spec board_radius(:auto | pos_integer()) :: String.t()
   def board_radius(:auto), do: gettext("Automatic (grows with players)")
@@ -187,7 +209,7 @@ defmodule HextankWeb.Messages do
 
   @doc "A game's status, for badges."
   @spec status(Game.status()) :: String.t()
-  def status(:lobby), do: gettext("Waiting for players")
+  def status(:lobby), do: gettext("Not started")
   def status(:running), do: gettext("Running")
   def status(:finished), do: gettext("Finished")
 end

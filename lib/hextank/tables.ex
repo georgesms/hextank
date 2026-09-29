@@ -116,6 +116,9 @@ defmodule Hextank.Tables do
   @doc "Every table the player is in, newest first."
   defdelegate list_for_player(player_id), to: Lobby
 
+  @doc "When a finished or never-started table will be deleted (`nil` if running)."
+  defdelegate expires_at(summary_or_game), to: Lobby
+
   ## Finding or starting the table process
 
   # A table can stop itself (idle) just as a request reaches it. Then the call exits

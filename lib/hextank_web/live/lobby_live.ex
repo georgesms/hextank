@@ -20,6 +20,8 @@ defmodule HextankWeb.LobbyLive do
     socket =
       socket
       |> assign(:page_title, gettext("Lobby"))
+      # For "Started 3 days ago" on the cards. The lobby doesn't refresh by itself.
+      |> assign(:now, DateTime.utc_now())
       |> assign(:my_tables, my_tables)
       # One small chat read per table you're in; public tables aren't read at all.
       |> assign(:unread, Map.new(my_tables, &{&1.id, Chat.unread_count(&1.id, player.id)}))
@@ -103,6 +105,7 @@ defmodule HextankWeb.LobbyLive do
               <.table_card
                 :for={summary <- @my_tables}
                 summary={summary}
+                now={@now}
                 unread={@unread[summary.id]}
               />
             </div>
@@ -114,7 +117,7 @@ defmodule HextankWeb.LobbyLive do
               {gettext("No public tables right now. Create one and invite your friends!")}
             </p>
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <.table_card :for={summary <- @open_tables} summary={summary} />
+              <.table_card :for={summary <- @open_tables} summary={summary} now={@now} />
             </div>
           </section>
         </div>
@@ -221,6 +224,7 @@ defmodule HextankWeb.LobbyLive do
   end
 
   attr :summary, :map, required: true
+  attr :now, DateTime, required: true
   attr :unread, :integer, default: 0
 
   defp table_card(assigns) do
@@ -234,12 +238,12 @@ defmodule HextankWeb.LobbyLive do
         <h3 class="truncate font-semibold group-hover:text-primary">{@summary.name}</h3>
         <.status_badge status={@summary.status} />
       </div>
-      <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-content/60">
-        <span class="flex items-center gap-1">
-          <.icon name="hero-users-micro" class="size-4" />
-          {length(@summary.player_ids)}/20
-        </span>
-        <span class="flex items-center gap-1">
+      <div
+        id={"table-status-#{@summary.id}"}
+        class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-content/60"
+      >
+        <.status_details summary={@summary} now={@now} />
+        <span :if={@summary.status != :finished} class="flex items-center gap-1">
           <.icon name="hero-clock-micro" class="size-4" />
           {Messages.tick_interval(@summary.tick_interval)}
         </span>
@@ -257,6 +261,52 @@ defmodule HextankWeb.LobbyLive do
         </span>
       </div>
     </.link>
+    """
+  end
+
+  # What a card says about each status: who's in before the start, who's still
+  # alive and since when during the game, who won and when it goes away after.
+  attr :summary, :map, required: true
+  attr :now, DateTime, required: true
+
+  defp status_details(%{summary: %{status: :lobby}} = assigns) do
+    ~H"""
+    <span class="flex items-center gap-1">
+      <.icon name="hero-users-micro" class="size-4" />
+      {ngettext("1 of 20 players", "%{count} of 20 players", length(@summary.player_ids))}
+    </span>
+    """
+  end
+
+  defp status_details(%{summary: %{status: :running} = summary} = assigns) do
+    assigns = assign(assigns, :destroyed, length(summary.player_ids) - summary.alive_count)
+
+    ~H"""
+    <span class="flex items-center gap-1">
+      <.icon name="hero-users-micro" class="size-4" />
+      {ngettext("1 alive", "%{count} alive", @summary.alive_count)}
+    </span>
+    <span class="flex items-center gap-1">
+      <.icon name="hero-x-circle-micro" class="size-4" />
+      {ngettext("1 destroyed", "%{count} destroyed", @destroyed)}
+    </span>
+    <span class="flex items-center gap-1">
+      <.icon name="hero-calendar-micro" class="size-4" />
+      {Messages.started_ago(DateTime.diff(@now, @summary.started_at, :second))}
+    </span>
+    """
+  end
+
+  defp status_details(%{summary: %{status: :finished}} = assigns) do
+    ~H"""
+    <span class="flex items-center gap-1 font-medium text-base-content/80">
+      <.icon name="hero-trophy-micro" class="size-4 text-warning" />
+      {gettext("%{name} won", name: @summary.winner_name)}
+    </span>
+    <span class="flex items-center gap-1">
+      <.icon name="hero-trash-micro" class="size-4" />
+      {Messages.deleted_in(DateTime.diff(Tables.expires_at(@summary), @now, :second))}
+    </span>
     """
   end
 end

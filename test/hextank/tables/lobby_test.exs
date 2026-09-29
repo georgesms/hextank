@@ -1,11 +1,43 @@
 defmodule Hextank.Tables.LobbyTest do
   use ExUnit.Case, async: true
 
+  alias Hextank.Game
   alias Hextank.Tables.Lobby
 
   @now ~U[2026-03-01 12:00:00Z]
 
+  defp new_game do
+    Game.new(
+      id: "t1",
+      name: "Test",
+      visibility: :public,
+      creator_id: "ana",
+      tick_interval: 60,
+      created_at: @now
+    )
+  end
+
   defp days_ago(days), do: DateTime.add(@now, -days * 86_400 - 1, :second)
+
+  describe "summary/1" do
+    test "counts the living tanks and names the winner" do
+      {:ok, game} = Game.add_player(new_game(), "ana", "Ana", @now)
+      {:ok, game} = Game.add_player(game, "bruno", "Bruno", @now)
+      {:ok, game} = Game.start(game, "ana", @now, 1)
+
+      assert %{alive_count: 2, winner_name: nil} = Lobby.summary(game)
+
+      # Ana can reach Bruno, who has 1 HP left: one shot ends the game.
+      tanks =
+        game.tanks
+        |> Map.update!("ana", &%{&1 | ap: 1, range: 99})
+        |> Map.update!("bruno", &%{&1 | hp: 1})
+
+      {:ok, game} = Game.act(%{game | tanks: tanks}, "ana", {:shoot, "bruno"}, @now)
+
+      assert %{status: :finished, alive_count: 1, winner_name: "Ana"} = Lobby.summary(game)
+    end
+  end
 
   describe "expires_at/1" do
     test "a finished table goes 7 days after the end, a waiting one 7 days after creation" do

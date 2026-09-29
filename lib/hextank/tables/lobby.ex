@@ -26,6 +26,8 @@ defmodule Hextank.Tables.Lobby do
           status: Game.status(),
           creator_id: String.t() | nil,
           player_ids: [String.t()],
+          alive_count: non_neg_integer(),
+          winner_name: String.t() | nil,
           tick_interval: pos_integer(),
           created_at: DateTime.t(),
           started_at: DateTime.t() | nil,
@@ -74,6 +76,9 @@ defmodule Hextank.Tables.Lobby do
       status: game.status,
       creator_id: game.creator_id,
       player_ids: Map.keys(game.tanks),
+      # For the lobby's cards: "3 alive, 2 destroyed", "Ana won".
+      alive_count: length(Game.living_tanks(game)),
+      winner_name: winner_name(game),
       tick_interval: game.tick_interval,
       created_at: game.created_at,
       # Enough to work out the AP of a sleeping table without loading it.
@@ -84,6 +89,9 @@ defmodule Hextank.Tables.Lobby do
       action_counts: game.action_counts
     }
   end
+
+  defp winner_name(%Game{winner_id: nil}), do: nil
+  defp winner_name(game), do: Game.tank(game, game.winner_id).name
 
   @doc """
   When a finished or never-started table will be deleted:
