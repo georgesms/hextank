@@ -38,7 +38,7 @@ defmodule Hextank.ModerationTest do
   end
 
   test "the real list lets the allowed words through" do
-    assert Moderation.check("bruxo burro vadio burrinhos") == :ok
+    assert Moderation.check("Eu queria um bicho, não um burro: que safado!") == :ok
   end
 
   test "the list file compiles into a set of normalized words" do

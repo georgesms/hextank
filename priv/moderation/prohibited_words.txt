@@ -281,3 +281,62 @@ beaner
 mussie
 niglet
 chink
+
+# Added from MOL, the Multilingual Offensive Lexicon (Vargas et al., MIT license,
+# https://github.com/franciellevargas/MOL): context-independent terms aimed at a
+# group. / Tirado do MOL: termos ofensivos em qualquer contexto, contra um grupo.
+vagabunda
+vagaba
+quenga
+greluda
+jornazista
+bicha
+hipocristão
+enrustiano
+machona
+evanjegue
+safaneja
+hypochristian
+
+# Added from HurtLex 1.2 (Bassignana, Basile and Patti, CC BY-SA 4.0,
+# https://github.com/valeriobasile/hurtlex): ethnic and homophobic slurs, picked
+# by hand. / Tirado do HurtLex: insultos étnicos e homofóbicos, escolhidos à mão.
+faggedy
+nigga
+niggar
+mongloids
+ghey
+queerio
+jigaboo
+mongoloids
+chernozhopyi
+mongolid
+fayg
+boche
+poove
+krauthead
+darkey
+mongoloid
+niggiz
+nigra
+ni66a
+nikker
+niggas
+halfbreed
+krauts
+fagala
+mongloid
+halfcast
+halfbreeds
+niggaz
+niggah
+niggre
+sinoid
+pikie
+darky
+kraut
+retardado
+mongolóide
+paneleiro
+mongolóides
+mongólico

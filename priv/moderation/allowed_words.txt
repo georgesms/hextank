@@ -17,6 +17,10 @@
 
 arrotinha
 arrotinhas
+bichinho
+bichinhos
+bicho
+bichos
 bichão
 bichões
 bimba
@@ -34,7 +38,19 @@ burrinhos
 burro
 burros
 homão
+machão
+machões
 pepo
 pepos
+quengo
+quengos
+queria
+querias
+safadinho
+safadinhos
+safado
+safados
 vadio
 vadios
+vagabundo
+vagabundos
