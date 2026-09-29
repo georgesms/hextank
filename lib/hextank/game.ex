@@ -108,7 +108,8 @@ defmodule Hextank.Game do
           name: name,
           seat: next_seat(game),
           hp: game.settings.start_hp,
-          range: game.settings.start_range
+          range: game.settings.start_range,
+          ap: game.settings.start_ap
         }
 
         game =

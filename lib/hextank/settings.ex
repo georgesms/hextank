@@ -1,8 +1,8 @@
 defmodule Hextank.Settings do
   @moduledoc """
   The settings a table's creator can choose (besides the tick interval, which lives on
-  `%Game{}` itself): board size, how many rocks, each tank's starting HP and range,
-  and the highest range a tank can upgrade to. Chosen when the table is created, fixed
+  `%Game{}` itself): board size, how many rocks, each tank's starting HP, range and
+  AP, and the highest range a tank can upgrade to. Chosen when the table is created, fixed
   afterwards.
   """
 
@@ -11,6 +11,7 @@ defmodule Hextank.Settings do
     obstacle_percent: 10,
     start_hp: 3,
     start_range: 2,
+    start_ap: 0,
     max_range: 5
   }
 
@@ -20,6 +21,7 @@ defmodule Hextank.Settings do
     obstacle_percent: [0, 5, 10, 20],
     start_hp: Enum.to_list(1..5),
     start_range: Enum.to_list(1..4),
+    start_ap: [0, 1, 2, 3, 5, 10],
     # :none lets range grow without a limit.
     max_range: [4, 5, 6, 8, :none]
   }
@@ -29,6 +31,7 @@ defmodule Hextank.Settings do
           obstacle_percent: non_neg_integer(),
           start_hp: pos_integer(),
           start_range: pos_integer(),
+          start_ap: non_neg_integer(),
           max_range: pos_integer() | :none
         }
 
@@ -51,7 +54,14 @@ defmodule Hextank.Settings do
 
       iex> Settings.validate(%{start_hp: 5})
       {:ok,
-       %{board_radius: :auto, max_range: 5, obstacle_percent: 10, start_hp: 5, start_range: 2}}
+       %{
+         board_radius: :auto,
+         max_range: 5,
+         obstacle_percent: 10,
+         start_ap: 0,
+         start_hp: 5,
+         start_range: 2
+       }}
 
       iex> Settings.validate(%{start_hp: 99})
       {:error, :invalid_settings}

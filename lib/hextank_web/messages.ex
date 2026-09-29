@@ -210,6 +210,7 @@ defmodule HextankWeb.Messages do
       {gettext("Rocks"), obstacles(settings.obstacle_percent)},
       {gettext("Starting HP"), to_string(settings.start_hp)},
       {gettext("Starting range"), to_string(settings.start_range)},
+      {gettext("Starting AP"), to_string(settings.start_ap)},
       {gettext("Maximum range"), max_range(settings.max_range)}
     ]
   end

@@ -167,6 +167,13 @@ defmodule Hextank.GameTest do
       assert %Tank{hp: 5, range: 1} = Game.tank(game, "bruno")
     end
 
+    test "tanks start with no AP, or with the chosen AP" do
+      assert %Tank{ap: 0} = Game.tank(lobby_game(["ana", "bruno"]), "bruno")
+
+      game = lobby_with_settings(%{start_ap: 5}, ["ana", "bruno"])
+      assert %Tank{ap: 5} = Game.tank(game, "bruno")
+    end
+
     test "a fixed board radius and obstacle share are used at the start" do
       game = lobby_with_settings(%{board_radius: 7, obstacle_percent: 0}, ["ana", "bruno"])
       {:ok, game} = Game.start(game, "ana", @now, 1)

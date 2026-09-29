@@ -65,6 +65,7 @@ defmodule HextankWeb.LobbyLiveTest do
           board_radius: "7",
           obstacle_percent: "0",
           start_hp: "5",
+          start_ap: "3",
           max_range: "none"
         }
       )
@@ -74,7 +75,14 @@ defmodule HextankWeb.LobbyLiveTest do
     [summary] = Tables.list_for_player(player.id)
     {:ok, game} = Tables.get(summary.id)
 
-    assert %{board_radius: 7, obstacle_percent: 0, start_hp: 5, start_range: 2, max_range: :none} =
+    assert %{
+             board_radius: 7,
+             obstacle_percent: 0,
+             start_hp: 5,
+             start_range: 2,
+             start_ap: 3,
+             max_range: :none
+           } =
              game.settings
 
     assert has_element?(table_view, "#table-settings")

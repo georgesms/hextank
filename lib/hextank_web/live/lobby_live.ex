@@ -41,6 +41,7 @@ defmodule HextankWeb.LobbyLive do
       "obstacle_percent" => "10",
       "start_hp" => "3",
       "start_range" => "2",
+      "start_ap" => "0",
       "max_range" => "5"
     }
 
@@ -60,6 +61,7 @@ defmodule HextankWeb.LobbyLive do
         obstacle_percent: parse_integer(params["obstacle_percent"]),
         start_hp: parse_integer(params["start_hp"]),
         start_range: parse_integer(params["start_range"]),
+        start_ap: parse_integer(params["start_ap"]),
         max_range: parse_max_range(params["max_range"])
       }
     }
@@ -179,7 +181,7 @@ defmodule HextankWeb.LobbyLive do
                     for p <- Settings.allowed(:obstacle_percent), do: {Messages.obstacles(p), p}
                   }
                 />
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-3 gap-3">
                   <.input
                     field={@form[:start_hp]}
                     type="select"
@@ -191,6 +193,12 @@ defmodule HextankWeb.LobbyLive do
                     type="select"
                     label={gettext("Starting range")}
                     options={Settings.allowed(:start_range)}
+                  />
+                  <.input
+                    field={@form[:start_ap]}
+                    type="select"
+                    label={gettext("Starting AP")}
+                    options={Settings.allowed(:start_ap)}
                   />
                 </div>
                 <.input

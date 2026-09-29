@@ -31,7 +31,8 @@ the diplomacy, alliances and betrayals as much as the tactics.
   cells, so "within range 2" means "at most 2 steps away". Upgrades stop at the
   table's **maximum range, 5** by default (the creator can pick 4, 5, 6, 8 or no
   limit). The original game had no maximum.
-- **Action Points:** each tank starts with **0 AP**.
+- **Action Points:** each tank starts with **0 AP** (the creator can pick 1, 2, 3, 5
+  or 10 instead).
 
 ### Visibility (fog of war)
 
@@ -754,7 +755,7 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [ ] Later: GitHub Actions deploy on push to `main`
 
 ### Phase 8 – Nice to have
-- [x] Table settings: board radius, tick interval, obstacle density, start HP/range
+- [x] Table settings: board radius, tick interval, obstacle density, start HP/range/AP
 - [x] Board controls: click to preview, second click or double-click to act, multi-cell
       moves along the shortest path, stats on hover
 - [x] Every action as a button in the tank panel; choose whether a double-click on

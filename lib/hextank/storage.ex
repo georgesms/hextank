@@ -18,7 +18,7 @@ defmodule Hextank.Storage do
 
   alias Hextank.{Game, Player, Settings}
 
-  @format_version 5
+  @format_version 6
 
   # Ids end up in file paths, so they must never contain "/" or "..".
   @id_format ~r/\A[A-Za-z0-9_-]{8,32}\z/
@@ -184,6 +184,13 @@ defmodule Hextank.Storage do
 
   # One clause per save format. When the format changes, bump @format_version and
   # add a clause here that upgrades the old shape.
+  defp decode({6, term}), do: term
+
+  # Version 5 games were saved before the starting AP could be chosen: tanks always
+  # started with 0, which is the default. Then on as version 6.
+  defp decode({5, %Game{} = game}),
+    do: decode({6, update_in(game.settings, &Map.put_new(&1, :start_ap, 0))})
+
   defp decode({5, term}), do: term
 
   # Version 4 tanks were saved before hulls and turrets could turn: they point the
@@ -194,7 +201,7 @@ defmodule Hextank.Storage do
         {player_id, tank |> Map.put_new(:heading, 0) |> Map.put_new(:aim, nil)}
       end)
 
-    %{game | tanks: tanks}
+    decode({5, %{game | tanks: tanks}})
   end
 
   defp decode({4, term}), do: term

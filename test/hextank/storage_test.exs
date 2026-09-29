@@ -85,6 +85,19 @@ defmodule Hextank.StorageTest do
     assert loaded == game
   end
 
+  test "a game saved before the starting AP could be chosen loads with 0" do
+    game = game()
+
+    # What version 5 wrote: settings without :start_ap.
+    old_game = update_in(game.settings, &Map.delete(&1, :start_ap))
+    path = Path.join([Application.fetch_env!(:hextank, :data_dir), "tables", game.id, "game.bin"])
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, :erlang.term_to_binary({5, old_game}))
+
+    assert {:ok, %{settings: %{start_ap: 0}} = loaded} = Storage.load_game(game.id)
+    assert loaded == game
+  end
+
   test "an unknown table is not found" do
     assert Storage.load_game(Storage.new_id()) == {:error, :not_found}
   end
