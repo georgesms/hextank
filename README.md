@@ -63,10 +63,16 @@ selection, which is handy on touch screens. It also has a switch that picks what
 double-click on another tank does: shoot it (the default) or give it 1 AP. Escape
 cancels.
 
-Every action shows a short animation on everyone's board: tire tracks along a move, a
-tracer and a burst for a shot (bigger when a tank is destroyed), a ⚡ flying to the
-tank that got AP (dropping from above for a ghost's vote) and a ring growing to the
-new range. When the game ends, a banner above the board names the winner ("You won!"
+The board is a dark screen, the same in both themes ("Sala de Guerra", a war room's
+map table). Each tank is the NATO symbol for armour in its player's neon colour: the
+hull (a rectangle) points the way the tank last drove, the turret (an ellipse with
+its gun) at the last tank it shot.
+
+Every action shows a short animation on everyone's board: a move drives along the
+shortest path, cell by cell, turning the hull before each leg and leaving two tread
+marks that fade; a shot turns the turret, then fires a tracer with a burst (bigger
+when a tank is destroyed); a ⚡ flies to the tank that got AP (dropping from above
+for a ghost's vote) and a ring grows to the new range. When the game ends, a banner above the board names the winner ("You won!"
 for them), and the winner's tank gets a crown. The animations are plain CSS, played
 once when LiveView adds them to the page, and are turned off for people whose system
 asks for reduced motion.
@@ -173,7 +179,9 @@ files on disk instead of a database:
 - **`Hextank.Board`** – the board radius and a `MapSet` of obstacle hexes. The cells
   themselves are **not stored**: they are `Hex.range(Hex.new(0, 0, 0), radius)`.
 - **`Hextank.Tank`** – `%Tank{player_id, name, seat, position, hp, ap, range,
-  has_vote, frozen}`. A tank with 0 HP is a ghost.
+  has_vote, frozen, heading, aim}`. A tank with 0 HP is a ghost. `heading` is the
+  direction (0..5) of the last cell it drove to, `aim` its last target's position
+  minus its own: the board draws the hull and turret from them.
 - **`Hextank.Random`** – a shuffle that always gives the same order for the same seed,
   so randomness is repeatable in tests.
 - **`Hextank.Game`** – the whole game state and the rules. Functions that change the
@@ -708,6 +716,9 @@ the places that deserve the closest look (see CLAUDE.md, *Review workflow*).
 - [x] Stats as emojis: ❤️ HP, ⚡ AP, 🎯 range
 - [x] Light animations for moves, shots, AP gifts, range upgrades and the game's
       result (CSS only)
+- [x] Board as a dark "war room" screen: neon armour symbols whose hull turns the way
+      they drive and turret the way they aim; moves follow the shortest path with
+      tread marks
 - [x] Lobby cards show each table's status: players, tanks alive and destroyed, days
       since the start, the winner, days until deletion
 - [x] Admin page: statistics computed on demand, bulk table deletion
