@@ -24,6 +24,10 @@ defmodule HextankWeb.Messages do
   def error(:off_board), do: gettext("That's off the board.")
   def error(:obstacle), do: gettext("There's a rock there.")
   def error(:cell_occupied), do: gettext("There's a tank there.")
+
+  def error(:not_visible),
+    do: gettext("You can't see that cell: you only drive where you can see.")
+
   def error(:cannot_target_self), do: gettext("You can't target yourself.")
   def error(:invalid_target), do: gettext("Pick a tank that's still on the board.")
   def error(:out_of_range), do: gettext("That tank is out of your range.")

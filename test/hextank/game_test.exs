@@ -3,6 +3,8 @@ defmodule Hextank.GameTest do
 
   alias Hextank.{Board, Game, Hex, Tank}
 
+  doctest Hextank.Game
+
   @now ~U[2026-01-01 12:00:00Z]
   @day 86_400
 
@@ -346,6 +348,59 @@ defmodule Hextank.GameTest do
     test "needs 1 AP even for a neighbouring cell" do
       assert Game.act(standard_game(), "bruno", {:move, Hex.new(2, 0, -2)}, @now) ==
                {:error, :not_enough_ap}
+    end
+  end
+
+  describe "visible_cells/2" do
+    test "a living tank sees the cells within twice its range" do
+      game = running_game([{"ana", Hex.new(0, 0, 0), range: 1}, {"bruno", Hex.new(3, -3, 0), []}])
+      visible = Game.visible_cells(game, "ana")
+
+      assert Game.visible?(visible, Hex.new(2, 0, -2))
+      refute Game.visible?(visible, Hex.new(3, 0, -3))
+      assert MapSet.size(visible) == 19
+    end
+
+    test "ghosts see everything" do
+      assert Game.visible_cells(game_with_ghost([]), "ghost") == :all
+    end
+
+    test "someone who isn't playing sees nothing until the game is over" do
+      game = standard_game()
+
+      assert Game.visible_cells(game, "zeca") == MapSet.new()
+      assert Game.visible_cells(%{game | status: :finished}, "zeca") == :all
+    end
+  end
+
+  describe "act/4 with {:move, hex} in the fog" do
+    # Bruno's cell (2, 0, -2) is fenced in on the side facing Ana: the way around
+    # goes through cells 3 steps from her.
+    defp fenced_game(ana_range) do
+      game =
+        running_game([
+          {"ana", Hex.new(0, 0, 0), ap: 9, range: ana_range},
+          {"bruno", Hex.new(-3, 3, 0), []}
+        ])
+
+      fence = [Hex.new(2, -1, -1), Hex.new(1, 0, -1), Hex.new(1, 1, -2)]
+      %{game | board: Board.new(3, fence)}
+    end
+
+    test "can't drive to a cell out of sight, and isn't told what's there" do
+      game = fenced_game(1)
+      # (3, -3, 0) is 3 steps away and Ana sees 2: it doesn't matter what's there.
+      game = %{game | board: Board.new(3, [Hex.new(3, -3, 0)])}
+
+      assert Game.act(game, "ana", {:move, Hex.new(3, -3, 0)}, @now) == {:error, :not_visible}
+    end
+
+    test "the whole path stays in sight" do
+      assert Game.act(fenced_game(1), "ana", {:move, Hex.new(2, 0, -2)}, @now) ==
+               {:error, :unreachable}
+
+      # Seeing 4 steps, the way around the fence is in sight.
+      assert {:ok, _game} = Game.act(fenced_game(2), "ana", {:move, Hex.new(2, 0, -2)}, @now)
     end
   end
 

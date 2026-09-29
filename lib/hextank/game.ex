@@ -442,6 +442,12 @@ defmodule Hextank.Game do
       else: {:error, :out_of_range}
   end
 
+  defp check_in_view(tank, hex) do
+    if Hex.distance(tank.position, hex) <= view_radius(tank),
+      do: :ok,
+      else: {:error, :not_visible}
+  end
+
   defp check_open(game, hex) do
     cond do
       not Board.on_board?(game.board, hex) -> {:error, :off_board}
@@ -466,6 +472,50 @@ defmodule Hextank.Game do
     end
   end
 
+  ## Fog of war: what each player can see (see README, *Visibility*)
+
+  @doc """
+  How far a living tank sees: twice its range.
+
+      iex> Hextank.Game.view_radius(%Hextank.Tank{player_id: "a", name: "A", seat: 1, range: 3})
+      6
+  """
+  @spec view_radius(Tank.t()) :: non_neg_integer()
+  def view_radius(%Tank{range: range}), do: 2 * range
+
+  @doc """
+  The cells a player can see: `:all` of them, or a `MapSet` of hexes.
+
+    * before the start and once the game is over, everyone sees everything;
+    * a living tank sees the cells within its `view_radius/1`;
+    * ghosts see everything;
+    * someone who isn't playing sees nothing until the game is over, so nobody can
+      spy on the whole board with a second player.
+  """
+  @spec visible_cells(t(), player_id() | nil) :: :all | MapSet.t(Hex.t())
+  def visible_cells(%__MODULE__{status: :running} = game, player_id) do
+    case tank(game, player_id) do
+      %Tank{position: %Hex{} = position} = tank ->
+        position
+        |> Hex.range(view_radius(tank))
+        |> Enum.filter(&Board.on_board?(game.board, &1))
+        |> MapSet.new()
+
+      %Tank{} ->
+        :all
+
+      nil ->
+        MapSet.new()
+    end
+  end
+
+  def visible_cells(_game, _player_id), do: :all
+
+  @doc "Whether a hex is among the visible cells (see `visible_cells/2`)."
+  @spec visible?(:all | MapSet.t(Hex.t()), Hex.t()) :: boolean()
+  def visible?(:all, _hex), do: true
+  def visible?(visible, hex), do: MapSet.member?(visible, hex)
+
   @doc "Whether the tank's range is already the table's maximum, so it can't upgrade."
   @spec max_range_reached?(t(), Tank.t()) :: boolean()
   def max_range_reached?(game, tank) do
@@ -488,12 +538,17 @@ defmodule Hextank.Game do
   The shortest path the player's tank would drive to reach `target`, around rocks
   and other tanks: the cells to cross, `target` included. Its length is the AP cost.
   Doesn't check the tank has enough AP (`act/4` does).
+
+  A tank only drives where it can see: the target and every cell of the path must be
+  within its `view_radius/1`. So a path never gives away a hidden rock or tank.
   """
   @spec path(t(), player_id(), Hex.t()) :: {:ok, [Hex.t()]} | {:error, atom()}
   def path(game, player_id, target) do
-    with %Tank{position: %Hex{} = from} <- tank(game, player_id),
+    with %Tank{position: %Hex{} = from} = tank <- tank(game, player_id),
+         # First: an answer about a cell you can't see must not tell what's there.
+         :ok <- check_in_view(tank, target),
          :ok <- check_open(game, target) do
-      open? = &(check_open(game, &1) == :ok)
+      open? = &(check_in_view(tank, &1) == :ok and check_open(game, &1) == :ok)
 
       case Hex.find_path(from, target, open?, Board.cell_count(game.board.radius)) do
         {:ok, path} -> {:ok, path}
